@@ -1,0 +1,209 @@
+openapi: 3.1.0
+info:
+  title: HASSAL B2B Marketplace API Engine
+  description: >
+    Production-grade RESTful API for HASSAL B2B Marketplace. Facilitates inventory surplus liquidation,
+    opportunity trading, atomic stock reservation, deal state machines, escrow payments, double-entry ledger,
+    and RFQ demands for the food & FMCG sector.
+  version: 2.0.0-production
+  contact:
+    name: HASSAL Engineering
+    email: api@hassal.sa
+    url: https://marketplace.hassal.sa
+
+servers:
+  - url: https://marketplace.hassal.sa/api/v1
+    description: Production Cloud Run Server
+  - url: http://localhost:3000/api/v1
+    description: Local Dev Server Gateway
+
+paths:
+  /health:
+    get:
+      summary: Health check & engine status
+      responses:
+        '200':
+          description: Operational status
+
+  /bootstrap:
+    get:
+      summary: Client initialization payload for Mobile & Web
+      responses:
+        '200':
+          description: Bootstrap configuration, currencies, feature flags, user profile
+
+  /auth/register:
+    post:
+      summary: Register user and company
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password, organization_name]
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+                phone: { type: string }
+                organization_name: { type: string }
+                organization_type: { type: string, enum: [buyer, seller] }
+                commercial_registration_number: { type: string }
+                vat_number: { type: string }
+      responses:
+        '201':
+          description: Registration successful
+
+  /auth/login:
+    post:
+      summary: Authenticate user and issue Sanctum token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [login, password]
+              properties:
+                login: { type: string }
+                password: { type: string }
+                device_name: { type: string }
+      responses:
+        '200':
+          description: Authenticated
+
+  /marketplace/offers:
+    get:
+      summary: Search and filter marketplace opportunities
+      parameters:
+        - name: category_id
+          in: query
+          schema: { type: integer }
+        - name: opportunity_reason
+          in: query
+          schema: { type: string }
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: min_price
+          in: query
+          schema: { type: number }
+        - name: max_price
+          in: query
+          schema: { type: number }
+      responses:
+        '200':
+          description: List of active offers
+    post:
+      summary: Create opportunity offer (Seller)
+      security:
+        - BearerAuth: []
+      responses:
+        '201':
+          description: Offer published
+
+  /marketplace/offers/nearby:
+    get:
+      summary: Geographical search using Haversine formula
+      parameters:
+        - name: latitude
+          in: query
+          required: true
+          schema: { type: number }
+        - name: longitude
+          in: query
+          required: true
+          schema: { type: number }
+        - name: radius_km
+          in: query
+          schema: { type: number, default: 50 }
+      responses:
+        '200':
+          description: List of nearby offers
+
+  /marketplace/reservations:
+    post:
+      summary: Atomically reserve stock
+      security:
+        - BearerAuth: []
+      responses:
+        '201':
+          description: Stock reserved
+
+  /deals:
+    get:
+      summary: List deals
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of deals
+    post:
+      summary: Convert reservation to Deal
+      security:
+        - BearerAuth: []
+      responses:
+        '201':
+          description: Deal initialized
+
+  /deals/{id}/transition:
+    post:
+      summary: Transition deal state
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string }
+                notes: { type: string }
+      responses:
+        '200':
+          description: Deal state transitioned
+
+  /ledger/journal-entries:
+    get:
+      summary: List double-entry journal entries
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Immutable journal entries
+
+  /ledger/trial-balance:
+    get:
+      summary: Financial audit trial balance
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Balanced debits and credits
+
+  /demands:
+    get:
+      summary: List open RFQ demands
+    post:
+      summary: Post RFQ demand
+      security:
+        - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Hassal-Api-Key

@@ -1,0 +1,81 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use App\Http\Responses\ApiResponse;
+use App\Models\Organization;
+use App\Services\TenantContext;
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class ResolveOrganizationContext
+{
+    public function handle(Request $request, Closure $next): Response
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return $next($request);
+        }
+
+        $organizationId = $request->header('X-Organization-Id');
+
+        if (!$organizationId) {
+            // Fall back to first active membership if available
+            $firstMembership = $user->memberships()->where('is_active', true)->with('organization')->first();
+            if ($firstMembership && $firstMembership->organization) {
+                TenantContext::set($firstMembership->organization, $firstMembership);
+                $request->attributes->set('organization', $firstMembership->organization);
+                $request->attributes->set('membership', $firstMembership);
+            }
+            return $next($request);
+        }
+
+        $organization = Organization::find($organizationId);
+
+        if (!$organization) {
+            return ApiResponse::error(
+                'Organization not found',
+                'ORGANIZATION_NOT_FOUND',
+                Response::HTTP_NOT_FOUND
+            );
+        }
+
+        if ($organization->status === 'suspended' || $organization->status === 'rejected') {
+            return ApiResponse::error(
+                'Organization account is suspended or inactive',
+                'ORGANIZATION_SUSPENDED',
+                Response::HTTP_FORBIDDEN
+            );
+        }
+
+        // Check if user is super-admin or has active membership
+        $isSuperAdmin = $user->hasRole('SuperAdmin');
+        $membership = $user->memberships()
+            ->where('organization_id', $organizationId)
+            ->where('is_active', true)
+            ->first();
+
+        if (!$isSuperAdmin && !$membership) {
+            return ApiResponse::error(
+                'You do not have active access to this organization',
+                'ORGANIZATION_ACCESS_DENIED',
+                Response::HTTP_FORBIDDEN
+            );
+        }
+
+        TenantContext::set($organization, $membership);
+        $request->attributes->set('organization', $organization);
+        $request->attributes->set('membership', $membership);
+
+        $response = $next($request);
+
+        return $response;
+    }
+
+    public function terminate(Request $request, Response $response): void
+    {
+        TenantContext::clear();
+    }
+}

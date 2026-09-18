@@ -1,0 +1,15 @@
+node_modules/
+dist/
+build/
+coverage/
+.DS_Store
+*.log
+.env
+!.env.example
+backend/vendor/
+backend/node_modules/
+backend/.env
+backend/.phpunit.result.cache
+/storage/
+public/hot
+public/build
