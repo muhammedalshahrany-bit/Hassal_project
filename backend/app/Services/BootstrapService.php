@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Currency;
 use App\Models\Offer;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class BootstrapService
 {
@@ -15,7 +16,10 @@ class BootstrapService
     ) {}
 
     /**
-     * Generates a unified, high-speed bootstrap payload for Flutter Mobile & Web Client initialization.
+     * Reference data the client needs before it can draw a screen: locales,
+     * currencies, categories, opportunity reasons, feature flags and the
+     * commercial settings. Consumed by the web gateway, and by any client that
+     * speaks /api/v1.
      */
     public function getBootstrapPayload(?User $user = null, ?int $organizationId = null): array
     {
@@ -36,15 +40,18 @@ class BootstrapService
         ];
 
         $payload = [
-            'app_version' => '2.0.0-production',
+            'app_name' => config('app.name'),
+            'app_version' => config('hassal.brand.app_version'),
             'api_version' => 'v1',
-            'system_status' => 'OPERATIONAL',
+            'system_status' => $this->databaseIsReachable() ? 'OPERATIONAL' : 'DEGRADED',
             'server_time' => now()->toIso8601String(),
-            'default_locale' => $this->settingsService->get('platform.default_locale', 'ar'),
-            'supported_locales' => ['ar', 'en'],
+            'default_locale' => $this->settingsService->get('platform.default_locale'),
+            'supported_locales' => config('app.supported_locales') ?: ['ar', 'en'],
             'active_locale' => app()->getLocale(),
-            'country' => $this->settingsService->get('platform.country', env('PLATFORM_COUNTRY', 'YE')),
-            'base_currency' => $this->settingsService->get('platform.default_currency', 'YER'),
+            // null until an operator configures it: the client must be able to
+            // tell "not configured" apart from a guessed value.
+            'country' => $this->settingsService->get('platform.country'),
+            'base_currency' => $this->settingsService->get('platform.default_currency'),
             'currencies' => $currencies,
             'categories' => $categories,
             'opportunity_reasons' => $opportunityReasons,
@@ -52,13 +59,16 @@ class BootstrapService
             'platform_settings' => [
                 'tax' => [
                     'enabled' => (bool) $this->settingsService->get('tax.enabled', false),
-                    'name' => $this->settingsService->get('tax.name', 'ضريبة المبيعات'),
+                    'name' => $this->settingsService->get('tax.name'),
                     'rate' => (float) $this->settingsService->get('tax.rate', 0.0000),
                     'inclusive' => (bool) $this->settingsService->get('tax.inclusive', false),
                 ],
-                'commission_rate' => (float)$this->settingsService->get('commission.rate', 0.0250),
-                'reservation_timeout_minutes' => (int)$this->settingsService->get('reservation.timeout', 30),
-                'inspection_window_hours' => (int)$this->settingsService->get('inspection.window', 48),
+                'commission_rate' => (float) $this->settingsService->get('commission.rate', 0.0000),
+                'reservation_timeout_minutes' => (int) $this->settingsService->get('reservation.timeout', config('hassal.reservations.default_timeout_minutes')),
+                'inspection_window_hours' => (int) $this->settingsService->get('inspection.window', 48),
+                // The city this deployment starts from. A client needs it for
+                // search and form defaults; it must never carry one of its own.
+                'default_city' => $this->settingsService->get('platform.default_city'),
                 'public_configs' => $publicSettings,
             ],
             'user' => null,
@@ -96,5 +106,19 @@ class BootstrapService
         }
 
         return $payload;
+    }
+
+    /**
+     * Whether the database answered just now — the same measurement `/health`
+     * reports. A client must be able to tell "the platform is down" apart from
+     * "nobody looked"; a compiled-in OPERATIONAL cannot make that distinction.
+     */
+    private function databaseIsReachable(): bool
+    {
+        try {
+            return DB::connection()->getPdo() !== null;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 }

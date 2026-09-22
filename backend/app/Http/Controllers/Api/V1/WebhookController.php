@@ -6,11 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\Webhook;
 use App\Models\WebhookDelivery;
+use App\Rules\SafeWebhookEndpoint;
 use App\Services\TenantContext;
 use App\Services\WebhookDispatcherService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
 class WebhookController extends Controller
@@ -38,19 +38,41 @@ class WebhookController extends Controller
         }
 
         $validated = $request->validate([
-            'endpoint_url' => ['required', 'url', 'max:500'],
-            'events' => ['required', 'array'],
+            // The endpoint is not a display value: this server posts to it from
+            // inside its own network, so an internal address here is a request
+            // forgery primitive rather than a typo. See OutboundEndpointPolicy.
+            'endpoint_url' => ['required', 'string', 'max:500', new SafeWebhookEndpoint],
+            'events' => ['required', 'array', 'min:1', 'max:25'],
+            'events.*' => ['required', 'string', 'max:100', 'regex:/^[a-z0-9_]+(\.[a-z0-9_]+)*$/i'],
         ]);
+
+        // 32 bytes from the CSPRNG, so the HMAC key carries the same entropy as
+        // the hash it feeds. The prefix exists so a string that turns up in a
+        // log is instantly recognisable as a webhook secret.
+        $secret = 'whsec_' . bin2hex(random_bytes(32));
 
         $webhook = Webhook::create([
             'organization_id' => $orgId,
             'endpoint_url' => $validated['endpoint_url'],
-            'secret' => 'whsec_' . Str::random(32),
-            'events' => $validated['events'],
+            'secret' => $secret,
+            'events' => array_values(array_unique($validated['events'])),
             'is_active' => true,
         ]);
 
-        return ApiResponse::success($webhook, 'Webhook endpoint registered successfully', Response::HTTP_CREATED);
+        // `secret` is on the model's $hidden list, so it can never be read back
+        // through GET /webhooks — which also means this response is the only
+        // time the tenant ever sees it. Deliveries are signed with it, so a
+        // receiver that misses this value cannot prove a payload came here.
+        $payload = $webhook->only([
+            'id', 'organization_id', 'endpoint_url', 'events', 'is_active', 'failure_count', 'created_at',
+        ]);
+        $payload['secret'] = $secret;
+
+        return ApiResponse::success(
+            $payload,
+            'Webhook endpoint registered successfully. Store the secret now: it will not be shown again.',
+            Response::HTTP_CREATED
+        );
     }
 
     public function ping(int $id): JsonResponse

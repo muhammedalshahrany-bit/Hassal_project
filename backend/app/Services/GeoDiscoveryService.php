@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
+use App\Http\Resources\OfferResource;
 use App\Models\Offer;
-use Illuminate\Support\Collection;
 
 /**
  * Geo Discovery Service
@@ -62,9 +62,16 @@ class GeoDiscoveryService
                 'warehouses.longitude'
             )
             ->selectRaw("{$haversine} AS distance_km", [$latitude, $longitude, $latitude])
+            ->tradable()
             ->where('offers.status', Offer::STATUS_ACTIVE)
             ->where('offers.available_quantity', '>', 0)
             ->whereNull('offers.deleted_at')
+            // Rank only offers with a real, live location. Coordinates are nullable
+            // by design; an unknown warehouse must not be scored at a fabricated
+            // distance, and soft-deleted warehouses must never surface offers.
+            ->whereNull('warehouses.deleted_at')
+            ->whereNotNull('warehouses.latitude')
+            ->whereNotNull('warehouses.longitude')
             ->having('distance_km', '<=', $radiusKm);
 
         // ── Category filter ───────────────────────────────────────────────────
@@ -119,41 +126,26 @@ class GeoDiscoveryService
         });
 
         // ── Sorting ───────────────────────────────────────────────────────────
+        // Distance is the default because this is the "near me" path; the same
+        // intent names the plain listing endpoint accepts work here too.
         $sortBy = $filters['sort_by'] ?? 'distance';
         match ($sortBy) {
-            'price'     => $query->orderBy('offers.unit_price', 'asc'),
-            'freshness' => $query->orderBy('offers.published_at', 'desc'),
-            default     => $query->orderBy('distance_km', 'asc'),
+            'price', 'cheapest'   => $query->orderBy('offers.unit_price', 'asc'),
+            'freshness', 'newest' => $query->orderBy('offers.published_at', 'desc'),
+            'expiring'            => $query->orderBy('offers.expires_at', 'asc'),
+            default               => $query->orderBy('distance_km', 'asc'),
         };
 
         // ── Pagination limit ──────────────────────────────────────────────────
         $perPage = min(50, max(1, (int) ($filters['per_page'] ?? 20)));
 
+        // The list is presented through the same resource as every other offer
+        // response, so the client reads one shape for offers everywhere.
         return $query
-            ->with(['variant.product', 'seller', 'category'])
+            ->with(['variant.product.brand', 'warehouse', 'seller', 'category'])
             ->limit($perPage)
             ->get()
-            ->map(function ($offer) {
-                $arr                 = $offer->toArray();
-                $arr['distance_km']  = round((float) $offer->distance_km, 2);
-                return $arr;
-            })
-            ->toArray();
-    }
-
-    /**
-     * Returns offers within standard radius bands (5/10/25/50 km).
-     * Useful for the "Nearest First" discovery UI tabs.
-     */
-    public function findOffersByBands(float $latitude, float $longitude, array $filters = []): array
-    {
-        $bands = [5, 10, 25, 50];
-
-        $result = [];
-        foreach ($bands as $km) {
-            $result["within_{$km}km"] = $this->findOffersNearby($latitude, $longitude, (float) $km, array_merge($filters, ['per_page' => 5]));
-        }
-
-        return $result;
+            ->map(fn (Offer $offer) => OfferResource::make($offer)->resolve())
+            ->all();
     }
 }

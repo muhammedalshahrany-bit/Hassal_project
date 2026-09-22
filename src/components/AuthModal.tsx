@@ -1,201 +1,574 @@
-import React, { useState } from 'react';
-import { LogIn, UserPlus, X } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { KeyRound, Loader2, LogIn, UserPlus, X } from 'lucide-react';
 import { api } from '../lib/api';
-import type { OrganizationMembership, User } from '../types';
+import { googleSignInSettings, usePlatformConfig } from '../lib/config';
+import { clearSignInNonce, renderGoogleSignInButton, rotateSignInNonce, signInNonce } from '../lib/googleIdentity';
 import { translations, type Locale } from '../lib/i18n';
 
-const DEMO_ACCOUNTS = [
-  { role: 'Super Admin', email: 'superadmin@hassal.local', password: 'Hassal@2026!', description: 'إدارة كاملة للنظام' },
-  { role: 'Seller Admin', email: 'seller.admin@hassal.local', password: 'Hassal@2026!', description: 'إدارة البائع ومخازنه' },
-  { role: 'Seller Staff', email: 'seller.staff@hassal.local', password: 'Hassal@2026!', description: 'تنفيذ العمليات اليومية للبائع' },
-  { role: 'Buyer Admin', email: 'buyer.admin@hassal.local', password: 'Hassal@2026!', description: 'إدارة المشتري وطلباته' },
-  { role: 'Buyer Staff', email: 'buyer.staff@hassal.local', password: 'Hassal@2026!', description: 'إدارة الطلبات اليومية' },
-  { role: 'Intermediary', email: 'intermediary@hassal.local', password: 'Hassal@2026!', description: 'تسوية الصفقات والربط' },
-  { role: 'Auditor', email: 'auditor@hassal.local', password: 'Hassal@2026!', description: 'التدقيق والمراجعة' },
-];
-
+/**
+ * Sign in, register, and password reset.
+ *
+ * There is deliberately no "quick login as …" panel here. A screen that lists
+ * accounts and a shared development password is not a convenience — in a
+ * deployment that has been seeded even once it is a directory of targets, and
+ * in one that has not, every button on it fails. Real accounts come from
+ * registration, from Google, or from the operator's own installer.
+ *
+ * Registration opens a *person*: name, email, password. It does not ask for a
+ * business, because the server refuses one here — `POST /organizations` is the
+ * single door that applies the legal-record rules, the duplicate-register check
+ * and the per-account ceiling, and it is also the door a Google account reaches
+ * later. Both kinds of account therefore walk one path through one policy, and
+ * the door itself stays short.
+ *
+ * The Google button appears only when the operator has switched the feature on
+ * *and* entered a client ID (`googleSignInSettings().ready`), so a control that
+ * could only be refused is never offered.
+ */
 interface AuthModalProps {
   mode: 'login' | 'register' | 'reset';
   onClose: () => void;
-  onAuthenticated: (user: User, organization: OrganizationMembership | null) => void;
+  onAuthenticated: () => void;
   locale?: Locale;
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({ mode: initialMode, onClose, onAuthenticated, locale = 'ar' }) => {
+/**
+ * A message that is not a scolding. `tone: 'notice'` renders in the calm style
+ * the reset links use; `tone: 'error'` in the refusal style. One slot for both
+ * keeps the card from stacking three banners after a bad submit.
+ */
+interface Notice {
+  tone: 'error' | 'notice';
+  text: string;
+}
+
+const STRINGS = {
+  ar: {
+    signInTitle: 'تسجيل الدخول',
+    signInSub: 'ادخل إلى العروض والصفقات ومنشأتك.',
+    registerTitle: 'إنشاء حساب',
+    registerSub: 'خطوة واحدة: بريدك وكلمة مرور. المنشأة تُضاف بعد ذلك.',
+    resetTitle: 'تعيين كلمة مرور جديدة',
+    resetSub: 'أدخل كلمة المرور الجديدة لحسابك.',
+    forgotTitle: 'استعادة كلمة المرور',
+    forgotSub: 'نرسل رابطًا إلى بريدك المسجّل.',
+    close: 'إغلاق',
+    name: 'الاسم الكامل',
+    email: 'البريد الإلكتروني',
+    password: 'كلمة المرور',
+    newPassword: 'كلمة المرور الجديدة',
+    confirmPassword: 'تأكيد كلمة المرور',
+    signIn: 'تسجيل الدخول',
+    register: 'إنشاء حساب',
+    processing: 'جارٍ التنفيذ…',
+    forgotLink: 'نسيت كلمة المرور؟',
+    backToSignIn: 'العودة لتسجيل الدخول',
+    sendLink: 'إرسال رابط الاستعادة',
+    saving: 'جارٍ الحفظ…',
+    savePassword: 'حفظ كلمة المرور',
+    linkSent: 'تم إرسال رابط الاستعادة إلى بريدك. افتح الرابط لتعيين كلمة جديدة.',
+    passwordChanged: 'تم تغيير كلمة المرور. يمكنك الآن تسجيل الدخول.',
+    or: 'أو',
+    googleFailed: 'تعذّر إتمام الدخول عبر جوجل.',
+    businessNote: 'بعد الدخول يمكنك إضافة منشأتك بالسجل التجاري الخاص بها.',
+    fallback: 'تعذر إتمام العملية',
+  },
+  en: {
+    signInTitle: 'Sign in',
+    signInSub: 'Reach your offers, deals and organization.',
+    registerTitle: 'Create an account',
+    registerSub: 'One step: your email and a password. The organization comes next.',
+    resetTitle: 'Set a new password',
+    resetSub: 'Enter the new password for your account.',
+    forgotTitle: 'Reset your password',
+    forgotSub: 'We send a link to your registered email.',
+    close: 'Close',
+    name: 'Full name',
+    email: 'Email',
+    password: 'Password',
+    newPassword: 'New password',
+    confirmPassword: 'Confirm password',
+    signIn: 'Sign in',
+    register: 'Create account',
+    processing: 'Working…',
+    forgotLink: 'Forgot your password?',
+    backToSignIn: 'Back to sign in',
+    sendLink: 'Send reset link',
+    saving: 'Saving…',
+    savePassword: 'Save password',
+    linkSent: 'A reset link has been sent to your email. Open it to set a new password.',
+    passwordChanged: 'Password changed. You can sign in now.',
+    or: 'or',
+    googleFailed: 'Google sign-in could not be completed.',
+    businessNote: 'After signing in you can add your organization with its commercial register.',
+    fallback: 'The request could not be completed',
+  },
+} as const;
+
+/** Shared field styling: 44px tall for a thumb, and one visible focus ring. */
+const inputClass =
+  'mt-1.5 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm font-normal text-slate-900 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50';
+
+const labelClass = 'block text-sm font-bold text-slate-700 dark:text-slate-200';
+
+export const AuthModal: React.FC<AuthModalProps> = ({
+  mode: initialMode,
+  onClose,
+  onAuthenticated,
+  locale = 'ar',
+}) => {
+  const s = STRINGS[locale];
   const t = translations[locale];
   const [mode, setMode] = useState<'login' | 'register' | 'reset'>(initialMode);
   const [forgotMode, setForgotMode] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
-  const [organizationName, setOrganizationName] = useState('');
-  const [organizationType, setOrganizationType] = useState<'buyer' | 'seller'>('buyer');
-  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<Notice | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
+  const [googleAvailable, setGoogleAvailable] = useState(false);
+  const googleSlot = useRef<HTMLDivElement | null>(null);
+  /**
+   * Bootstrap may land after this card is already open — a person who taps
+   "تسجيل الدخول" on a slow connection should not have to close and reopen it to
+   * see the Google button. The store re-renders on arrival, and the effect below
+   * reads the switch again.
+   */
+  const platform = usePlatformConfig();
+  const googleReady = googleSignInSettings().ready;
 
-  React.useEffect(() => {
+  const isDark =
+    typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+
+  const resetNotice = () => setNotice(null);
+
+  useEffect(() => {
     const queryEmail = new URLSearchParams(window.location.search).get('email');
     if (queryEmail) setEmail(queryEmail);
   }, []);
 
+  // Close on Escape, and let the backdrop take the click. A sign-in card that
+  // traps a visitor who changed their mind is the oldest usability complaint.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  /**
+   * Google's button is drawn by Google's script, so it needs a real element and
+   * a nonce generated before the request. Re-rendering on mode changes keeps
+   * one visible button rather than two stacked ones.
+   */
+  useEffect(() => {
+    if (mode === 'reset' || forgotMode) {
+      setGoogleAvailable(false);
+      return;
+    }
+    if (!googleReady || !googleSlot.current) return;
+
+    let cancelled = false;
+    void renderGoogleSignInButton({
+      container: googleSlot.current,
+      locale,
+      dark: isDark,
+      onCredential: (credential) => {
+        void completeGoogleSignIn(credential);
+      },
+    }).then((drawn) => {
+      if (!cancelled) setGoogleAvailable(drawn);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+    // `platform.loaded` and `googleReady` are what a late bootstrap changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, forgotMode, locale, isDark, googleReady, platform.loaded]);
+
+  const completeGoogleSignIn = async (credential: string) => {
+    setGoogleBusy(true);
+    resetNotice();
+    const response = await api.googleSignIn(credential, signInNonce());
+    setGoogleBusy(false);
+
+    if (!response.success) {
+      // A used nonce must not survive the attempt that failed with it.
+      rotateSignInNonce();
+      setNotice({
+        tone: 'error',
+        text: String(response.message || s.googleFailed),
+      });
+      return;
+    }
+
+    clearSignInNonce();
+    onAuthenticated();
+    onClose();
+  };
+
+  const firstValidationError = (response: { error?: { details?: unknown } }): string | null => {
+    const details = response.error?.details;
+    if (!details || typeof details !== 'object') return null;
+    const values = Object.values(details as Record<string, unknown>).flat();
+    return values.length ? String(values[0]) : null;
+  };
+
   const submitForgotPassword = async (event: React.FormEvent) => {
     event.preventDefault();
-    setError(null);
+    resetNotice();
     setSubmitting(true);
     const response = await api.forgotPassword(email);
     setSubmitting(false);
     if (!response.success) {
-      setError(response.message || 'تعذر إرسال رسالة الاستعادة');
+      setNotice({ tone: 'error', text: response.message || s.fallback });
       return;
     }
-    setError('تم إرسال رابط الاستعادة إلى بريدك. في التشغيل المحلي ستجده في سجل Laravel.');
+    setNotice({ tone: 'notice', text: s.linkSent });
   };
 
   const submitResetPassword = async (event: React.FormEvent) => {
     event.preventDefault();
-    setError(null);
+    resetNotice();
     setSubmitting(true);
     const token = new URLSearchParams(window.location.search).get('reset_token') || '';
-    const response = await api.resetPassword({ email, token, password, password_confirmation: passwordConfirmation });
+    const response = await api.resetPassword({
+      email,
+      token,
+      password,
+      password_confirmation: passwordConfirmation,
+    });
     setSubmitting(false);
     if (!response.success) {
-      setError(response.message || 'تعذر تغيير كلمة المرور');
+      setNotice({ tone: 'error', text: firstValidationError(response) || response.message || s.fallback });
       return;
     }
-    setError('تم تغيير كلمة المرور. يمكنك الآن تسجيل الدخول.');
     setMode('login');
+    setForgotMode(false);
+    setPassword('');
+    setPasswordConfirmation('');
+    setNotice({ tone: 'notice', text: s.passwordChanged });
     window.history.replaceState({}, '', window.location.pathname);
   };
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setError(null);
+    resetNotice();
     setSubmitting(true);
 
-    const response = mode === 'login'
-      ? await api.login(email, password)
-      : await api.register({
-          name,
-          email,
-          phone: phone || undefined,
-          password,
-          password_confirmation: passwordConfirmation,
-          organization_name: organizationName || undefined,
-          organization_type: organizationName ? organizationType : undefined,
-        });
+    const response =
+      mode === 'login'
+        ? await api.login(email, password)
+        : await api.register({ name, email, password, password_confirmation: passwordConfirmation });
 
     setSubmitting(false);
     if (!response.success || !response.data?.token) {
-      const validationErrors = response.error?.details;
-      const firstValidationError = validationErrors && typeof validationErrors === 'object'
-        ? Object.values(validationErrors).flat()[0]
-        : null;
-      setError(String(firstValidationError || response.message || 'تعذر إتمام العملية'));
+      setNotice({
+        tone: 'error',
+        text: firstValidationError(response) || response.message || s.fallback,
+      });
       return;
     }
 
-    const user = response.data.user as User;
-    const organization = (response.data.active_organization || response.data.organization || null) as OrganizationMembership | null;
-    onAuthenticated(user, organization);
+    onAuthenticated();
     onClose();
   };
 
-  const handleDemoLogin = async (account: (typeof DEMO_ACCOUNTS)[number]) => {
-    setError(null);
-    setSubmitting(true);
-    const response = await api.login(account.email, account.password);
-    setSubmitting(false);
+  const showTabs = mode !== 'reset' && !forgotMode;
 
-    if (!response.success || !response.data?.token) {
-      setError(response.message || 'تعذر تسجيل الدخول بالحساب التجريبي');
-      return;
-    }
-
-    const user = response.data.user as User;
-    const organization = (response.data.active_organization || response.data.organization || null) as OrganizationMembership | null;
-    onAuthenticated(user, organization);
-    onClose();
-  };
+  /**
+   * Google's own button is drawn *into* the slot by its script, so the element
+   * has to exist before the answer arrives. Hiding the wrapper with `hidden`
+   * rather than not rendering it is what lets the first attempt work: an
+   * un-mounted ref can only be filled by the render after it, which leaves a
+   * card that shows the button on the second open and never on the first.
+   */
+  const googleBlock = (
+    <div className={googleAvailable ? 'space-y-3' : 'hidden'}>
+      <div ref={googleSlot} className="flex min-h-[44px] justify-center" />
+      {googleBusy && (
+        <div className="flex items-center justify-center gap-2 text-xs font-bold text-slate-500">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          {s.processing}
+        </div>
+      )}
+      <div className="flex items-center gap-3 text-[11px] font-bold uppercase text-slate-400">
+        <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+        {s.or}
+        <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+      </div>
+    </div>
+  );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4" role="dialog" aria-modal="true">
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl" dir="rtl">
-        <div className="mb-5 flex items-start justify-between gap-4">
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 backdrop-blur-[2px] sm:items-center sm:p-4"
+      role="dialog"
+      aria-modal="true"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <div
+        className="flex max-h-[92dvh] w-full flex-col overflow-y-auto rounded-t-2xl bg-white shadow-2xl sm:max-w-md sm:rounded-2xl"
+        dir={locale === 'ar' ? 'rtl' : 'ltr'}
+      >
+        <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-5 pb-4 dark:border-slate-800">
           <div>
-            <h2 className="text-xl font-black text-slate-900">{mode === 'login' ? 'تسجيل الدخول' : mode === 'reset' ? 'تعيين كلمة مرور جديدة' : 'إنشاء حساب جديد'}</h2>
-              <p className="mt-1 text-xs text-slate-500">{mode === 'login' ? 'ادخل للوصول إلى إدارة المستودعات والصفقات.' : mode === 'reset' ? 'أدخل كلمة المرور الجديدة لحسابك.' : 'أنشئ حسابك وابدأ إدارة نشاطك التجاري.'}</p>
+            <h2 className="text-lg font-black text-slate-900 dark:text-slate-50">
+              {mode === 'reset'
+                ? s.resetTitle
+                : forgotMode
+                  ? s.forgotTitle
+                  : mode === 'login'
+                    ? s.signInTitle
+                    : s.registerTitle}
+            </h2>
+            <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+              {mode === 'reset'
+                ? s.resetSub
+                : forgotMode
+                  ? s.forgotSub
+                  : mode === 'login'
+                    ? s.signInSub
+                    : s.registerSub}
+            </p>
           </div>
-          <button type="button" onClick={onClose} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="إغلاق">
+          <button
+            type="button"
+            onClick={onClose}
+            className="-m-1 rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-emerald-600"
+            aria-label={s.close}
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        {mode === 'reset' ? (
-          <form onSubmit={submitResetPassword} className="space-y-4">
-            <label className="block text-sm font-bold text-slate-700">البريد الإلكتروني<input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-normal outline-none focus:border-emerald-500" /></label>
-            <label className="block text-sm font-bold text-slate-700">كلمة المرور الجديدة<input required minLength={8} type="password" value={password} onChange={(event) => setPassword(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-normal outline-none focus:border-emerald-500" /></label>
-            <label className="block text-sm font-bold text-slate-700">تأكيد كلمة المرور<input required minLength={8} type="password" value={passwordConfirmation} onChange={(event) => setPasswordConfirmation(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-normal outline-none focus:border-emerald-500" /></label>
-            {error && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-800">{error}</div>}
-            <button disabled={submitting} type="submit" className="w-full rounded-xl bg-emerald-700 px-4 py-3 font-bold text-white disabled:opacity-50">{submitting ? 'جارٍ الحفظ...' : 'حفظ كلمة المرور'}</button>
-          </form>
-        ) : forgotMode ? (
-          <form onSubmit={submitForgotPassword} className="space-y-4">
-            <label className="block text-sm font-bold text-slate-700">البريد الإلكتروني<input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-normal outline-none focus:border-emerald-500" /></label>
-            {error && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-800">{error}</div>}
-            <button disabled={submitting} type="submit" className="w-full rounded-xl bg-emerald-700 px-4 py-3 font-bold text-white disabled:opacity-50">{submitting ? 'جارٍ الإرسال...' : 'إرسال رابط الاستعادة'}</button>
-            <button type="button" onClick={() => { setForgotMode(false); setError(null); }} className="w-full text-sm font-bold text-slate-500 hover:text-slate-800">العودة لتسجيل الدخول</button>
-          </form>
-        ) : <>
-        <div className="mb-5 grid grid-cols-2 rounded-xl bg-slate-100 p-1 text-sm font-bold">
-          <button type="button" onClick={() => { setMode('login'); setError(null); }} className={`rounded-lg px-3 py-2 ${mode === 'login' ? 'bg-white text-emerald-800 shadow-sm' : 'text-slate-500'}`}>{t.login}</button>
-          <button type="button" onClick={() => { setMode('register'); setError(null); }} className={`rounded-lg px-3 py-2 ${mode === 'register' ? 'bg-white text-emerald-800 shadow-sm' : 'text-slate-500'}`}>{t.register}</button>
-        </div>
-
-        <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50/50 p-3">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <span className="text-xs font-black text-emerald-900">حسابات تجريبية لكل الأدوار</span>
-            <span className="text-[10px] font-bold text-emerald-700">الرمز: Hassal@2026!</span>
-          </div>
-          <div className="grid grid-cols-1 gap-2">
-            {DEMO_ACCOUNTS.map((account) => (
+        <div className="p-5">
+          {showTabs && (
+            <div className="mb-5 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 text-sm font-bold dark:bg-slate-800">
               <button
-                key={account.email}
                 type="button"
-                onClick={() => handleDemoLogin(account)}
-                className="flex items-center justify-between rounded-lg border border-emerald-200 bg-white px-2.5 py-2 text-right transition hover:border-emerald-400 hover:bg-emerald-50"
+                onClick={() => {
+                  setMode('login');
+                  resetNotice();
+                }}
+                className={`rounded-lg px-3 py-2.5 transition ${
+                  mode === 'login'
+                    ? 'bg-white text-emerald-800 shadow-sm dark:bg-slate-900 dark:text-emerald-300'
+                    : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                }`}
               >
-                <div>
-                  <div className="text-[11px] font-black text-slate-800">{account.role}</div>
-                  <div className="text-[10px] text-slate-500">{account.description}</div>
-                </div>
-                <div className="text-[10px] font-bold text-emerald-700">{account.email}</div>
+                {t.login}
               </button>
-            ))}
-          </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('register');
+                  resetNotice();
+                }}
+                className={`rounded-lg px-3 py-2.5 transition ${
+                  mode === 'register'
+                    ? 'bg-white text-emerald-800 shadow-sm dark:bg-slate-900 dark:text-emerald-300'
+                    : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                }`}
+              >
+                {t.register}
+              </button>
+            </div>
+          )}
+
+          {showTabs && googleBlock}
+
+          {mode === 'reset' ? (
+            <form onSubmit={submitResetPassword} className="mt-4 space-y-4 sm:mt-0">
+              <label className={labelClass}>
+                {s.email}
+                <input
+                  required
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  className={inputClass}
+                />
+              </label>
+              <label className={labelClass}>
+                {s.newPassword}
+                <input
+                  required
+                  minLength={8}
+                  type="password"
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  className={inputClass}
+                />
+              </label>
+              <label className={labelClass}>
+                {s.confirmPassword}
+                <input
+                  required
+                  minLength={8}
+                  type="password"
+                  autoComplete="new-password"
+                  value={passwordConfirmation}
+                  onChange={(event) => setPasswordConfirmation(event.target.value)}
+                  className={inputClass}
+                />
+              </label>
+              {notice && <NoticeBlock notice={notice} />}
+              <PrimaryButton disabled={submitting}>
+                <KeyRound className="h-4 w-4" />
+                {submitting ? s.saving : s.savePassword}
+              </PrimaryButton>
+            </form>
+          ) : forgotMode ? (
+            <form onSubmit={submitForgotPassword} className="mt-4 space-y-4 sm:mt-0">
+              <label className={labelClass}>
+                {s.email}
+                <input
+                  required
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  className={inputClass}
+                />
+              </label>
+              {notice && <NoticeBlock notice={notice} />}
+              <PrimaryButton disabled={submitting}>
+                {submitting ? s.saving : s.sendLink}
+              </PrimaryButton>
+              <button
+                type="button"
+                onClick={() => {
+                  setForgotMode(false);
+                  resetNotice();
+                }}
+                className="w-full py-2 text-sm font-bold text-slate-500 transition hover:text-slate-800 dark:hover:text-slate-200"
+              >
+                {s.backToSignIn}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={submit} className="mt-4 space-y-3 sm:mt-0">
+              {mode === 'register' && (
+                <label className={labelClass}>
+                  {s.name}
+                  <input
+                    required
+                    autoComplete="name"
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    className={inputClass}
+                  />
+                </label>
+              )}
+              <label className={labelClass}>
+                {s.email}
+                <input
+                  required
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  className={inputClass}
+                />
+              </label>
+              <label className={labelClass}>
+                {s.password}
+                <input
+                  required
+                  minLength={8}
+                  type="password"
+                  autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  className={inputClass}
+                />
+              </label>
+              {mode === 'register' && (
+                <label className={labelClass}>
+                  {s.confirmPassword}
+                  <input
+                    required
+                    minLength={8}
+                    type="password"
+                    autoComplete="new-password"
+                    value={passwordConfirmation}
+                    onChange={(event) => setPasswordConfirmation(event.target.value)}
+                    className={inputClass}
+                  />
+                </label>
+              )}
+
+              {notice && <NoticeBlock notice={notice} />}
+
+              <PrimaryButton disabled={submitting}>
+                {mode === 'login' ? <LogIn className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
+                {submitting
+                  ? s.processing
+                  : mode === 'login'
+                    ? s.signIn
+                    : s.register}
+              </PrimaryButton>
+
+              {mode === 'register' && (
+                <p className="text-[11px] leading-relaxed text-slate-400 dark:text-slate-500">
+                  {s.businessNote}
+                </p>
+              )}
+
+              {mode === 'login' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForgotMode(true);
+                    resetNotice();
+                  }}
+                  className="w-full py-1 text-sm font-bold text-emerald-700 transition hover:text-emerald-900 dark:text-emerald-400"
+                >
+                  {s.forgotLink}
+                </button>
+              )}
+            </form>
+          )}
         </div>
-
-        <form onSubmit={submit} className="space-y-3">
-          {mode === 'register' && <label className="block text-sm font-bold text-slate-700">الاسم الكامل<input required value={name} onChange={(event) => setName(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-normal outline-none focus:border-emerald-500" /></label>}
-          <label className="block text-sm font-bold text-slate-700">البريد الإلكتروني<input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-normal outline-none focus:border-emerald-500" /></label>
-          {mode === 'register' && <label className="block text-sm font-bold text-slate-700">رقم الهاتف <span className="font-normal text-slate-400">(اختياري)</span><input value={phone} onChange={(event) => setPhone(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-normal outline-none focus:border-emerald-500" /></label>}
-          <label className="block text-sm font-bold text-slate-700">كلمة المرور<input required minLength={8} type="password" value={password} onChange={(event) => setPassword(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-normal outline-none focus:border-emerald-500" /></label>
-          {mode === 'register' && <>
-            <label className="block text-sm font-bold text-slate-700">تأكيد كلمة المرور<input required minLength={8} type="password" value={passwordConfirmation} onChange={(event) => setPasswordConfirmation(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-normal outline-none focus:border-emerald-500" /></label>
-            <label className="block text-sm font-bold text-slate-700">اسم المنظمة <span className="font-normal text-slate-400">(اختياري)</span><input value={organizationName} onChange={(event) => setOrganizationName(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 p-3 font-normal outline-none focus:border-emerald-500" /></label>
-            {organizationName && <label className="block text-sm font-bold text-slate-700">نوع المنظمة<select value={organizationType} onChange={(event) => setOrganizationType(event.target.value as 'buyer' | 'seller')} className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-3 font-normal outline-none focus:border-emerald-500"><option value="buyer">مشتري</option><option value="seller">بائع</option></select></label>}
-          </>}
-
-          {error && <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">{error}</div>}
-          <button disabled={submitting} type="submit" className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 font-bold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50">
-            {mode === 'login' ? <LogIn className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
-            {submitting ? (locale === 'ar' ? 'جارٍ التنفيذ...' : 'Processing...') : mode === 'login' ? t.login : t.register}
-          </button>
-          {mode === 'login' && <button type="button" onClick={() => { setForgotMode(true); setError(null); }} className="w-full text-sm font-bold text-emerald-700 hover:text-emerald-900">نسيت كلمة المرور؟</button>}
-        </form>
-        </>}
       </div>
     </div>
   );
 };
+
+const PrimaryButton: React.FC<React.PropsWithChildren<{ disabled?: boolean }>> = ({
+  children,
+  disabled,
+}) => (
+  <button
+    disabled={disabled}
+    type="submit"
+    className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-800 focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+  >
+    {children}
+  </button>
+);
+
+const NoticeBlock: React.FC<{ notice: Notice }> = ({ notice }) => (
+  <div
+    role={notice.tone === 'error' ? 'alert' : 'status'}
+    className={`rounded-xl border p-3 text-sm font-medium leading-relaxed ${
+      notice.tone === 'error'
+        ? 'border-rose-200 bg-rose-50 text-rose-700'
+        : 'border-emerald-200 bg-emerald-50 text-emerald-800'
+    }`}
+  >
+    {notice.text}
+  </div>
+);

@@ -45,8 +45,11 @@
 ### المرحلة 3: السوق والعروض والاكتشاف الجغرافي (Phase 3 — Marketplace & Geo-Discovery)
 - **المحاور:**
   - بناء نماذج المستودعات (`Warehouses`) وإحداثياتها الجغرافية.
-  - بناء نموذج العروض التجارية (`Offers`) ومحرك دورة الحياة (Draft -> Active -> Paused -> Expired).
-  - تطبيق أسعار العملات بدقة Decimal (SAR, YER, USD, AED).
+  - بناء نموذج العروض التجارية (`Offers`) ومحرك دورة الحياة: `DRAFT → PENDING_REVIEW → ACTIVE → PAUSED /
+    SOLD_OUT / EXPIRED / CANCELLED` (الحالات السبع في `app/Models/Offer.php`) — مع ملاحظة أن
+    `PENDING_REVIEW → ACTIVE` قرار مراجعة عبر صلاحية `offers.moderate`، لا يملك البائع نفسه تنفيذه.
+  - تطبيق أسعار العملات بدقة Decimal: `YER` هي القاعدة النشطة المثبَّتة، و`USD` و`AED` و`SAR` صفوف مُدخلة
+    **غير نشطة** بسعر محايد `1.000000` حتى يسجّل مشرف معتمد سعرًا معتمدًا.
   - بناء خوارزمية البحث المكاني وحساب المسافات بنظرية Haversine (`/api/v1/offers/nearby`).
   - دعم الاختيار اليدوي للمدينة والمنطقة لحماية خصوصية المستخدم.
 - **الاختبارات:** اختبار دقة حساب المسافات الجغرافية، فلترة العروض، واختبار حالات انتهاء الصلاحية.
@@ -58,9 +61,13 @@
   - بناء محرك طلبات الشراء (`PurchaseRequest`).
   - تنفيذ بروتوكول الحجز الذري للمخزون (`lockForUpdate()` مع `DB::transaction`).
   - منع البيع المزدوج تحت أشد ظروف التزامن (Race Conditions).
-  - بناء مجدول تحرير الحجوزات المنتهية (`ReservationExpirySweeper`).
+  - بناء مجدول تحرير الحجوزات المنتهية: `app:expire-reservations` في `routes/console.php` (كل دقيقة) عبر
+    `ExpireReservationsCommand` → `InventoryReservationService::sweepExpiredReservations()` بهامش أمان
+    `hassal.reservations.expiry_grace_seconds`.
   - بناء الصفقات التجارية (`Deals`) وتجميد لقطة الأسعار والشروط (`Deal Snapshot`).
-  - بناء ماكينة حالات الصفقة (Requested -> Accepted -> Preparing -> Shipped -> Completed).
+  - بناء ماكينة حالات الصفقة بـ 16 حالة في `DealStateMachineService`: `DRAFT → PENDING_SELLER_APPROVAL →
+    ACCEPTED → PENDING_PAYMENT → ESCROW_FUNDED → PROCESSING → READY_FOR_PICKUP → DISPATCHED → DELIVERED →
+    INSPECTION → COMPLETED → SETTLED`، مع `CANCELLED` و `DISPUTED` و `RESOLVED` و `REFUNDED`.
 - **الاختبارات:**
   - **Concurrency Stress Test:** محاكاة طلب مشتريين في نفس اللحظة لنفس الكمية والتأكد من نجاح الأول ورفض الثاني قطعياً.
   - اختبارات انتقالات ماكينة الحالة لجميع الحالات ومسار الإلغاء.
@@ -69,12 +76,18 @@
 
 ### المرحلة 5: المدفوعات، دفتر الأستاذ، والتسوية المالية (Phase 5 — Financial Engine & Ledger)
 - **المحاور:**
-  - بناء طبقة تجريد بوابات الدفع (`PaymentManager` و `PaymentProviderInterface`).
-  - دعم التحويل البنكي، الدفع عند الاستلام (COD)، والمحفظة.
-  - بناء دفتر الأستاذ المالي المزدوج غير القابل للتعديل (`Ledger Accounts & Entries`).
-  - احتساب وتوزيع الضرائب والعمولات وفق لقطة الصفقة بدقة عشرية.
-  - تحرير المستحقات ومسارات التسوية وتجميد أموال الضمان (Escrow).
-- **الاختبارات:** مطابقة ميزان المراجعة الحسابي (Debit == Credit) ومنع التلاعب بالأرصدة.
+  - بناء طبقة تجريد بوابات الدفع (`PaymentProviderInterface` مع `PaymentGatewayManager` ومنفّذي
+    `BankTransferPaymentProvider` و `CashOnDeliveryPaymentProvider`). **لم يوصل أي مسار بها بعد**، ولا يوجد
+    مزوّد محفظة أو بطاقة — ربط بوابة حقيقية واختباره عملٌ متبقٍّ.
+  - دعم التحويل البنكي والدفع عند الاستلام (COD) كمسارات مسجَّلة، دون خصم إلكتروني.
+  - بناء دفتر الأستاذ المالي المزدوج: لا عدول ولا حذف عبر أي نقطة نهاية، والتصحيح يكون بقيد معكوس
+    (`is_reversal` / `reversal_of_entry_id`) وتحقّق `isBalanced()`. لا يوجد قمع على مستوى قاعدة البيانات يمنع
+    تعديل SQL مباشر.
+  - احتساب وتوزيع الضرائب والعمولات وفق لقطة الصفقة بدقة عشرية (`tax_rate_snapshot` و
+    `platform_fee_rate_snapshot` على جدول `deals`)، وكلاهما يبدأ صفرًا حتى يقرره المشرف.
+  - تسجيل الضمان (Escrow) كـ**قيد محاسبي وحساب `2010-ESCROW-HOLDING`**، لا كحيازة أموال: لا طرف ثالث يقبض
+    المبلغ، والانتقال `ESCROW_FUNDED` محجوب خلف علم `escrow` المعطّل افتراضيًا.
+- **الاختبارات:** مطابقة ميزان المراجعة الحسابي (Debit == Credit) ومنع التلاعب بالأرصدة على مستوى الخدمة.
 
 ---
 

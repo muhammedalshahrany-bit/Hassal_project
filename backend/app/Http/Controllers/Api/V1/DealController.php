@@ -7,6 +7,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\Deal;
 use App\Models\DealItem;
 use App\Models\Offer;
+use App\Models\PurchaseRequest;
 use App\Models\Reservation;
 use App\Services\DealStateMachineService;
 use App\Services\PricingAndCurrencyService;
@@ -109,17 +110,22 @@ class DealController extends Controller
         $qty = (float)$reservation->quantity;
         $unitPrice = (float)$reservation->unit_price;
 
+        // The seller's acceptance is what put this stock on hold, so the ask
+        // behind the reservation — when there was one — is the deal's origin.
+        $purchaseRequest = PurchaseRequest::where('reservation_id', $reservation->id)->first();
+
         // Pricing snapshots
         $pricing = $this->pricingService->calculateDealPricing($qty, $unitPrice, $offer->currency_code);
 
         try {
-            $deal = DB::transaction(function () use ($reservation, $offer, $buyerOrgId, $request, $validated, $pricing, $qty, $unitPrice) {
+            $deal = DB::transaction(function () use ($reservation, $offer, $buyerOrgId, $request, $validated, $pricing, $qty, $unitPrice, $purchaseRequest) {
                 $dealNumber = 'DEAL-' . date('ymd') . '-' . strtoupper(Str::random(4));
 
                 $newDeal = Deal::create([
                     'deal_number' => $dealNumber,
                     'offer_id' => $offer->id,
                     'reservation_id' => $reservation->id,
+                    'purchase_request_id' => $purchaseRequest?->id,
                     'buyer_organization_id' => $buyerOrgId,
                     'seller_organization_id' => $offer->seller_organization_id,
                     'buyer_user_id' => $request->user()->id,
@@ -216,7 +222,7 @@ class DealController extends Controller
             'escrow',
             'payments',
             'dispute',
-        ]);
+        ])->whereKey($id);
 
         if (!$user->hasRole('SuperAdmin')) {
             if (!$orgId) {
@@ -231,11 +237,44 @@ class DealController extends Controller
 
         $deal = $query->first();
         if (!$deal) {
-            return ApiResponse::error('Unauthorized to access this deal', 'DEAL_ACCESS_DENIED', Response::HTTP_FORBIDDEN);
+            // A deal that exists but is not yours answers 403 without leaking
+            // its contents; a deal that does not exist at all must not pretend
+            // to be a permission problem.
+            $exists = Deal::whereKey($id)->exists();
+
+            return $exists
+                ? ApiResponse::error('Unauthorized to access this deal', 'DEAL_ACCESS_DENIED', Response::HTTP_FORBIDDEN)
+                : ApiResponse::error('Deal not found', 'NOT_FOUND', Response::HTTP_NOT_FOUND);
         }
 
         return ApiResponse::success($deal, 'Deal details retrieved successfully');
     }
+
+    /**
+     * Permission each target state requires.
+     *
+     * The route cannot express this: one endpoint serves both counterparties
+     * and the platform, and "who may do this" is part of the state machine,
+     * not of the URL. A BuyerStaff member holds `deals.deliver` but not
+     * `deals.confirm`, so a single blanket gate would either lock them out of
+     * their own job or let them approve deals.
+     */
+    protected const TRANSITION_PERMISSIONS = [
+        Deal::STATUS_PENDING_PAYMENT => 'deals.confirm',
+        Deal::STATUS_ESCROW_FUNDED => 'deals.confirm',
+        Deal::STATUS_ACCEPTED => 'deals.confirm',
+        Deal::STATUS_PROCESSING => 'deals.dispatch',
+        Deal::STATUS_READY_FOR_PICKUP => 'deals.dispatch',
+        Deal::STATUS_DISPATCHED => 'deals.dispatch',
+        Deal::STATUS_DELIVERED => 'deals.deliver',
+        Deal::STATUS_INSPECTION => 'deals.deliver',
+        Deal::STATUS_COMPLETED => 'deals.confirm',
+        Deal::STATUS_SETTLED => 'deals.manage',
+        Deal::STATUS_DISPUTED => 'deals.dispute',
+        Deal::STATUS_RESOLVED => 'disputes.resolve',
+        Deal::STATUS_REFUNDED => 'disputes.resolve',
+        Deal::STATUS_CANCELLED => 'deals.confirm',
+    ];
 
     /**
      * Executes state machine transition on the deal.
@@ -247,27 +286,54 @@ class DealController extends Controller
 
         $deal = Deal::findOrFail($id);
 
-        if (!$user->hasRole('SuperAdmin') && $deal->buyer_organization_id !== $orgId && $deal->seller_organization_id !== $orgId) {
+        $isPlatform = $user->hasRole('SuperAdmin');
+
+        if (!$isPlatform && !in_array((int) $orgId, [(int) $deal->buyer_organization_id, (int) $deal->seller_organization_id], true)) {
             return ApiResponse::error('Unauthorized to modify this deal', 'DEAL_ACCESS_DENIED', Response::HTTP_FORBIDDEN);
         }
 
         $validated = $request->validate([
             'status' => ['required', 'string'],
-            'notes' => ['nullable', 'string'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+            'metadata' => ['nullable', 'array'],
         ]);
+
+        $requiredPermission = self::TRANSITION_PERMISSIONS[$validated['status']] ?? null;
+
+        if ($requiredPermission !== null && !$user->can($requiredPermission)) {
+            return ApiResponse::error(
+                "Moving a deal to {$validated['status']} requires the '{$requiredPermission}' permission.",
+                'DEAL_TRANSITION_FORBIDDEN',
+                Response::HTTP_FORBIDDEN
+            );
+        }
+
+        if ($requiredPermission === null && !$isPlatform) {
+            // An unknown target is rejected here rather than inside the state
+            // machine, so a typo cannot be mistaken for a legal state the
+            // actor rules were meant to guard.
+            return ApiResponse::error(
+                'Unknown deal state',
+                'DEAL_STATE_UNKNOWN',
+                Response::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
 
         try {
             $updatedDeal = $this->stateMachine->transition(
                 $deal,
                 $validated['status'],
                 $user,
-                $validated['notes'] ?? null
+                $validated['notes'] ?? null,
+                $validated['metadata'] ?? null,
+                $isPlatform ? null : $orgId
             );
 
             return ApiResponse::success($updatedDeal->fresh([
                 'buyerOrganization',
                 'sellerOrganization',
                 'escrow',
+                'purchaseRequest',
                 'statusHistories',
             ]), "Deal state successfully transitioned to {$validated['status']}");
         } catch (Exception $e) {

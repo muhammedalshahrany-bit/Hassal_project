@@ -10,8 +10,20 @@ class PurchaseRequest extends Model
 {
     use HasFactory;
 
+    /**
+     * State machine (actor / condition / side-effect):
+     *
+     *   REQUESTED  -> ACCEPTED   seller   offer still has the quantity   a Reservation is created atomically; this is the only transition that holds stock
+     *   REQUESTED  -> REJECTED   seller   reason required                none
+     *   REQUESTED  -> PROPOSED   seller   terms must actually change     none; the buyer's ask is kept, proposed_terms records the counter
+     *   REQUESTED  -> CANCELLED  buyer    unanswered                     none
+     *   PROPOSED   -> REQUESTED  buyer    counter adopted                proposed_terms folded into requested_quantity/price and cleared
+     *   PROPOSED   -> CANCELLED  buyer    —                              none
+     *
+     * No transition here creates a Deal. A deal is formed later, against the
+     * reservation this seller acceptance produced.
+     */
     public const STATUS_REQUESTED = 'REQUESTED';
-    public const STATUS_SELLER_REVIEW = 'SELLER_REVIEW';
     public const STATUS_ACCEPTED = 'ACCEPTED';
     public const STATUS_REJECTED = 'REJECTED';
     public const STATUS_PROPOSED = 'PROPOSED';
@@ -22,6 +34,7 @@ class PurchaseRequest extends Model
         'demand_id',
         'demand_match_id',
         'offer_id',
+        'reservation_id',
         'buyer_organization_id',
         'seller_organization_id',
         'buyer_user_id',
@@ -58,6 +71,14 @@ class PurchaseRequest extends Model
     public function offer(): BelongsTo
     {
         return $this->belongsTo(Offer::class);
+    }
+
+    /**
+     * The stock the seller held when they accepted this request.
+     */
+    public function reservation(): BelongsTo
+    {
+        return $this->belongsTo(Reservation::class);
     }
 
     public function buyerOrganization(): BelongsTo

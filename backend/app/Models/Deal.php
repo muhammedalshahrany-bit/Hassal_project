@@ -35,6 +35,7 @@ class Deal extends Model
         'deal_number',
         'offer_id',
         'reservation_id',
+        'purchase_request_id',
         'buyer_organization_id',
         'seller_organization_id',
         'buyer_user_id',
@@ -112,6 +113,15 @@ class Deal extends Model
     public function reservation(): BelongsTo
     {
         return $this->belongsTo(Reservation::class);
+    }
+
+    /**
+     * The buyer's ask that led here, when the deal came through a purchase
+     * request rather than a direct reservation.
+     */
+    public function purchaseRequest(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseRequest::class);
     }
 
     public function buyerOrganization(): BelongsTo

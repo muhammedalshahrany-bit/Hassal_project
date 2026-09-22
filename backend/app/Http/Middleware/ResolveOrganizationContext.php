@@ -13,7 +13,11 @@ class ResolveOrganizationContext
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $user = $request->user();
+        // On an authenticated route the auth middleware has already made the
+        // bearer user `$request->user()`. On a hybrid public route it has not,
+        // and the default guard is the session one, so the token is resolved
+        // explicitly here rather than being silently ignored.
+        $user = $request->user() ?: $request->user('sanctum');
 
         if (!$user) {
             return $next($request);

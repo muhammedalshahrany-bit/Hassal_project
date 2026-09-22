@@ -82,6 +82,23 @@ return [
 
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Supported Locales
+    |--------------------------------------------------------------------------
+    |
+    | The locales `Accept-Language` may select and that `/api/v1/bootstrap`
+    | advertises. Declared once here instead of hard-coded in the middleware
+    | and the bootstrap payload, so the two can never disagree. Listing a
+    | locale is not enough to support it: translations must exist for it.
+    |
+    */
+
+    'supported_locales' => array_values(array_filter(array_map(
+        static fn ($locale) => strtolower(trim($locale)),
+        explode(',', (string) env('APP_SUPPORTED_LOCALES', 'ar,en'))
+    ), static fn ($locale) => $locale !== '')),
+
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
 
     /*

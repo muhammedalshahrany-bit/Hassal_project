@@ -75,24 +75,31 @@
 
 ## 3. تصنيف الميزات وجاهزيتها (Feature Classification)
 
+الحالة أدناه مقيسة على الشجرة الحالية (لا على تقرير سابق): `منفَّذ` = كود يعمل ومغطى باختبار،
+`واجهة بلا تنفيذ` = عقد/واجهة موجودة بلا مزوّد حقيقي خلفها، `غير منفَّذ` = لا شيء منه في الكود.
+
 | الميزة / الوحدة | التصنيف | الحالة والتفاصيل |
 | :--- | :--- | :--- |
-| **Authentication & RBAC** | `MVP` | كامل مع Sanctum و Spatie وصلاحيات المؤسسات. |
-| **Multi-Tenancy (Organizations)** | `MVP` | فصل كامل، معزل بالـ Policies و Tenant Context. |
-| **Product & Variant Catalog** | `MVP` | جاهز للتشغيل مع السمات، الفئات، والماركات. |
-| **Offer Engine & Lifecycle** | `MVP` | دورة حياة محكمة ومؤمنة بالتحقق والحالات. |
-| **Atomic Inventory Lock** | `MVP` | `lockForUpdate` ومعاملات بنكية تمنع البيع المزدوج. |
-| **Deal State Machine** | `MVP` | تتبع متكامل وتجميد لقطة الصفقة (Snapshot). |
-| **Geo-Discovery (Haversine)** | `MVP` | بحث جغرافي دقيق مع بديل للمدن اليدوية. |
-| **Dispute Management** | `MVP` | رفع أدلة وقرارات إدارة وتعديل القيود المالية. |
-| **Immutable Ledger** | `MVP` | قيود مالية مزدوجة لحساب الأرصدة والعمولات. |
-| **Dynamic Settings & Flags** | `MVP` | لوحة تحكم كاملة للإعدادات ونسب الضرائب. |
-| **Webhooks (HMAC-SHA256)** | `MVP` | توقيع وتوثيق وسجل تسليم وإعادة محاولة. |
-| **Online Payment (Mada/Cards)** | `INTEGRATION_READY` | واجهات `PaymentProviderInterface` جاهزة لربط البوابات الفعلية فور توفير المفاتيح. |
-| **ZATCA E-Invoicing Phase 2** | `INTEGRATION_READY` | هياكل الفواتير والضرائب مطابقة لمتطلبات الفوترة الضريبية. |
-| **Push Notifications (FCM/SMS)**| `INTEGRATION_READY` | معمارية الإشعارات جاهزة، وتعمل محلياً عبر In-App & Mail. |
-| **AI Pricing & Predictions** | `POST-MVP` | طبقة تجريد `PricingRecommendationInterface` تعتمد حالياً على محرك قواعد إحصائي. |
-| **External ERP / WMS Two-Way** | `INTEGRATION_READY` | جداول المراجع الخارجية وسجلات المزامنة (`SyncLog`) جاهزة. |
+| **Authentication & RBAC** | `MVP` | `منفَّذ` — Sanctum + Spatie، والصلاحيات تُفرض في طبقة المسارات (`permission:`) لا في الواجهة وحدها. |
+| **Multi-Tenancy (Organizations)** | `MVP` | `منفَّذ` — سياق `X-Organization-Id` عبر `ResolveOrganizationContext`، وعضويات صريحة في `organization_memberships`. |
+| **Product & Variant Catalog** | `MVP` | `منفَّذ` — كتالوج مشترك للمنصة + أصناف المنشأة، مع اختبارات نطاق في `CatalogScopeTest`. |
+| **Offer Engine & Lifecycle** | `MVP` | `منفَّذ` — `DRAFT → submit → review → ACTIVE → PAUSED/CANCELLED/EXPIRED` مع بوابة مراجعة اختيارية بالإعداد. |
+| **Atomic Inventory Lock** | `MVP` | `منفَّذ` — الحجز داخل معاملة بـ `lockForUpdate` عند قبول البائع، ومغطى بتسابق حقيقي على نفس الصف في `InventoryReservationTest`. |
+| **Purchase Request (review path)** | `MVP` | `منفَّذ` — لا كمية تتحرك قبل قرار البائع؛ مسار سريع من العرض وم الآخر من المطابقة. |
+| **Deal State Machine** | `MVP` | `منفَّذ` — آلة حالات مع صلاحيات لكل انتقال ولقطة تسعير/ضريبة/عملة. |
+| **Geo-Discovery (Haversine)** | `MVP` | `منفَّذ` خلف `feature:geo_discovery`، بسقف نصف قطر من الإعدادات. |
+| **Dispute Management** | `MVP` | `منفَّذ جزئياً` — فتح نزاع وقائمة وقرار من المنصة مع سجل أسباب. **لا رفع أدلة**: لا جدول `dispute_evidence` ولا مسار رفع ملف، والقرار لا يعدّل القيود المحاسبية تلقائياً. |
+| **Immutable Ledger** | `MVP` | `منفَّذ` — قيود مزدوجة من أحداث الصفقة، مع ميزان مراجعة ومطابقة. |
+| **Dynamic Settings & Flags** | `MVP` | `منفَّذ` — كتالوج إعدادات وفئات رايات تُقرأ وقت الطلب؛ لا نسب ضريبة أو عمولة مثبّتة في الكود. |
+| **Webhooks (HMAC-SHA256)** | `MVP` | `منفَّذ` — توقيع على bytes المرسلة، سجل تسليم، وإعادة محاولة حتى ٥ مرات عبر `app:process-webhooks` المجدول كل دقيقة. |
+| **Background Lifecycle** | `MVP` | `منفَّذ` — `app:expire-reservations` و`app:process-webhooks` مجدولان في `routes/console.php`. |
+| **In-App & Email Notifications** | `MVP` | `منفَّذ` — قناتا `DatabaseNotificationChannel` و`EmailNotificationChannel` خلف `NotificationChannelInterface`، وشاشة إشعارات في الواجهة. |
+| **Payment Adapters** | `غير منفَّذ عملياً` | يوجد `PaymentProviderInterface` مع `BankTransferPaymentProvider` و`CashOnDeliveryPaymentProvider` و`PaymentGatewayManager` داخل `app/Services/Payments`، لكنها **غير موصولة بشيء**: لا مسار API ولا نداء من آلة الحالة ولا ربط في الحاوية يسمّيها (البحث عنها لا يُرجع مرجعاً خارج مجلدها). جدول `payments` يبقى بلا كاتب في الدورة الحالية. بوابة دفع خارجية غير متاحة. |
+| **Escrow Record** | `منفَّذ كسجل، لا كحيازة مال` | انتقال الصفقة إلى `ESCROW_FUNDED` ينشئ صفاً في `escrows` بحالة `HELD`، ويكتب القيد المزدوج على حساب `2010-ESCROW-HOLDING`. هذا **سجل محاسبي** لا حساب بنكي ضامن: لا طرف ثالث يحتجز أموالاً ولا مزوّد يحرّكها. |
+| **Push Notifications (FCM/SMS)** | `غير منفَّذ` | لا حزمة FCM ولا مزوّد رسائل في `composer.json`، ولا قناة غير القناتين أعلاه. أي تصريح جاهزية سابق كان وصفاً لمعمارية مقترحة لا لكود موجود. |
+| **E-Invoicing / هيئة الضرائب** | `غير منفَّذ` | لا تكامل مع أي جهة ضريبية — ولا مبرر لذكر ZATCA تحديداً في منصة يمنية. الموجود: لقطة `tax_rate_snapshot`/`tax_amount` على الصفقة معطّلة افتراضياً، وحساب `2030-VAT-OUTPUT`. لا إرسال ولا اعتماد ولا توقيع فوتوري. |
+| **AI Pricing & Predictions** | `غير منفَّذ` | لا `PricingRecommendationInterface` ولا محرك توصية في الشجرة. السعر رقم يدخله البائع. |
+| **External ERP / WMS Two-Way** | `غير منفَّذ` | لا `SyncLog` ولا جداول مزامنة؛ `api-keys` تُصدر وتسحب فقط، ولا وسط قبول يطلب مفتاح API في الـ API. |
 
 ---
 

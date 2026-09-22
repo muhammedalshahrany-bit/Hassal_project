@@ -18,6 +18,24 @@ class Dispute extends Model
     public const STATUS_RESOLVED_PARTIAL = 'RESOLVED_PARTIAL';
     public const STATUS_REJECTED = 'REJECTED';
 
+    /** The whole vocabulary one column holds. */
+    public const STATUSES = [
+        self::STATUS_OPEN,
+        self::STATUS_UNDER_REVIEW,
+        self::STATUS_EVIDENCE_REQUIRED,
+        self::STATUS_RESOLVED_REFUND,
+        self::STATUS_RESOLVED_RELEASE,
+        self::STATUS_RESOLVED_PARTIAL,
+        self::STATUS_REJECTED,
+    ];
+
+    /** Still awaiting the platform's decision. */
+    public const OPEN_STATUSES = [
+        self::STATUS_OPEN,
+        self::STATUS_UNDER_REVIEW,
+        self::STATUS_EVIDENCE_REQUIRED,
+    ];
+
     protected $fillable = [
         'dispute_number',
         'deal_id',

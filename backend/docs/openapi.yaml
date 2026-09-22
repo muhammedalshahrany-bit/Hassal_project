@@ -2,21 +2,35 @@ openapi: 3.1.0
 info:
   title: HASSAL B2B Marketplace API Engine
   description: >
-    Production-grade RESTful API for HASSAL B2B Marketplace. Facilitates inventory surplus liquidation,
-    opportunity trading, atomic stock reservation, deal state machines, escrow payments, double-entry ledger,
-    and RFQ demands for the food & FMCG sector.
+    RESTful API for the HASSAL B2B food-stuff marketplace: inventory listings from
+    registered businesses, purchase requests a seller reviews, quantity holds created
+    by that review, deal state machines with inspection and settlement windows, a
+    double-entry ledger of what a deal recorded, and RFQ demands. The platform does
+    not hold money: no payment gateway, wallet or escrow custody is implemented, and
+    a deal's ESCROW_FUNDED state is a status the counterparties record, not funds the
+    platform keeps.
   version: 2.0.0-production
   contact:
     name: HASSAL Engineering
-    email: api@hassal.sa
-    url: https://marketplace.hassal.sa
+    email: api@hassal.example
+    url: https://hassal.example
 
 servers:
-  - url: https://marketplace.hassal.sa/api/v1
-    description: Production Cloud Run Server
+  # `.example` is the RFC 2606 reserved domain: the deployed base URL is not
+  # recorded anywhere in this repository, so no real host is claimed here.
+  # What is verified is the local topology — the Vite gateway on :3000 proxies
+  # `/api/*` to the Laravel server on 127.0.0.1:8000.
+  - url: https://hassal.example/api/v1
+    description: Placeholder for a deployed base URL (not configured in this repo)
   - url: http://localhost:3000/api/v1
-    description: Local Dev Server Gateway
+    description: Local dev gateway (`npm run dev`)
+  - url: http://127.0.0.1:8000/api/v1
+    description: Laravel server directly (`php artisan serve`)
 
+# Provenance: this is a hand-maintained subset of the routes declared in
+# backend/routes/api.php, which remains the authoritative source. Every path
+# below exists in that router; the router also exposes many paths not listed
+# here. Schemas are indicative, not exhaustive.
 paths:
   /health:
     get:
@@ -41,12 +55,14 @@ paths:
           application/json:
             schema:
               type: object
-              required: [name, email, password, organization_name]
+              required: [name, email, password, password_confirmation]
               properties:
-                name: { type: string }
+                name: { type: string, maxLength: 255 }
                 email: { type: string, format: email }
                 password: { type: string, minLength: 8 }
-                phone: { type: string }
+                password_confirmation: { type: string, description: 'Must equal `password` (`confirmed` rule).' }
+                phone: { type: string, maxLength: 20 }
+                national_id: { type: string, maxLength: 30 }
                 organization_name: { type: string }
                 organization_type: { type: string, enum: [buyer, seller] }
                 commercial_registration_number: { type: string }
@@ -117,19 +133,98 @@ paths:
           schema: { type: number }
         - name: radius_km
           in: query
-          schema: { type: number, default: 50 }
+          schema: { type: number }
+          description: >
+            Optional. When omitted, the platform default radius applies
+            (admin-configurable setting key `matching.geo_radius_km`) and is
+            capped by the configured maximum radius.
       responses:
         '200':
           description: List of nearby offers
 
-  /marketplace/reservations:
+  /purchase-requests:
     post:
-      summary: Atomically reserve stock
+      summary: Raise a purchase request against an offer (holds nothing)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: X-Organization-Id
+          in: header
+          required: true
+          schema: { type: integer }
+        - name: X-Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [offer_id, requested_quantity]
+              properties:
+                offer_id: { type: integer }
+                requested_quantity: { type: number }
+                delivery_preference: { type: string, enum: [PICKUP, DELIVERY] }
+                notes: { type: string, maxLength: 500 }
+      responses:
+        '201':
+          description: >
+            Purchase request recorded as REQUESTED. No quantity moves: the
+            seller's acceptance is what reserves stock.
+        '422':
+          description: >
+            SELF_PURCHASE_FORBIDDEN, OFFER_NOT_TRADABLE, SELLER_NOT_TRADING,
+            QUANTITY_EXCEEEDS_AVAILABLE or QUANTITY_BELOW_MIN_ORDER.
+    get:
+      summary: List this organization's purchase requests (either side)
       security:
         - BearerAuth: []
       responses:
-        '201':
-          description: Stock reserved
+        '200':
+          description: Paginated purchase requests
+
+  /purchase-requests/{id}/accept:
+    post:
+      summary: Seller accepts — the atomic reservation happens here
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Request accepted and stock held for the configured `reservation.timeout`
+        '422':
+          description: PURCHASE_REQUEST_ACCEPT_FAILED when the shelf emptied after the ask
+
+  /marketplace/reservations:
+    get:
+      summary: List active reservations held for the current buyer organization
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Paginated reservations
+
+  /marketplace/reservations/{id}/cancel:
+    post:
+      summary: Release a hold back to the seller's available quantity
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Reservation released
+        '422':
+          description: RESERVATION_NOT_ACTIVE when the hold already ended
 
   /deals:
     get:
@@ -192,18 +287,29 @@ paths:
   /demands:
     get:
       summary: List open RFQ demands
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of open demands
     post:
       summary: Post RFQ demand
       security:
         - BearerAuth: []
+      responses:
+        '201':
+          description: Demand created
 
 components:
   securitySchemes:
     BearerAuth:
       type: http
       scheme: bearer
-      bearerFormat: JWT
-    ApiKeyAuth:
-      type: apiKey
-      in: header
-      name: X-Hassal-Api-Key
+      description: >
+        Laravel Sanctum access token issued by `POST /auth/login`. Sanctum's default
+        driver stores an opaque random token (its SHA-256 hash in the database), so
+        this is not a JWT and must not be decoded client-side.
+
+    # No second scheme is documented on purpose: `POST /api-keys` only creates and
+    # revokes API-key records, and no middleware accepts an API-key header as a
+    # request credential yet, so it cannot be declared as an authentication scheme.

@@ -1,1 +1,201 @@
 @import "tailwindcss";
+
+/*
+ * Dark mode is a class the interface puts on <html>, not a preference the
+ * stylesheet guesses at.
+ *
+ * `prefers-color-scheme` alone would mean a person browsing at work on a bright
+ * screen and at home on a dark one gets whatever their operating system says,
+ * with no way to choose. HASSAL asks instead, remembers the answer under
+ * `hassal_theme`, and only falls back to the system when nothing was ever
+ * chosen — see `src/lib/theme.ts`. This variant definition is what makes the
+ * `dark:` utilities in the components respond to that class.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * The palette the dark surfaces are built from, as tokens rather than repeated
+ * literals. Two reasons: a reviewer looking at registration certificates for
+ * hours needs the same contrast ratio everywhere, and a screen that hard-codes
+ * `#0b1220` in twelve files is twelve chances to drift.
+ */
+@theme {
+  --color-hassal-night: #0b1220;
+  --color-hassal-surface: #121c2b;
+  --color-hassal-raised: #1a2637;
+  --color-hassal-line: #26364b;
+}
+
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+/*
+ * The body is styled here rather than only as a class on <body> in index.html,
+ * because the theme can change while the page is open and the transition should
+ * belong to the document, not to whichever component re-rendered last.
+ */
+body {
+  background-color: var(--color-slate-50);
+  color: var(--color-slate-900);
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+html.dark body {
+  background-color: var(--color-hassal-night);
+  color: var(--color-slate-100);
+}
+
+/*
+ * Form controls keep the browser's own text colour unless a component says
+ * otherwise; in a dark document an unstyled `<select>` would render dark text on
+ * a dark option list. This sets the default once.
+ */
+html.dark select,
+html.dark textarea,
+html.dark input {
+  color-scheme: dark;
+}
+
+/*
+ * App-wide dark remap for the light-only utilities.
+ *
+ * The shared primitives in `panel.tsx` and the header opt into `dark:` per class.
+ * The dozens of business screens predate that and hard-code light surfaces —
+ * `bg-white`, `text-slate-900`, `border-slate-200` — because when they were
+ * written there was no dark mode. Retyping every literal in every file is both
+ * large and fragile; a screen added next week would quietly ignore dark again.
+ *
+ * So the common utilities are remapped here once, under `.dark`, against the same
+ * tokens the primitives use. `html.dark .bg-white` out-specifies Tailwind's
+ * `.bg-white`, so the override lands without `!important` and without touching a
+ * single component. A component that already styles itself for dark with a
+ * `dark:` utility still wins on that element, because a more specific utility
+ * class overrides this generic remap for it.
+ *
+ * The accent colours are only nudged, never flattened: emerald/amber/rose still
+ * mean approved/waiting/refused in both themes, just lightened so they stay
+ * legible against `hassal-night`.
+ *
+ * Deliberately unlayered. Tailwind v4 sorts its cascade as theme → base →
+ * components → utilities, and a later layer beats an earlier one regardless of
+ * specificity. An `@layer base` rule here would lose to the `utilities`
+ * `.bg-white`. Unlayered author CSS outranks every `@layer`, so these remaps
+ * apply no matter how the component wrote the class.
+ */
+  html.dark .bg-white { background-color: var(--color-hassal-surface); }
+  html.dark .bg-slate-50 { background-color: var(--color-hassal-surface); }
+  html.dark .bg-slate-100 { background-color: var(--color-hassal-raised); }
+  html.dark .bg-slate-200 { background-color: var(--color-hassal-line); }
+
+  html.dark .text-slate-900 { color: var(--color-slate-50); }
+  html.dark .text-slate-800 { color: var(--color-slate-100); }
+  html.dark .text-slate-700 { color: var(--color-slate-200); }
+  html.dark .text-slate-600 { color: var(--color-slate-300); }
+  html.dark .text-slate-500 { color: var(--color-slate-400); }
+  html.dark .text-slate-400 { color: var(--color-slate-500); }
+
+  html.dark .border-slate-100,
+  html.dark .border-slate-200,
+  html.dark .border-slate-300 { border-color: var(--color-hassal-line); }
+  html.dark .divide-slate-100 > :not(:last-child),
+  html.dark .divide-slate-200 > :not(:last-child) { border-color: var(--color-hassal-line); }
+  html.dark .ring-slate-200 { --tw-ring-color: var(--color-hassal-line); }
+
+  /* Hover states that assumed a white base. */
+  html.dark .hover\:bg-slate-50:hover { background-color: var(--color-hassal-raised); }
+  html.dark .hover\:bg-slate-100:hover { background-color: var(--color-hassal-line); }
+
+  /* Status accents, lightened for dark surfaces. */
+  html.dark .text-emerald-700,
+  html.dark .text-emerald-800 { color: var(--color-emerald-300); }
+  html.dark .text-amber-700,
+  html.dark .text-amber-800 { color: var(--color-amber-300); }
+  html.dark .text-rose-700,
+  html.dark .text-rose-800 { color: var(--color-rose-300); }
+  html.dark .text-sky-700,
+  html.dark .text-sky-800 { color: var(--color-sky-300); }
+  html.dark .bg-emerald-50 { background-color: color-mix(in oklab, var(--color-emerald-500) 18%, transparent); }
+  html.dark .bg-amber-50 { background-color: color-mix(in oklab, var(--color-amber-500) 18%, transparent); }
+  html.dark .bg-rose-50 { background-color: color-mix(in oklab, var(--color-rose-500) 18%, transparent); }
+  html.dark .bg-sky-50 { background-color: color-mix(in oklab, var(--color-sky-500) 18%, transparent); }
+
+/*
+ * Hiding a scroller on a horizontally scrolling strip (the header's nav, filter
+ * rows). Tailwind has no such utility, and a strip that shows a scrollbar on a
+ * phone reads as a broken layout.
+ */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+/*
+ * Small screens, swept once.
+ *
+ * The business screens were written for a reviewer at a desk: dense filter bars,
+ * wide tables, `text-[11px]` everywhere. Editing seventeen thousand lines of
+ * components to make them behave on a phone is neither safe nor finished — the
+ * next screen written would forget it again. So the handful of things that
+ * actually break on a handset are corrected here, the same way the dark remap
+ * above corrects the colours.
+ *
+ * Each rule answers one observed failure:
+ *
+ *   1. iOS zooms the whole page when a focused input is smaller than 16px, and
+ *      the zoom persists after the keyboard closes — the page is then sideways
+ *      and the person has to find the page again. Every form field on this
+ *      platform is 11–13px. So on a phone, fields are 16px. Legibility was the
+ *      complaint behind the zoom anyway.
+ *   2. A table of deals has more columns than a 360px screen. `display:block`
+ *      with a scroll makes the *table* swipe instead of the page, which would
+ *      otherwise take the whole layout sideways.
+ *   3. Long unbroken values — a commercial registration number, an absolute
+ *      URL, a product name without spaces — push their container wider than the
+ *      viewport. `overflow-wrap` breaks them inside the box that holds them.
+ *   4. Controls sized for a mouse (`px-3 py-1`) are a guess on a touchscreen.
+ *      A minimum height gives a tap target a thumb can hit, and it changes no
+ *      layout above 768px, where the pointer is precise and the density was
+ *      deliberate.
+ *
+ * Deliberately unlayered, for the same reason as the dark remap: an author rule
+ * outside `@layer` outranks Tailwind's `utilities` layer, which is what lets
+ * these apply to a component that wrote `text-xs` or `py-1` itself. They are
+ * also gated behind a media query, so on a desktop — where a console's density
+ * is a feature, not a defect — nothing here applies at all.
+ */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  /* `select` keeps its own font in some engines; the fields above are the ones
+     a person types into, and a picker that jumps size mid-form is expected. */
+  button,
+  [role='button'] {
+    min-height: 40px;
+  }
+
+  td,
+  th,
+  p,
+  label,
+  span {
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 639px) {
+  table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}

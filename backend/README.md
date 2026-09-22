@@ -14,12 +14,25 @@
 **HASSAL (حصّال)** is a production-oriented B2B Food & FMCG marketplace engine designed first for Yemen, with configuration and localization boundaries that allow later operation in additional countries and regions.
 
 The platform provides:
-- **Surplus & Short-Dated Batch Liquidation**: Real-time marketplace for secondary and wholesale food batches.
-- **Pessimistic Concurrency & Stock Locking**: Zero overselling guarantee via atomic database transactions with row-level locks.
-- **Strict Multi-Tenant Isolation**: Header-driven (`X-Organization-Id`) tenant isolation with complete IDOR immunity.
-- **Double-Entry Financial Ledger**: Immutable accounting recording escrow holding, VAT liability, and platform commission.
-- **Dynamic Configuration & Feature Flags**: Real-time toggles and platform parameter management without code deployments.
-- **Standardized RESTful API**: Production contract powering Flutter Mobile, Single-Page Web Applications, and ERP/WMS connectors.
+- **Surplus & Short-Dated Batch Liquidation**: marketplace for secondary and wholesale food batches, driven by
+  offers → purchase requests → seller acceptance → reservation → deal. A buyer never creates a deal directly.
+- **Pessimistic Concurrency & Stock Locking**: `DB::transaction` + `lockForUpdate()` on the offer row inside
+  `InventoryReservationService`, so a single hold cannot be double-allocated. This is a per-transaction guard,
+  not a mathematical guarantee — it is covered by `InventoryReservationAndConcurrencyTest`, which drives the
+  service in one process and does not simulate concurrent HTTP clients.
+- **Strict Multi-Tenant Isolation**: `X-Organization-Id` resolved by `ResolveOrganizationContext`, `permission:`
+  checks on each route, and `where('organization_id', …)` applied per query. There are no Eloquent global scopes
+  and no `app/Policies` directory, so isolation depends on each query being scoped deliberately;
+  `TenantIsolationAndIdorTest` exercises selected paths, not every route.
+- **Double-Entry Financial Ledger**: journal entries with balanced debit/credit lines, recording an escrow
+  *holding as an accounting entry*, tax liability and commission. **No third party takes custody of money** —
+  the `escrow` flag ships off because no payment gateway is connected, and the `payments` table has no writer.
+- **Dynamic Configuration & Feature Flags**: `system_settings` / `feature_flags` read at runtime through a
+  cache-backed service, toggled without deployment; a disabled capability answers `503 FEATURE_DISABLED`.
+- **RESTful API (`/api/v1`)**: 120 routes (`route:list --json`, 2026-09-19), currently consumed by the React
+  single-page dashboard in this
+  repository. **There is no Flutter client in the repo yet.** External integration means HMAC-signed webhooks
+  and per-organization API keys — and no route authenticates an API key today, so a key grants no access.
 
 ---
 
@@ -27,12 +40,12 @@ The platform provides:
 
 | Component | Technology | Version | Purpose |
 | :--- | :--- | :--- | :--- |
-| **Framework** | Laravel Framework | 13.x / 12.x | Backend REST API Engine |
+| **Framework** | Laravel Framework | 13.x (installed: 13.32) | Backend REST API Engine |
 | **Runtime** | PHP | 8.3+ | CLI, Worker, and FPM Runtime |
 | **Primary Database** | MySQL | 8.4 LTS (InnoDB, utf8mb4) | Relational Storage & Row-Level Locking |
 | **Authentication** | Laravel Sanctum | 4.x | Bearer Token Management |
 | **Authorization** | Spatie Laravel Permission | 6.x | Role-Based Access Control (RBAC) |
-| **Data Types** | Decimal Precision | `DECIMAL(18,4)` | Exact Currency & Quantity Calculations |
+| **Data Types** | Decimal Precision | `DECIMAL(18,4)` money · `DECIMAL(14,2)` quantities · `DECIMAL(18,6)` FX rates | Exact currency, quantity and rate math |
 
 ---
 
@@ -40,7 +53,7 @@ The platform provides:
 
 ```
                     ┌────────────────────────────────────────┐
-                    │     Flutter App / Web Client / ERP     │
+                    │    Web client  /  any /api/v1 client    │
                     └───────────────────┬────────────────────┘
                                         │ (HTTPS / Bearer Sanctum)
                                         ▼

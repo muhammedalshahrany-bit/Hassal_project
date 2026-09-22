@@ -27,7 +27,16 @@ class ApiKeyController extends Controller
         }
 
         $keys = ApiKey::where('organization_id', $orgId)->orderBy('created_at', 'desc')->get();
-        return ApiResponse::success($keys, 'API Keys retrieved successfully');
+
+        return ApiResponse::success(
+            $keys,
+            'API Keys retrieved successfully',
+            Response::HTTP_OK,
+            [],
+            // Read from the route table, not written here by hand: it stays true
+            // only as long as some endpoint really accepts a key.
+            ['key_authentication_ready' => $this->apiKeyService->acceptedByAnyRoute()],
+        );
     }
 
     public function store(Request $request): JsonResponse
@@ -50,7 +59,17 @@ class ApiKeyController extends Controller
 
         $result = $this->apiKeyService->generate($org, $validated['name'], $scopes, $expiresAt);
 
-        return ApiResponse::success($result, 'API Key generated successfully. Please copy the secret key now; it will not be shown again.', Response::HTTP_CREATED);
+        $ready = $this->apiKeyService->acceptedByAnyRoute();
+
+        return ApiResponse::success(
+            $result,
+            $ready
+                ? 'API Key generated successfully. Please copy the secret key now; it will not be shown again.'
+                : 'تم إصدار المفتاح، لكن لا مسار في هذا الخادم يقبل مفتاح API بعد: لن يفتح أي طلب. انسخ السر الآن لأنه لا يُعرض مرة أخرى.',
+            Response::HTTP_CREATED,
+            [],
+            ['key_authentication_ready' => $ready],
+        );
     }
 
     public function revoke(int $id): JsonResponse

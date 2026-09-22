@@ -33,9 +33,12 @@ return new class extends Migration
             // Pricing Snapshot (Immutable after deal creation)
             $table->decimal('base_amount', 18, 4);
             $table->decimal('discount_amount', 18, 4)->default(0.0000);
-            $table->decimal('tax_rate_snapshot', 6, 4)->default(0.1500);
+            // Tax and fee rates default to 0.00: they are NOT product assumptions.
+            // They must be written explicitly from admin configuration when the
+            // deal's financials are computed (see PricingAndCurrencyService).
+            $table->decimal('tax_rate_snapshot', 6, 4)->default(0.0000);
             $table->decimal('tax_amount', 18, 4)->default(0.0000);
-            $table->decimal('platform_fee_rate_snapshot', 6, 4)->default(0.0250);
+            $table->decimal('platform_fee_rate_snapshot', 6, 4)->default(0.0000);
             $table->decimal('platform_fee_amount', 18, 4)->default(0.0000);
             $table->decimal('delivery_fee_amount', 18, 4)->default(0.0000);
             $table->decimal('buyer_total_amount', 18, 4);

@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\Deal;
 use App\Models\Escrow;
-use App\Models\LedgerAccount;
+use App\Models\LedgerLine;
 use App\Models\Payment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -39,13 +39,15 @@ class ReconciliationController extends Controller
             }
         }
 
-        // 2. Ledger Accounts Balance Check (Total Debits == Total Credits)
-        $accounts = LedgerAccount::all();
-        $totalDebits = $accounts->sum('current_debit');
-        $totalCredits = $accounts->sum('current_credit');
-        $imbalance = abs($totalDebits - $totalCredits);
+        // 2. Posted side check: every debit must have a matching credit.
+        //    `ledger_accounts` stores one signed `balance` column, so there is
+        //    no separate debit/credit balance to compare; the posted sides on
+        //    the journal lines are what prove double entry.
+        $totalDebits = (float) LedgerLine::sum('debit_amount');
+        $totalCredits = (float) LedgerLine::sum('credit_amount');
+        $imbalance = round($totalDebits - $totalCredits, 4);
 
-        if ($imbalance > 0.0001) {
+        if (abs($imbalance) > 0.0001) {
             $exceptions[] = [
                 'type' => 'RECONCILIATION_EXCEPTION',
                 'entity' => 'General Ledger',
@@ -53,7 +55,7 @@ class ReconciliationController extends Controller
                 'issue' => 'Trial balance imbalance detected between total debits and credits',
                 'total_debits' => $totalDebits,
                 'total_credits' => $totalCredits,
-                'difference' => $imbalance,
+                'difference' => abs($imbalance),
             ];
         }
 

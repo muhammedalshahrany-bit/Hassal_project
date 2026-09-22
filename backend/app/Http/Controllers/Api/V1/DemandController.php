@@ -100,7 +100,7 @@ class DemandController extends Controller
         ]);
 
         $expiryDays      = (int) $this->settingsService->get('demand.expiry_days', 14);
-        $defaultCurrency = strtoupper((string) $this->settingsService->get('platform.default_currency', 'YER'));
+        $defaultCurrency = strtoupper((string) $this->settingsService->get('platform.default_currency'));
         $currencyCode = strtoupper($validated['currency_code'] ?? $defaultCurrency);
 
         if (!Currency::query()->where('iso_code', $currencyCode)->where('is_active', true)->exists()) {

@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Currency;
 use App\Models\FeatureFlag;
@@ -14,17 +13,25 @@ use App\Models\SystemSetting;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\DoubleEntryLedgerService;
+use App\Support\CategoryCatalog;
+use App\Support\FlagCatalog;
+use App\Support\SettingCatalog;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 
 class InstallSystemCommand extends Command
 {
-    protected $signature = 'app:install-system {--force : Overwrite existing system defaults} {--skip-prereqs : Skip environment pre-flight checks}';
+    protected $signature = 'app:install-system
+                            {--force : Overwrite existing system defaults}
+                            {--skip-prereqs : Skip environment pre-flight checks}
+                            {--skip-admin : Do not create the first platform operator}
+                            {--admin-name= : Full name of the first SuperAdmin}
+                            {--admin-email= : Email of the first SuperAdmin}
+                            {--admin-password= : Password for the first SuperAdmin (prefer the interactive prompt; this form can leak into shell history)}';
     protected $description = 'Production Installer for HASSAL B2B Platform (Environment verification, migrations, RBAC, currencies, settings, and ledger initialization).';
 
     public function handle(DoubleEntryLedgerService $ledgerService): int
@@ -81,7 +88,14 @@ class InstallSystemCommand extends Command
         $this->seedCatalog();
         $this->info('✔ Industry categories initialized.');
 
-        $this->line('--- Step 9: Storage Linking & Production Cache Optimization ---');
+        $this->line('--- Step 9: First Platform Operator ---');
+        if ($this->option('skip-admin')) {
+            $this->line('   Skipped by request. Until an operator exists the API has no SuperAdmin and the setup wizard cannot be reached.');
+        } else {
+            $this->createFirstAdmin();
+        }
+
+        $this->line('--- Step 10: Storage Linking & Production Cache Optimization ---');
         try {
             Artisan::call('storage:link');
         } catch (\Exception $e) {
@@ -162,59 +176,68 @@ class InstallSystemCommand extends Command
         return $allPassed;
     }
 
+    /**
+     * RBAC has exactly one source of truth: config/rbac.php, applied by
+     * RolesAndPermissionsSeeder. The installer previously declared its own
+     * matrix here, which (a) created permissions no route ever checked and
+     * (b) overwrote the real grants through syncPermissions(). Never
+     * re-introduce a second definition.
+     */
     protected function seedRolesAndPermissions(): void
     {
-        $permissions = [
-            'marketplace.view', 'offers.view', 'offers.create', 'offers.edit', 'offers.delete', 'offers.moderate',
-            'requests.create', 'requests.cancel', 'requests.view', 'demands.view',
-            'deals.view', 'deals.create', 'deals.transition',
-            'warehouses.view', 'warehouses.manage', 'inventory.manage', 'inventory.adjust',
-            'team.manage', 'ledger.view', 'settings.manage', 'audit.view',
-            'reconciliation.view', 'reconciliation.execute', 'api-keys.manage', 'webhooks.manage',
-            'disputes.open', 'disputes.resolve', 'organizations.manage', 'organizations.verify',
-            'users.manage', 'currencies.manage', 'catalog.manage'
-        ];
+        $this->call('db:seed', ['--class' => \Database\Seeders\RolesAndPermissionsSeeder::class]);
+    }
 
-        foreach ($permissions as $perm) {
-            Permission::firstOrCreate(['name' => $perm, 'guard_name' => 'web']);
+    /**
+     * The installer previously finished with a fully migrated database that
+     * nobody could sign into: every admin route requires a SuperAdmin token,
+     * and the setup wizard itself is behind auth:sanctum. Creating the first
+     * operator here is what breaks that loop.
+     *
+     * No password is ever echoed, logged, or written to disk, and no default
+     * password exists in this repository.
+     */
+    protected function createFirstAdmin(): void
+    {
+        $name  = (string) ($this->option('admin-name') ?: $this->ask('Name of the platform operator', 'Platform Operator'));
+        $email = strtolower((string) ($this->option('admin-email') ?: $this->ask('Email of the platform operator')));
+
+        if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->error("'{$email}' is not a valid email address.");
+
+            return;
         }
 
-        $roles = [
-            'SuperAdmin' => $permissions,
-            'OperationsManager' => [
-                'marketplace.view', 'offers.view', 'offers.moderate', 'deals.view', 'deals.transition',
-                'warehouses.view', 'warehouses.manage', 'ledger.view', 'disputes.resolve',
-                'organizations.manage', 'organizations.verify', 'audit.view'
-            ],
-            'ComplianceOfficer' => [
-                'marketplace.view', 'offers.view', 'offers.moderate', 'ledger.view', 'disputes.resolve',
-                'organizations.verify', 'reconciliation.view', 'audit.view'
-            ],
-            'SellerAdmin' => [
-                'marketplace.view', 'offers.view', 'offers.create', 'offers.edit', 'offers.delete', 'deals.view',
-                'deals.transition', 'warehouses.view', 'warehouses.manage', 'inventory.manage',
-                'team.manage', 'api-keys.manage', 'webhooks.manage', 'disputes.open'
-            ],
-            'SellerStaff' => [
-                'marketplace.view', 'offers.view', 'offers.create', 'offers.edit', 'deals.transition', 'warehouses.view'
-            ],
-            'BuyerAdmin' => [
-                'marketplace.view', 'offers.view', 'requests.create', 'requests.cancel', 'requests.view', 'demands.view',
-                'deals.create', 'deals.view', 'deals.transition', 'team.manage', 'api-keys.manage',
-                'webhooks.manage', 'disputes.open'
-            ],
-            'BuyerStaff' => [
-                'marketplace.view', 'offers.view', 'requests.create', 'requests.view', 'demands.view', 'deals.create'
-            ],
-            'PlatformAuditor' => [
-                'marketplace.view', 'offers.view', 'ledger.view', 'reconciliation.view', 'audit.view'
-            ],
-        ];
+        $password = $this->option('admin-password');
 
-        foreach ($roles as $roleName => $rolePerms) {
-            $role = Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
-            $role->syncPermissions($rolePerms);
+        if (! is_string($password) || $password === '') {
+            if (! $this->getOutput()->isInteractive()) {
+                $this->error('No admin password supplied and the terminal is not interactive. Pass --admin-password or run interactively.');
+
+                return;
+            }
+
+            $password = (string) $this->secret('Choose the operator password (12+ characters)');
         }
+
+        if (strlen($password) < 12) {
+            $this->error('The operator password must be at least 12 characters. Nothing was changed.');
+
+            return;
+        }
+
+        // The User model casts `password` to `hashed`, so the raw value is
+        // assigned and hashed exactly once by the model layer.
+        $user = User::firstOrNew(['email' => $email]);
+        $user->name = $name;
+        $user->status = 'active';
+        $user->password = $password;
+        $user->save();
+
+        $user->syncRoles(['SuperAdmin']);
+
+        $this->info("✔ Platform operator ready: {$email} (role: SuperAdmin).");
+        $this->warn('  Store the password in your own password manager. It is not recoverable from the database or from this console.');
     }
 
     protected function seedCurrencies(): void
@@ -224,40 +247,24 @@ class InstallSystemCommand extends Command
         Currency::updateOrCreate(['iso_code' => 'YER'], [
             'name_ar' => 'ريال يمني',
             'name_en' => 'Yemeni Rial',
-            'symbol' => 'ر.ي',
+            'symbol' => '﷼',
             'decimal_places' => 2,
             'exchange_rate_to_base' => 1.000000,
+            'rate_source' => 'BASE_CURRENCY',
             'is_active' => true,
             'is_default' => true,
         ]);
 
+        // Present but inactive: a currency is only usable once an operator
+        // supplies a rate and a source for it. Seeding a guessed conversion
+        // would put invented arithmetic into real invoices.
         Currency::updateOrCreate(['iso_code' => 'USD'], [
             'name_ar' => 'دولار أمريكي',
             'name_en' => 'US Dollar',
             'symbol' => '$',
             'decimal_places' => 2,
-            // A rate must be supplied and approved by an administrator before use.
             'exchange_rate_to_base' => 1.000000,
-            'is_active' => false,
-            'is_default' => false,
-        ]);
-
-        Currency::updateOrCreate(['iso_code' => 'AED'], [
-            'name_ar' => 'درهم إماراتي',
-            'name_en' => 'UAE Dirham',
-            'symbol' => 'د.إ',
-            'decimal_places' => 2,
-            'exchange_rate_to_base' => 1.000000,
-            'is_active' => false,
-            'is_default' => false,
-        ]);
-
-        Currency::updateOrCreate(['iso_code' => 'SAR'], [
-            'name_ar' => 'ريال سعودي',
-            'name_en' => 'Saudi Riyal',
-            'symbol' => 'ر.س',
-            'decimal_places' => 2,
-            'exchange_rate_to_base' => 1.000000,
+            'rate_source' => 'UNSET_SET_BEFORE_USE',
             'is_active' => false,
             'is_default' => false,
         ]);
@@ -265,242 +272,32 @@ class InstallSystemCommand extends Command
 
     protected function seedSystemSettings(): void
     {
-        $settings = [
-            [
-                'key' => 'platform.country',
-                'value' => 'YE',
-                'type' => 'string',
-                'group' => 'platform',
-                'description_ar' => 'الدولة الافتراضية للمنصة',
-                'description_en' => 'Default platform country',
-                'default_value' => 'YE',
-                'is_editable' => true,
-                'is_public' => true,
-                'validation_rules' => ['required', 'size:2']
-            ],
-            [
-                'key' => 'platform.name_ar',
-                'value' => 'منصة حصّال للفرص والمخزون الغذائي',
-                'type' => 'string',
-                'group' => 'platform',
-                'description_ar' => 'اسم المنصة التجاري بالعربية',
-                'description_en' => 'Platform Commercial Name (Arabic)',
-                'default_value' => 'منصة حصّال',
-                'is_editable' => true,
-                'is_public' => true,
-                'validation_rules' => ['required', 'string', 'max:150']
-            ],
-            [
-                'key' => 'platform.name_en',
-                'value' => 'HASSAL B2B Food & Opportunities Marketplace',
-                'type' => 'string',
-                'group' => 'platform',
-                'description_ar' => 'اسم المنصة التجاري بالإنجليزية',
-                'description_en' => 'Platform Commercial Name (English)',
-                'default_value' => 'HASSAL B2B Marketplace',
-                'is_editable' => true,
-                'is_public' => true,
-                'validation_rules' => ['required', 'string', 'max:150']
-            ],
-            [
-                'key' => 'platform.default_locale',
-                'value' => 'ar',
-                'type' => 'string',
-                'group' => 'platform',
-                'description_ar' => 'اللغة الافتراضية للنظام',
-                'description_en' => 'Default Platform Locale',
-                'default_value' => 'ar',
-                'is_editable' => true,
-                'is_public' => true,
-                'validation_rules' => ['required', 'in:ar,en,fr,tr,ur']
-            ],
-            [
-                'key' => 'platform.default_currency',
-                'value' => 'YER',
-                'type' => 'string',
-                'group' => 'platform',
-                'description_ar' => 'العملة الأساسية للمنصة',
-                'description_en' => 'Platform Base Currency',
-                'default_value' => 'YER',
-                'is_editable' => true,
-                'is_public' => true,
-                'validation_rules' => ['required', 'string', 'size:3']
-            ],
-            [
-                'key' => 'tax.enabled',
-                'value' => 'false',
-                'type' => 'boolean',
-                'group' => 'tax',
-                'description_ar' => 'تفعيل احتساب الضريبة',
-                'description_en' => 'Enable tax calculation',
-                'default_value' => 'false',
-                'is_editable' => true,
-                'is_public' => true,
-                'validation_rules' => ['required', 'boolean']
-            ],
-            [
-                'key' => 'tax.name',
-                'value' => 'ضريبة المبيعات',
-                'type' => 'string',
-                'group' => 'tax',
-                'description_ar' => 'اسم الضريبة الظاهر في المستندات',
-                'description_en' => 'Tax label shown in documents',
-                'default_value' => 'ضريبة المبيعات',
-                'is_editable' => true,
-                'is_public' => true,
-                'validation_rules' => ['required', 'string', 'max:100']
-            ],
-            [
-                'key' => 'tax.rate',
-                'value' => '0.0000',
-                'type' => 'decimal',
-                'group' => 'tax',
-                'description_ar' => 'نسبة الضريبة؛ تعتمد بعد التحقق القانوني',
-                'description_en' => 'Tax rate; set only after legal verification',
-                'default_value' => '0.0000',
-                'is_editable' => true,
-                'is_public' => true,
-                'validation_rules' => ['required', 'numeric', 'min:0', 'max:1']
-            ],
-            [
-                'key' => 'tax.inclusive',
-                'value' => 'false',
-                'type' => 'boolean',
-                'group' => 'tax',
-                'description_ar' => 'هل السعر شامل الضريبة',
-                'description_en' => 'Whether displayed prices include tax',
-                'default_value' => 'false',
-                'is_editable' => true,
-                'is_public' => true,
-                'validation_rules' => ['required', 'boolean']
-            ],
-            [
-                'key' => 'commission.rate',
-                'value' => '0.0250',
-                'type' => 'decimal',
-                'group' => 'commission',
-                'description_ar' => 'عمولة المنصة من إجمالي الصفقة',
-                'description_en' => 'Platform commission rate',
-                'default_value' => '0.0250',
-                'is_editable' => true,
-                'is_public' => false,
-                'validation_rules' => ['required', 'numeric', 'min:0', 'max:0.5']
-            ],
-            [
-                'key' => 'reservation.timeout',
-                'value' => '30',
-                'type' => 'integer',
-                'group' => 'reservation',
-                'description_ar' => 'مدة قفل المخزون المؤقت لحين السداد (بالدقائق)',
-                'description_en' => 'Inventory Hold Lock Timeout in Minutes',
-                'default_value' => '30',
-                'is_editable' => true,
-                'is_public' => true,
-                'validation_rules' => ['required', 'integer', 'min:5', 'max:1440']
-            ],
-            [
-                'key' => 'inspection.window',
-                'value' => '48',
-                'type' => 'integer',
-                'group' => 'inspection',
-                'description_ar' => 'مهلة الفحص ومطابقة البضاعة في المستودع (بالساعات)',
-                'description_en' => 'Inspection and Quality Verification Window in Hours',
-                'default_value' => '48',
-                'is_editable' => true,
-                'is_public' => true,
-                'validation_rules' => ['required', 'integer', 'min:12', 'max:168']
-            ],
-            [
-                'key' => 'marketplace.require_offer_moderation',
-                'value' => 'true',
-                'type' => 'boolean',
-                'group' => 'marketplace',
-                'description_ar' => 'إلزامية اعتماد ومراجعة العروض قبل النشر',
-                'description_en' => 'Enforce Admin Moderation Before Offers Go Live',
-                'default_value' => 'true',
-                'is_editable' => true,
-                'is_public' => false,
-                'validation_rules' => ['required', 'boolean']
-            ],
-            [
-                'key' => 'compliance.enforce_kyb_verification',
-                'value' => 'true',
-                'type' => 'boolean',
-                'group' => 'compliance',
-                'description_ar' => 'اشتراط توثيق السجل التجاري والشهادة الضريبية للمنشآت',
-                'description_en' => 'Require KYB / Commercial Registration Verification',
-                'default_value' => 'true',
-                'is_editable' => true,
-                'is_public' => false,
-                'validation_rules' => ['required', 'boolean']
-            ],
-            [
-                'key' => 'geo.default_radius_km',
-                'value' => '250',
-                'type' => 'integer',
-                'group' => 'geo',
-                'description_ar' => 'نصف قطر البحث الجغرافي الافتراضي (كم)',
-                'description_en' => 'Default Geographic Search Radius in Kilometers',
-                'default_value' => '250',
-                'is_editable' => true,
-                'is_public' => true,
-                'validation_rules' => ['required', 'integer', 'min:10', 'max:2000']
-            ],
-        ];
-
-        foreach ($settings as $s) {
+        // Seeded from App\Support\SettingCatalog — the same list the reference
+        // seeder uses and the list the runtime code reads by these exact keys.
+        // Declaring settings here as well is what produced two vocabularies,
+        // and an operator's edit in the admin console then changed a row that
+        // no service ever looked at.
+        foreach (SettingCatalog::defaults() as $setting) {
             SystemSetting::updateOrCreate(
-                ['key' => $s['key'], 'organization_id' => null],
-                $s
+                ['key' => $setting['key'], 'organization_id' => null],
+                $setting
             );
         }
     }
 
     protected function seedFeatureFlags(): void
     {
-        $flags = [
-            ['key' => 'marketplace', 'name_ar' => 'سوق الفرص والمخزون', 'name_en' => 'Marketplace Engine', 'is_enabled' => true],
-            ['key' => 'demands', 'name_ar' => 'طلبات الشراء وعروض الأسعار (RFQ)', 'name_en' => 'Demands & RFQ', 'is_enabled' => true],
-            ['key' => 'geo_discovery', 'name_ar' => 'البحث الجغرافي والفرص القريبة', 'name_en' => 'Geographical Discovery', 'is_enabled' => true],
-            ['key' => 'escrow', 'name_ar' => 'الضمان المالي وحساب الأمانات', 'name_en' => 'Escrow & Financial Safeguard', 'is_enabled' => true],
-            ['key' => 'webhooks', 'name_ar' => 'نظام إشعارات الويب هوك للمطورين', 'name_en' => 'Webhooks Engine', 'is_enabled' => true],
-            ['key' => 'api_keys', 'name_ar' => 'مفاتيح الربط البرمجي للمنشآت (API Keys)', 'name_en' => 'B2B API Keys', 'is_enabled' => true],
-            ['key' => 'disputes', 'name_ar' => 'مركز النزاعات والاعتراضات', 'name_en' => 'Dispute Resolution Center', 'is_enabled' => true],
-            ['key' => 'reconciliation', 'name_ar' => 'محرك المطابقة والتسوية المالية الآلية', 'name_en' => 'Automated Financial Reconciliation', 'is_enabled' => true],
-        ];
-
-        foreach ($flags as $f) {
-            FeatureFlag::updateOrCreate(['key' => $f['key']], $f);
+        foreach (FlagCatalog::defaults() as $flag) {
+            FeatureFlag::updateOrCreate(['key' => $flag['key']], $flag);
         }
     }
 
     protected function seedCatalog(): void
     {
-        $categories = [
-            ['code' => 'DAIRY', 'slug' => 'dairy-beverages', 'name_ar' => 'الألبان والعصائر والمشروبات', 'name_en' => 'Dairy & Beverages', 'icon' => 'Milk', 'sort_order' => 1],
-            ['code' => 'DRY_GOODS', 'slug' => 'dry-grains', 'name_ar' => 'الحبوب والبقوليات والمواد الجافة', 'name_en' => 'Dry Goods & Grains', 'icon' => 'Wheat', 'sort_order' => 2],
-            ['code' => 'OILS_FATS', 'slug' => 'oils-ghee', 'name_ar' => 'الزيوت والدهون والسمن', 'name_en' => 'Oils & Ghee', 'icon' => 'Droplet', 'sort_order' => 3],
-            ['code' => 'CANNED', 'slug' => 'canned-preserved', 'name_ar' => 'المعلبات والمحفوظات الغذائية', 'name_en' => 'Canned & Preserved Foods', 'icon' => 'Package', 'sort_order' => 4],
-            ['code' => 'FROZEN', 'slug' => 'frozen-chilled', 'name_ar' => 'المجمدات واللحوم والدواجن', 'name_en' => 'Frozen & Poultry', 'icon' => 'Snowflake', 'sort_order' => 5],
-            ['code' => 'SWEETS_SNACKS', 'slug' => 'confectionery-snacks', 'name_ar' => 'الحلويات والمقرمشات والشوكولاتة', 'name_en' => 'Confectionery & Snacks', 'icon' => 'Cookie', 'sort_order' => 6],
-            ['code' => 'BAKERY_RAW', 'slug' => 'bakery-raw-materials', 'name_ar' => 'مستلزمات المخابز والمواد الأولية', 'name_en' => 'Bakery & Raw Ingredients', 'icon' => 'Cake', 'sort_order' => 7],
-        ];
-
-        foreach ($categories as $cat) {
-            Category::updateOrCreate(['code' => $cat['code']], $cat);
-        }
-
-        $brands = [
-            ['name_ar' => 'المراعي', 'name_en' => 'Almarai', 'slug' => 'almarai'],
-            ['name_ar' => 'صافولا (عافية)', 'name_en' => 'Savola (Afia)', 'slug' => 'savola-afia'],
-            ['name_ar' => 'نادك', 'name_en' => 'Nadec', 'slug' => 'nadec'],
-            ['name_ar' => 'العلالي', 'name_en' => 'Al Alali', 'slug' => 'al-alali'],
-            ['name_ar' => 'أمريكانا', 'name_en' => 'Americana', 'slug' => 'americana'],
-            ['name_ar' => 'قودي', 'name_en' => 'Goody', 'slug' => 'goody'],
-        ];
-
-        foreach ($brands as $brand) {
-            Brand::updateOrCreate(['slug' => $brand['slug']], $brand);
+        // App\Support\CategoryCatalog is the single source; brands are created
+        // by the businesses that supply them, never invented by the platform.
+        foreach (CategoryCatalog::defaults() as $category) {
+            Category::updateOrCreate(['code' => $category['code']], $category);
         }
     }
 }

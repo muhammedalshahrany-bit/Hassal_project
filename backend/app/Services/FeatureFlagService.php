@@ -19,7 +19,10 @@ class FeatureFlagService
         $flags = $this->getAllFlags();
 
         if (!isset($flags[$key])) {
-            return true; // Default to true if not registered
+            // Fail closed. A capability that has never been registered is not
+            // installed, and `app:install-system` / DatabaseSeeder are what
+            // register the ones this deployment actually offers.
+            return false;
         }
 
         $flag = $flags[$key];
@@ -84,7 +87,20 @@ class FeatureFlagService
             ]
         );
 
-        Cache::forget(self::CACHE_KEY);
+        $this->flushCache();
         return $flag;
+    }
+
+    /**
+     * Drop the memoised flag table.
+     *
+     * Anything that writes `feature_flags` without going through setFlag() has
+     * to call this, or the change stays invisible for an hour — and an
+     * invisible flag fails closed, so a capability that was just switched on
+     * still answers FEATURE_DISABLED.
+     */
+    public function flushCache(): void
+    {
+        Cache::forget(self::CACHE_KEY);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\SystemSetting;
+use App\Support\SettingCatalog;
 use App\Services\SystemSettingsService;
 use App\Services\TenantContext;
 use Illuminate\Http\JsonResponse;
@@ -37,27 +38,116 @@ class SystemSettingController extends Controller
         return ApiResponse::success($settings, 'Settings retrieved successfully');
     }
 
+    /**
+     * Write one setting.
+     *
+     * Two things the row itself decides, and used to be ignored:
+     *
+     *   - `is_editable`. The flag is read from the row and honoured; a key
+     *     pinned that way can no longer be changed anyway. The catalog seeds
+     *     every key editable today, so this is the gate, not a list of keys it
+     *     currently blocks.
+     *   - `type`. The value is checked against the type the key was declared
+     *     with, so `tax.rate` cannot receive the word "نعم" and have it read
+     *     back as a number by the pricing service.
+     *
+     * A key with no row yet is created. `meta.in_catalog` says whether code
+     * actually reads it, because a setting nobody reads is a switch that looks
+     * live on screen and does nothing.
+     */
     public function update(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'key' => ['required', 'string'],
+            'key' => ['required', 'string', 'max:255'],
             'value' => ['required'],
-            'group' => ['nullable', 'string'],
-            'type' => ['nullable', 'string'],
+            'group' => ['nullable', 'string', 'max:100'],
+            'type' => ['nullable', 'string', 'max:50'],
         ]);
 
-        $orgId = $request->user()->hasRole('SuperAdmin') ? null : TenantContext::id();
+        $key = $validated['key'];
+        $isPlatform = $request->user()->hasRole('SuperAdmin');
+        $orgId = TenantContext::id();
+
+        if (!$isPlatform && $orgId === null) {
+            return ApiResponse::error(
+                'لا يوجد سياق منشأة لهذا الطلب',
+                'TENANT_REQUIRED',
+                Response::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
+
+        $rowOrgId = $isPlatform ? null : $orgId;
+
+        $query = SystemSetting::where('key', $key);
+        if ($rowOrgId === null) {
+            $query->whereNull('organization_id');
+        } else {
+            $query->where('organization_id', $rowOrgId);
+        }
+        $existing = $query->first();
+
+        if ($existing !== null && !$existing->is_editable) {
+            return ApiResponse::error(
+                "هذا الإعداد غير قابل للتعديل: {$key}",
+                'SETTING_NOT_EDITABLE',
+                Response::HTTP_FORBIDDEN
+            );
+        }
+
+        $declaredType = $existing?->type ?: ($validated['type'] ?? 'string');
+
+        $problem = self::valueProblem($declaredType, $validated['value']);
+        if ($problem !== null) {
+            return ApiResponse::error(
+                $problem,
+                'SETTING_TYPE_MISMATCH',
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+                ['value' => [$problem]]
+            );
+        }
 
         $setting = $this->settingsService->set(
-            $validated['key'],
+            $key,
             $validated['value'],
-            $validated['type'] ?? 'string',
-            $validated['group'] ?? 'platform',
+            $declaredType,
+            $existing?->group ?: ($validated['group'] ?? 'platform'),
             null,
             null,
-            $orgId
+            $isPlatform ? null : $orgId
         );
 
-        return ApiResponse::success($setting, 'Setting updated successfully');
+        return ApiResponse::success(
+            $setting,
+            'Setting updated successfully',
+            200,
+            [],
+            ['in_catalog' => self::inCatalog($key)]
+        );
+    }
+
+    /**
+     * Why this value does not fit the declared type, or null when it does.
+     */
+    private static function valueProblem(string $type, mixed $value): ?string
+    {
+        $text = is_scalar($value) ? trim((string) $value) : '';
+
+        return match ($type) {
+            'boolean' => in_array(strtolower($text), ['true', 'false', '1', '0', 'yes', 'no'], true)
+                ? null
+                : 'قيمة منطقية مطلوبة: true أو false',
+            'integer' => preg_match('/^-?\d+$/', $text) === 1 ? null : 'عدد صحيح مطلوب',
+            'decimal' => is_numeric($text) ? null : 'قيمة رقمية مطلوبة',
+            'json' => is_array($value) || json_decode($text, true) !== null || $text === ''
+                ? null
+                : 'تركيبة JSON صالحة مطلوبة',
+            default => null,
+        };
+    }
+
+    /** Whether any code path reads this key, per the catalog it defines them. */
+    private static function inCatalog(string $key): bool
+    {
+        return in_array($key, array_column(SettingCatalog::defaults(), 'key'), true);
     }
 }

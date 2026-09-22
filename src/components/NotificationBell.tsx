@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Bell, CheckCheck } from 'lucide-react';
 import { api } from '../lib/api';
-import { translations, type Locale } from '../lib/i18n';
+import { formatDateTime, translations, type Locale } from '../lib/i18n';
 
 interface NotificationItem {
   id: number;
@@ -67,7 +67,7 @@ export const NotificationBell: React.FC<{ locale?: Locale }> = ({ locale = 'ar' 
           {items.length === 0 ? <p className="p-5 text-center text-sm text-slate-500">{t.noNotifications}</p> : items.map((item) => <button type="button" key={item.id} onClick={() => !item.is_read && markRead(item.id)} className={`block w-full border-b border-slate-100 p-3 text-right hover:bg-slate-50 ${item.is_read ? 'opacity-60' : 'bg-emerald-50/40'}`}>
             <div className="text-sm font-black text-slate-800">{item.title_ar}</div>
             <div className="mt-1 text-xs leading-5 text-slate-600">{item.body_ar}</div>
-            <div className="mt-1 text-[10px] text-slate-400">{new Date(item.created_at).toLocaleString('ar')}</div>
+            <div className="mt-1 text-[10px] text-slate-400">{formatDateTime(item.created_at, locale) || item.created_at}</div>
           </button>)}
         </div>
       </div>}

@@ -13,7 +13,8 @@ class ApiResponse
         mixed $data = null,
         string $message = 'Operation completed successfully',
         int $status = Response::HTTP_OK,
-        array $headers = []
+        array $headers = [],
+        array $meta = []
     ): JsonResponse {
         $correlationId = request()->header('X-Correlation-Id', (string) Str::uuid());
 
@@ -21,10 +22,10 @@ class ApiResponse
             'success' => true,
             'message' => $message,
             'data' => $data,
-            'meta' => [
+            'meta' => array_merge([
                 'timestamp' => now()->toIso8601String(),
                 'correlation_id' => $correlationId,
-            ],
+            ], $meta),
         ], $status, $headers);
     }
 

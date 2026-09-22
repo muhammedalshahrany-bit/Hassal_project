@@ -1,10 +1,12 @@
 name: Production CI/CD
 
 on:
+  # `master` is the branch this repository actually has. Triggering only on
+  # `main` would leave every commit here unchecked.
   push:
-    branches: [ "main", "production" ]
+    branches: [ "master", "main", "production" ]
   pull_request:
-    branches: [ "main", "production" ]
+    branches: [ "master", "main", "production" ]
 
 jobs:
   test:
@@ -70,8 +72,30 @@ jobs:
         DB_PASSWORD: password
       run: php artisan test
 
+  web:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    # Without this job the TypeScript client is never compiled in CI: a broken
+    # screen would merge and only fail when someone runs `npm run dev`.
+    - name: Install client dependencies
+      run: npm ci
+
+    - name: Typecheck client
+      run: npm run lint
+
+    - name: Build client and gateway
+      run: npm run build
+
   build-and-push:
-    needs: test
+    needs: [test, web]
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     

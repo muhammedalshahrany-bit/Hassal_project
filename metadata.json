@@ -1,6 +1,5 @@
 {
   "name": "حصّال — HASSAL",
-  "description": "B2B Marketplace للمواد الغذائية والفرص التجارية والمخزون، يربط المؤسسات والبائعين والمشترين في سوق تجاري منظم.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "description": "سوق B2B للمواد الغذائية: عروض مخزون من مؤسسات مسجَّلة، طلبات شراء يراجعها البائع، حجوزات كمية، وصفقات بتسليم وفحص وتسوية.",
+  "requestFramePermissions": []
 }

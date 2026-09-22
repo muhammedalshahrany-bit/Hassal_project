@@ -111,6 +111,17 @@ class Organization extends Model
         return $this->hasMany(LedgerAccount::class);
     }
 
+    /**
+     * The legal papers this business filed, and what was decided on each.
+     *
+     * A verification verdict is the organization's own `status` column; these
+     * rows are the evidence a reviewer had in front of them when it was set.
+     */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(OrganizationDocument::class);
+    }
+
     public function isVerified(): bool
     {
         return $this->status === 'verified';

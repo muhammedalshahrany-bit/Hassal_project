@@ -29,6 +29,10 @@ class DisputeController extends Controller
         $orgId = TenantContext::id();
         $user = $request->user();
 
+        $validated = $request->validate([
+            'status' => ['nullable', 'in:' . implode(',', Dispute::STATUSES)],
+        ]);
+
         $query = Dispute::with(['deal.buyerOrganization', 'deal.sellerOrganization', 'initiatorOrganization', 'initiatorUser']);
 
         if (!$user->hasRole('SuperAdmin')) {
@@ -39,6 +43,12 @@ class DisputeController extends Controller
             $query->whereHas('deal', function ($d) use ($orgId) {
                 $d->where('buyer_organization_id', $orgId)->orWhere('seller_organization_id', $orgId);
             });
+        }
+
+        // A filter the query ignores would still be reported as a count, so an
+        // unknown value is refused rather than read as "no disputes".
+        if (!empty($validated['status'])) {
+            $query->where('status', $validated['status']);
         }
 
         $disputes = $query->orderBy('created_at', 'desc')->paginate(20);
@@ -85,7 +95,7 @@ class DisputeController extends Controller
             return $newDispute;
         });
 
-        return ApiResponse::success($dispute->load('deal'), 'Dispute filed successfully. Escrow funds have been placed on dispute hold.', Response::HTTP_CREATED);
+        return ApiResponse::success($dispute->load('deal'), 'Dispute filed successfully. The deal is now marked as disputed.', Response::HTTP_CREATED);
     }
 
     public function resolve(Request $request, int $id): JsonResponse

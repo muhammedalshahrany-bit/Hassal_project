@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\OfferExpiredException;
 use App\Models\Offer;
 use App\Models\Reservation;
 use App\Models\User;
@@ -22,6 +23,25 @@ class InventoryReservationService
      */
     public function reserve(Offer $offer, User $buyerUser, int $buyerOrgId, float $quantity, string $deliveryPreference = 'PICKUP', ?string $notes = null): Reservation
     {
+        try {
+            return $this->reserveInTransaction($offer, $buyerUser, $buyerOrgId, $quantity, $deliveryPreference, $notes);
+        } catch (OfferExpiredException $e) {
+            // The transaction above was rolled back, so this correction could
+            // not have been persisted inside it.
+            Offer::where('id', $e->offerId)->update([
+                'status' => Offer::STATUS_EXPIRED,
+                'updated_at' => Carbon::now(),
+            ]);
+
+            throw $e;
+        }
+    }
+
+    /**
+     * @throws Exception
+     */
+    protected function reserveInTransaction(Offer $offer, User $buyerUser, int $buyerOrgId, float $quantity, string $deliveryPreference, ?string $notes): Reservation
+    {
         return DB::transaction(function () use ($offer, $buyerUser, $buyerOrgId, $quantity, $deliveryPreference, $notes) {
             // Pessimistic lock on the offer record to prevent race conditions & double allocation
             $lockedOffer = Offer::where('id', $offer->id)->lockForUpdate()->firstOrFail();
@@ -31,8 +51,7 @@ class InventoryReservationService
             }
 
             if ($lockedOffer->expires_at && Carbon::now()->greaterThan($lockedOffer->expires_at)) {
-                $lockedOffer->update(['status' => Offer::STATUS_EXPIRED]);
-                throw new Exception("The offer has already expired.");
+                throw new OfferExpiredException((int) $lockedOffer->id);
             }
 
             if ($quantity < (float)$lockedOffer->min_order_quantity) {
@@ -51,7 +70,7 @@ class InventoryReservationService
             $newAvailable = (float)$lockedOffer->available_quantity - $quantity;
             $newReserved = (float)$lockedOffer->reserved_quantity + $quantity;
 
-            $status = $newAvailable <= 0.0001 ? Offer::STATUS_FULLY_RESERVED : Offer::STATUS_ACTIVE;
+            $status = Offer::statusAfterQuantityChange($lockedOffer->status, $newAvailable);
 
             $lockedOffer->update([
                 'available_quantity' => $newAvailable,
@@ -59,13 +78,19 @@ class InventoryReservationService
                 'status' => $status,
             ]);
 
-            $timeoutMinutes = (int)$this->settingsService->get('reservation.timeout', env('PLATFORM_RESERVATION_TIMEOUT_MINUTES', 30));
+            $timeoutMinutes = (int) $this->settingsService->get(
+                'reservation.timeout',
+                config('hassal.reservations.default_timeout_minutes')
+            );
             $expiresAt = Carbon::now()->addMinutes($timeoutMinutes);
 
             $unitPrice = (float)$lockedOffer->unit_price;
             $totalAmount = round($quantity * $unitPrice, 4);
 
-            $reservationNumber = 'RES-' . strtoupper(Str::random(4)) . '-' . rand(1000, 9999);
+            // reservation_number is UNIQUE, so it must not be something this
+            // request has a chance of colliding with: a date plus a random
+            // suffix, the same shape the offers and deals use.
+            $reservationNumber = 'RES-' . now()->format('ymd') . '-' . strtoupper(Str::random(8));
 
             $reservation = Reservation::create([
                 'reservation_number' => $reservationNumber,
@@ -97,14 +122,36 @@ class InventoryReservationService
 
     /**
      * Releases or cancels an active reservation, returning stock to the offer.
+     *
+     * @return bool false when the hold had already been resolved and nothing moved
      */
-    public function release(Reservation $reservation, string $reason = 'Buyer cancelled reservation'): void
+    public function release(Reservation $reservation, string $reason = 'Buyer cancelled reservation'): bool
     {
-        DB::transaction(function () use ($reservation, $reason) {
+        return $this->finalize($reservation, Reservation::STATUS_CANCELLED, $reason);
+    }
+
+    /**
+     * Ends a hold that was not converted into a deal in time.
+     *
+     * Kept apart from release() on purpose: a timeout is not somebody's
+     * decision, and writing it into cancelled_at and cancellation_reason would
+     * leave the history claiming a cancellation nobody made.
+     */
+    public function expire(Reservation $reservation): bool
+    {
+        return $this->finalize($reservation, Reservation::STATUS_EXPIRED);
+    }
+
+    /**
+     * The one place a hold comes off the shelf, whichever end it came to.
+     */
+    protected function finalize(Reservation $reservation, string $status, ?string $reason = null): bool
+    {
+        return DB::transaction(function () use ($reservation, $status, $reason) {
             $lockedReservation = Reservation::where('id', $reservation->id)->lockForUpdate()->firstOrFail();
 
             if ($lockedReservation->status !== Reservation::STATUS_ACTIVE) {
-                return; // Already resolved
+                return false; // Already resolved
             }
 
             $lockedOffer = Offer::where('id', $lockedReservation->offer_id)->lockForUpdate()->firstOrFail();
@@ -113,10 +160,7 @@ class InventoryReservationService
             $newReserved = max(0, (float)$lockedOffer->reserved_quantity - $quantity);
             $newAvailable = (float)$lockedOffer->available_quantity + $quantity;
 
-            $offerStatus = $lockedOffer->status;
-            if ($offerStatus === Offer::STATUS_FULLY_RESERVED && $newAvailable > 0) {
-                $offerStatus = Offer::STATUS_ACTIVE;
-            }
+            $offerStatus = Offer::statusAfterQuantityChange($lockedOffer->status, $newAvailable);
 
             $lockedOffer->update([
                 'available_quantity' => $newAvailable,
@@ -124,11 +168,14 @@ class InventoryReservationService
                 'status' => $offerStatus,
             ]);
 
-            $lockedReservation->update([
-                'status' => Reservation::STATUS_CANCELLED,
-                'cancelled_at' => Carbon::now(),
-                'cancellation_reason' => $reason,
-            ]);
+            $resolution = ['status' => $status];
+
+            if ($status === Reservation::STATUS_CANCELLED) {
+                $resolution['cancelled_at'] = Carbon::now();
+                $resolution['cancellation_reason'] = $reason;
+            }
+
+            $lockedReservation->update($resolution);
 
             // Dispatch webhook
             $this->webhookDispatcher->dispatch('inventory.released', [
@@ -136,30 +183,39 @@ class InventoryReservationService
                 'reservation_number' => $lockedReservation->reservation_number,
                 'offer_id' => $lockedOffer->id,
                 'quantity' => $quantity,
-                'reason' => $reason,
+                'reason' => $reason ?? 'Reservation timed out',
             ], $lockedOffer->seller_organization_id);
+
+            return true;
         });
     }
 
     /**
      * Sweeps and expires all timed-out reservations, restoring their stock.
+     *
+     * The grace window matters because the sweep runs on the same minute a deal
+     * may be being confirmed: a hold is only released once it is provably dead,
+     * and never while its owner is mid-transaction.
      */
     public function sweepExpiredReservations(): int
     {
         $expiredCount = 0;
-        $now = Carbon::now();
+        $cutoff = Carbon::now()->subSeconds(
+            max(0, (int) config('hassal.reservations.expiry_grace_seconds'))
+        );
 
         $expiredReservations = Reservation::where('status', Reservation::STATUS_ACTIVE)
-            ->where('expires_at', '<', $now)
+            ->where('expires_at', '<', $cutoff)
             ->get();
 
         foreach ($expiredReservations as $reservation) {
             try {
-                $this->release($reservation, 'Reservation expired due to timeout window');
-                $reservation->update(['status' => Reservation::STATUS_EXPIRED]);
+                $this->expire($reservation);
                 $expiredCount++;
             } catch (Exception $e) {
-                // Log and continue to sweep other reservations
+                // One poisoned row must not stop the rest of the shelf from
+                // coming back to market — but it must not vanish silently.
+                report($e);
             }
         }
 

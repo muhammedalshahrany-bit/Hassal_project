@@ -1,368 +1,511 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Scale, 
-  AlertTriangle, 
-  CheckCircle2, 
-  Clock, 
-  FileText, 
-  ShieldAlert, 
-  HelpCircle,
-  XCircle
-} from 'lucide-react';
-import { api } from '../lib/api';
-import type { Dispute, Deal } from '../types';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Scale, AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react';
+import { api, fieldError } from '../lib/api';
+import { formatMoney, usePlatformConfig } from '../lib/config';
+import { formatDateTime, getLocale } from '../lib/i18n';
+import { BannerView, DecisionButton, ErrorNote, LabeledSelect, PanelShell, TextInput, type Banner } from './panel';
+import type { Deal, Dispute, DisputeStatus } from '../types';
+
+/**
+ * Disputes: what a party to a deal can raise, and what the platform can decide.
+ *
+ * Two things this screen refuses to do. It does not describe money the platform
+ * is holding: filing a dispute moves the deal to DISPUTED and records a claim —
+ * no endpoint here touches funds, so no wording may imply an escrow that is not
+ * enabled (§27). And it does not invent vocabularies: the reason is the filer's
+ * own sentence because the server stores a string, while the decision and the
+ * status are exactly the constants the server accepts and returns.
+ *
+ * The arbitration control is shown to a platform account because the controller
+ * requires `hasRole('SuperAdmin')`; the list itself is scoped server-side to the
+ * organizations that are party to each dispute (§36).
+ */
+
+const STATUS_LABELS: Record<DisputeStatus, string> = {
+  OPEN: 'مفتوح',
+  UNDER_REVIEW: 'قيد المراجعة',
+  EVIDENCE_REQUIRED: 'مطلوب فيه أدلة',
+  RESOLVED_REFUND: 'قرار: استرداد كامل',
+  RESOLVED_RELEASE: 'قرار: إطلاق للمستحقات',
+  RESOLVED_PARTIAL: 'قرار: تسوية جزئية',
+  REJECTED: 'قرار: رد النزاع',
+};
+
+const OPEN_STATUSES: DisputeStatus[] = ['OPEN', 'UNDER_REVIEW', 'EVIDENCE_REQUIRED'];
+
+/** The four values `disputes/{id}/resolve` will accept. */
+const DECISIONS: { value: 'RESOLVED_REFUND' | 'RESOLVED_RELEASE' | 'RESOLVED_PARTIAL' | 'REJECTED'; label: string }[] = [
+  { value: 'RESOLVED_REFUND', label: 'استرداد كامل للمشتري' },
+  { value: 'RESOLVED_PARTIAL', label: 'تسوية جزئية: يُرد جزء من المبلغ' },
+  { value: 'RESOLVED_RELEASE', label: 'إطلاق مستحقات البائع' },
+  { value: 'REJECTED', label: 'رد النزاع' },
+];
 
 interface DisputesViewProps {
   currentPersonaId: string;
   initialDealId?: number | null;
+  /** The resolve endpoint checks `hasRole('SuperAdmin')`, so the console mirrors it. */
+  isPlatformAdmin: boolean;
+  onNotify?: (message: string) => void;
 }
 
-export const DisputesView: React.FC<DisputesViewProps> = ({ currentPersonaId, initialDealId }) => {
+export const DisputesView: React.FC<DisputesViewProps> = ({ currentPersonaId, initialDealId, isPlatformAdmin, onNotify }) => {
+  const config = usePlatformConfig();
   const [disputes, setDisputes] = useState<Dispute[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);
+  const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [banner, setBanner] = useState<Banner>(null);
+  const [statusFilter, setStatusFilter] = useState('');
 
-  // Open Dispute Modal
   const [showOpenModal, setShowOpenModal] = useState(false);
   const [selectedDealId, setSelectedDealId] = useState<number | ''>(initialDealId || '');
-  const [disputeReason, setDisputeReason] = useState('damaged_packaging');
-  const [claimedAmount, setClaimedAmount] = useState<number>(1000);
-  const [disputeNotes, setDisputeNotes] = useState('');
+  const [reason, setReason] = useState('');
+  const [description, setDescription] = useState('');
+  const [claimedAmount, setClaimedAmount] = useState('');
+  const [evidenceUrls, setEvidenceUrls] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Arbitrate Modal (Admin only)
-  const [arbitrateDisputeItem, setArbitrateDisputeItem] = useState<Dispute | null>(null);
-  const [arbitrateDecision, setArbitrateDecision] = useState<'full_refund' | 'partial_refund' | 'dismiss_dispute'>('full_refund');
-  const [arbitrateRefundAmount, setArbitrateRefundAmount] = useState<number>(0);
-  const [arbitrateNotes, setArbitrateNotes] = useState('');
+  const [deciding, setDeciding] = useState<Dispute | null>(null);
+  const [decision, setDecision] = useState<(typeof DECISIONS)[number]['value']>('RESOLVED_REFUND');
+  const [refundAmount, setRefundAmount] = useState('');
+  const [notes, setNotes] = useState('');
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const dRes = await api.getDeals();
-      if (dRes.success && dRes.data) {
-        setDeals(dRes.data);
-        const disps: Dispute[] = [];
-        dRes.data.forEach((d) => {
-          if (d.dispute) disps.push(d.dispute);
+  const loadData = useCallback(
+    async (page = 1) => {
+      setLoading(true);
+      const [disputesRes, dealsRes] = await Promise.all([
+        api.getDisputes({ status: statusFilter || undefined, page }),
+        api.getDeals({ page: 1 }),
+      ]);
+
+      if (disputesRes.success) {
+        setDisputes((disputesRes.data ?? []) as Dispute[]);
+        setTotal(disputesRes.pagination?.total_items ?? null);
+        setBanner(null);
+      } else {
+        setBanner({
+          kind: 'error',
+          text:
+            disputesRes.error_code === 'TENANT_REQUIRED'
+              ? 'سجل النزاعات مرتبط بمنشأة: اختر سياق منشأة أولًا.'
+              : disputesRes.message || 'تعذّر قراءة سجل النزاعات',
         });
-        setDisputes(disps);
       }
-    } catch (err) {
-      console.error(err);
-    } finally {
+
+      if (dealsRes.success) setDeals((dealsRes.data ?? []) as Deal[]);
       setLoading(false);
-    }
-  };
+    },
+    [statusFilter]
+  );
 
   useEffect(() => {
-    loadData();
+    void loadData(1);
+  }, [loadData]);
+
+  useEffect(() => {
     if (initialDealId) {
       setSelectedDealId(initialDealId);
       setShowOpenModal(true);
     }
   }, [currentPersonaId, initialDealId]);
 
-  const handleOpenDispute = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const openDispute = async (event: React.FormEvent) => {
+    event.preventDefault();
     if (!selectedDealId) return;
     setSubmitting(true);
+    setBanner(null);
 
-    const res = await api.openDispute(Number(selectedDealId), {
-      reason: disputeReason,
-      claimed_amount: claimedAmount,
-      notes: disputeNotes,
+    const urls = evidenceUrls
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    const res = await api.openDispute({
+      deal_id: Number(selectedDealId),
+      reason: reason.trim(),
+      description: description.trim(),
+      claimed_amount: Number(claimedAmount),
+      evidence_urls: urls.length ? urls : undefined,
     });
 
     setSubmitting(false);
     if (res.success) {
       setShowOpenModal(false);
-      loadData();
+      setReason('');
+      setDescription('');
+      setClaimedAmount('');
+      setEvidenceUrls('');
+      onNotify?.('سُجّل النزاع وتحوّلت الصفقة إلى حالة نزاع');
+      await loadData(1);
     } else {
-      alert(res.message);
+      setBanner({
+        kind: 'error',
+        text:
+          fieldError(res, 'claimed_amount') ||
+          fieldError(res, 'reason') ||
+          fieldError(res, 'description') ||
+          fieldError(res, 'deal_id') ||
+          res.message ||
+          'تعذّر تسجيل النزاع',
+      });
     }
   };
 
-  const handleArbitrate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!arbitrateDisputeItem) return;
+  const resolveDispute = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!deciding) return;
     setSubmitting(true);
+    setBanner(null);
 
-    const res = await api.arbitrateDispute(arbitrateDisputeItem.id, {
-      decision: arbitrateDecision,
-      refunded_amount: arbitrateDecision === 'dismiss_dispute' ? 0 : arbitrateRefundAmount,
-      resolution_notes: arbitrateNotes,
+    const res = await api.resolveDispute(deciding.id, {
+      decision,
+      refunded_amount: decision === 'RESOLVED_PARTIAL' || decision === 'RESOLVED_REFUND' ? Number(refundAmount || 0) : 0,
+      notes: notes.trim(),
     });
 
     setSubmitting(false);
     if (res.success) {
-      setArbitrateDisputeItem(null);
-      loadData();
+      setDeciding(null);
+      setNotes('');
+      setRefundAmount('');
+      onNotify?.('سُجّل قرار المنصة على النزاع');
+      await loadData(1);
     } else {
-      alert(res.message);
+      setBanner({
+        kind: 'error',
+        text:
+          fieldError(res, 'notes') ||
+          fieldError(res, 'decision') ||
+          res.message ||
+          'تعذّر تسجيل القرار',
+      });
     }
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-black text-slate-900 font-serif">مركز فض النزاعات والتحكيم التجاري</h2>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-800 border border-rose-200">
-              Arbitration Center
-            </span>
-          </div>
-          <p className="text-xs text-slate-500 pt-0.5">
-            في حال وجود تلف بالبضاعة أو عدم مطابقة للمواصفات خلال مهلة الفحص (48 ساعة)، يتم تعليق تحويل الأمانات والتحكيم العادل.
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">
+      <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h2 className="text-lg font-black text-slate-900">نزاعات الصفقات</h2>
+          <p className="text-xs leading-relaxed text-slate-500 pt-0.5">
+            فتح النزاع حقٌّ لطرفَي الصفقة ويُنقل إليها حالة «نزاع»؛ أما قرار التسوية فقرار المنصة ويُنفَّذ في الخادم.{' '}
+            {config.inspectionWindowHours === null
+              ? 'مهلة الفحص لم تضبط بعد في إعدادات المنصة.'
+              : `مهلة الفحص المضبوطة: ${config.inspectionWindowHours} ساعة من الاستلام.`}
           </p>
         </div>
-
-        <button
-          onClick={() => {
-            setShowOpenModal(true);
-            if (deals.length > 0 && !selectedDealId) setSelectedDealId(deals[0].id);
-          }}
-          className="bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer"
-        >
-          <AlertTriangle className="w-4 h-4" />
-          <span>فتح نزاع تجاري لصفقة</span>
-        </button>
+        <div className="grid grid-cols-1 items-end gap-2 sm:grid-cols-[minmax(0,12rem)_auto_auto]">
+          <LabeledSelect
+            label="الحالة"
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={[
+              { value: '', label: 'كل الحالات' },
+              ...Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label })),
+            ]}
+          />
+          <DecisionButton onClick={() => void loadData(1)} busy={loading}>
+            <RefreshCw className="w-3.5 h-3.5" />
+            تحديث السجل
+          </DecisionButton>
+          <button
+            onClick={() => setShowOpenModal(true)}
+            className="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-rose-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-rose-700"
+          >
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <span>فتح نزاع على صفقة</span>
+          </button>
+        </div>
       </div>
 
-      {/* Disputes List */}
-      {loading ? (
-        <div className="py-20 text-center text-slate-500 text-xs">جاري تحميل سجل النزاعات...</div>
-      ) : disputes.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-xl p-12 text-center space-y-3">
-          <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto" />
-          <h3 className="text-sm font-bold text-slate-800">لا توجد نزاعات مفتوحة حالياً</h3>
-          <p className="text-xs text-slate-500">كافة الصفقات تم تسويتها واستلامها برضا الطرفين دون مطالبات معلقة.</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {disputes.map((disp) => {
-            const deal = deals.find((d) => d.id === disp.deal_id);
+      <BannerView banner={banner} />
 
-            return (
-              <div
-                key={disp.id}
-                className="bg-white border border-slate-200 rounded-xl p-5 space-y-3 shadow-2xs hover:border-slate-300 transition-all"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-slate-900">نزاع #{disp.id}</span>
-                      <span className="text-xs font-mono font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded">
-                        صفقة: {deal?.deal_number || `ID ${disp.deal_id}`}
-                      </span>
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          disp.status === 'opened' || disp.status === 'under_review'
-                            ? 'bg-amber-100 text-amber-800'
-                            : disp.status === 'resolved_refund'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-slate-100 text-slate-700'
-                        }`}
+      <PanelShell
+        title="سجل النزاعات"
+        hint="كل صف هو مطالبة مسجّلة باسم منشأة وحساب، بما قرره الخادم عليها. لا تُعرض هنا أي أرقام عن أموال محتجزة أو مبالغ مُحوَّلة: المنصة لا تشغل حساب ضمان ما لم تُفعَّله."
+      >
+        {total !== null ? (
+          <p className="text-[11px] text-slate-500">
+            {/* The server's total for the filter applied; the list below is the first
+                page it sent, and the screen says so rather than implying more. */}
+            {total} نزاع بالفلتر الحالي — تُعرض هنا نتائج الصفحة الأولى منها
+          </p>
+        ) : null}
+
+        {loading ? (
+          <p className="text-xs text-slate-500">…</p>
+        ) : disputes.length === 0 ? (
+          <div className="py-10 text-center space-y-2">
+            <CheckCircle2 className="w-9 h-9 text-emerald-500 mx-auto" />
+            <p className="text-xs text-slate-500">لا نزاعات بهذه المعايير للمنشآت التي يقرأها هذا الحساب.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {disputes.map((dispute) => {
+              const currency = dispute.deal?.currency_code ?? null;
+              return (
+                <div key={dispute.id} className="min-w-0 space-y-2 rounded-lg border border-slate-200 p-3 sm:p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-slate-900">{dispute.dispute_number}</span>
+                        <span
+                          className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                            OPEN_STATUSES.includes(dispute.status)
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-slate-100 text-slate-700'
+                          }`}
+                        >
+                          {STATUS_LABELS[dispute.status] ?? dispute.status}
+                        </span>
+                        {dispute.deal ? (
+                          <span className="whitespace-nowrap rounded bg-emerald-50 px-2 py-0.5 font-mono text-[10px] text-emerald-800">
+                            {dispute.deal.deal_number}
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="text-xs text-slate-700">
+                        السبب: <strong className="break-words">{dispute.reason}</strong>
+                      </p>
+                      {dispute.description ? (
+                        <p className="text-[11px] leading-relaxed text-slate-500">{dispute.description}</p>
+                      ) : null}
+                      <p className="text-[11px] text-slate-500">
+                        المطالبة: {formatMoney(dispute.claimed_amount, currency)} · تاريخ التسجيل:{' '}
+                        {dispute.created_at ? formatDateTime(dispute.created_at, getLocale()) || dispute.created_at : '—'}
+                      </p>
+                    </div>
+
+                    {isPlatformAdmin && OPEN_STATUSES.includes(dispute.status) ? (
+                      <button
+                        onClick={() => {
+                          setDeciding(dispute);
+                          setRefundAmount(String(dispute.claimed_amount));
+                        }}
+                        className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-700 sm:w-auto"
                       >
-                        {disp.status === 'opened'
-                          ? 'قيد التحكيم ودراسة الأدلة'
-                          : disp.status === 'resolved_refund'
-                          ? 'تم التحكيم: استرداد للمشتري'
-                          : disp.status}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-600 pt-1">
-                      السبب: <strong>{disp.reason}</strong> • المبلغ المطالب به: <strong>{disp.claimed_amount} ر.س</strong>
-                    </p>
+                        <Scale className="w-3.5 h-3.5 shrink-0" />
+                        <span>تسجيل قرار المنصة</span>
+                      </button>
+                    ) : null}
                   </div>
 
-                  {/* Arbitration button for Admin persona */}
-                  {currentPersonaId === 'admin' && (disp.status === 'opened' || disp.status === 'under_review') && (
-                    <button
-                      onClick={() => {
-                        setArbitrateDisputeItem(disp);
-                        setArbitrateRefundAmount(disp.claimed_amount);
-                      }}
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1"
-                    >
-                      <Scale className="w-3.5 h-3.5" />
-                      <span>إصدار قرار تحكيمي ملزم</span>
-                    </button>
-                  )}
-                </div>
-
-                {disp.resolution_decision && (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-xs space-y-1">
-                    <div className="font-bold text-emerald-900">قرار لجنة التحكيم المعتمد:</div>
-                    <div className="text-emerald-800">
-                      القرار: {disp.resolution_decision} • المبلغ المسترد: {disp.refunded_amount} ر.س
+                  {dispute.resolution_decision ? (
+                    <div className="min-w-0 space-y-1 rounded-lg border border-slate-200 bg-slate-50 p-3 text-[11px]">
+                      <div className="font-bold text-slate-800">
+                        القرار المسجَّل: {STATUS_LABELS[dispute.resolution_decision as DisputeStatus] ?? dispute.resolution_decision}
+                      </div>
+                      <div className="text-slate-600">
+                        المبلغ المقرَّر: {formatMoney(dispute.refunded_amount ?? 0, currency)}
+                        {dispute.resolved_at && formatDateTime(dispute.resolved_at, getLocale())
+                          ? ` · ${formatDateTime(dispute.resolved_at, getLocale())}`
+                          : ''}
+                      </div>
+                      {dispute.resolution_notes ? (
+                        <p className="break-words leading-relaxed text-slate-600">المسببات: {dispute.resolution_notes}</p>
+                      ) : null}
                     </div>
-                    {disp.resolution_notes && (
-                      <div className="text-[11px] text-emerald-700">ملاحظات: {disp.resolution_notes}</div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Open Dispute Modal */}
-      {showOpenModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-900">رفع طلب نزاع تجاري وتعليق الأمانات</h3>
-              <button onClick={() => setShowOpenModal(false)} className="text-slate-400 hover:text-slate-700 font-bold">
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleOpenDispute} className="space-y-3.5 text-xs">
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700">اختر الصفقة المتنازع عليها:</label>
-                <select
-                  value={selectedDealId}
-                  onChange={(e) => setSelectedDealId(Number(e.target.value))}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 focus:bg-white focus:outline-none"
-                >
-                  {deals.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.deal_number} ({d.total_amount} ر.س) - {d.seller_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700">سبب النزاع والمطالبة:</label>
-                <select
-                  value={disputeReason}
-                  onChange={(e) => setDisputeReason(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 focus:bg-white focus:outline-none"
-                >
-                  <option value="damaged_packaging">تلف في التغليف أو الكراتين أثناء النقل</option>
-                  <option value="spec_mismatch">عدم مطابقة المواصفات أو الوزن المسجل</option>
-                  <option value="near_expiry_mismatch">تاريخ انتهاء الصلاحية لا يطابق العرض</option>
-                  <option value="quantity_deficit">نقص في عدد الوحدات المسلمة</option>
-                  <option value="temperature_break">خلل في التبريد وسلسلة الإمداد</option>
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700">المبلغ المطالب باسترداده (ر.س):</label>
-                <input
-                  type="number"
-                  value={claimedAmount}
-                  onChange={(e) => setClaimedAmount(Number(e.target.value))}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-bold focus:bg-white focus:outline-none"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700">شرح وتفاصيل الأدلة والتقرير الفني:</label>
-                <textarea
-                  rows={3}
-                  required
-                  value={disputeNotes}
-                  onChange={(e) => setDisputeNotes(e.target.value)}
-                  placeholder="بيان رقم الباليت، صور الفحص عند استلام البضاعة في المستودع..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 focus:bg-white focus:outline-none"
-                ></textarea>
-              </div>
-
-              <div className="flex items-center gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowOpenModal(false)}
-                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl font-semibold"
-                >
-                  إلغاء
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="flex-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white py-2.5 rounded-xl font-bold shadow-md cursor-pointer"
-                >
-                  {submitting ? 'جاري الرفع...' : 'تأكيد فتح النزاع وتعليق الصرف'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Arbitrate Modal (Admin) */}
-      {arbitrateDisputeItem && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-900">إصدار حكم التحكيم في نزاع #{arbitrateDisputeItem.id}</h3>
-              <button onClick={() => setArbitrateDisputeItem(null)} className="text-slate-400 hover:text-slate-700 font-bold">
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleArbitrate} className="space-y-3 text-xs">
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700">قرار التحكيم النهائي:</label>
-                <select
-                  value={arbitrateDecision}
-                  onChange={(e: any) => setArbitrateDecision(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 focus:bg-white focus:outline-none"
-                >
-                  <option value="full_refund">استرداد كامل المبلغ للمشتري (إرجاع البضاعة)</option>
-                  <option value="partial_refund">تسوية جزئية وتعويض المشتري بجزء من المبلغ</option>
-                  <option value="dismiss_dispute">رد النزاع وإطلاق مستحقات البائع بالكامل</option>
-                </select>
-              </div>
-
-              {arbitrateDecision !== 'dismiss_dispute' && (
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700">المبلغ المقرر رده للمشتري (ر.س):</label>
-                  <input
-                    type="number"
-                    value={arbitrateRefundAmount}
-                    onChange={(e) => setArbitrateRefundAmount(Number(e.target.value))}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-bold focus:bg-white focus:outline-none"
-                  />
+                  ) : null}
                 </div>
-              )}
-
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700">مسببات القرار والسند القانوني:</label>
-                <textarea
-                  rows={3}
-                  value={arbitrateNotes}
-                  onChange={(e) => setArbitrateNotes(e.target.value)}
-                  placeholder="بناءً على تقرير المعاينة وصور الشحنة..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 focus:bg-white focus:outline-none"
-                ></textarea>
-              </div>
-
-              <div className="flex items-center gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setArbitrateDisputeItem(null)}
-                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl font-semibold"
-                >
-                  إلغاء
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="flex-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white py-2.5 rounded-xl font-bold shadow-md cursor-pointer"
-                >
-                  اعتماد وتنفيذ التسوية
-                </button>
-              </div>
-            </form>
+              );
+            })}
           </div>
-        </div>
-      )}
+        )}
+      </PanelShell>
+
+      {showOpenModal ? (
+        <ModalShell title="فتح نزاع على صفقة" onClose={() => setShowOpenModal(false)}>
+          <form onSubmit={openDispute} className="space-y-3 text-xs">
+            <label className="block min-w-0 space-y-1">
+              <span className="font-bold text-slate-700">الصفقة</span>
+              <select
+                value={selectedDealId}
+                onChange={(e) => setSelectedDealId(Number(e.target.value))}
+                className="w-full min-w-0 rounded-lg border border-slate-200 bg-slate-50 p-2 focus:bg-white focus:outline-none"
+              >
+                <option value="">— اختر صفقة —</option>
+                {deals.map((deal) => (
+                  <option key={deal.id} value={deal.id}>
+                    {deal.deal_number} · {formatMoney(deal.buyer_total_amount, deal.currency_code)} · {deal.status}
+                  </option>
+                ))}
+              </select>
+              {!deals.length ? (
+                <span className="block text-[10px] text-slate-400">
+                  لم تصل صفقات إلى هذه الشاشة بعد؛ لا يمكن فتح نزاع بلا صفقة مسجَّلة.
+                </span>
+              ) : null}
+            </label>
+
+            <TextInput label="سبب النزاع (سطر واحد)" value={reason} onChange={setReason} wide placeholder="نقص في عدد الوحدات المسلمة" />
+
+            <label className="block min-w-0 space-y-1">
+              <span className="font-bold text-slate-700">شرح المطالبة</span>
+              <textarea
+                rows={3}
+                required
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="ما الذي وُجد مخالفًا، وبأي وثيقة أو تقرير استلام…"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 p-2 focus:bg-white focus:outline-none"
+              />
+            </label>
+
+            <TextInput
+              label="المبلغ المطالب به (بعملة الصفقة)"
+              value={claimedAmount}
+              onChange={setClaimedAmount}
+              placeholder="0"
+              wide
+            />
+
+            <label className="block min-w-0 space-y-1">
+              <span className="font-bold text-slate-700">روابط الأدلة (اختياري، سطر لكل رابط)</span>
+              <textarea
+                rows={2}
+                value={evidenceUrls}
+                onChange={(e) => setEvidenceUrls(e.target.value)}
+                placeholder="https://…"
+                dir="ltr"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 p-2 focus:bg-white focus:outline-none"
+              />
+            </label>
+
+            <ErrorNote text="الإرسال يسجّل المطالبة ويحوّل الصفقة إلى حالة نزاع لدى الطرفين. لا يوقف تحويل أموال ولا يمسّ أي حساب ضمان." />
+
+            <SubmitRow onCancel={() => setShowOpenModal(false)} submitting={submitting} label="تسجيل النزاع" />
+          </form>
+        </ModalShell>
+      ) : null}
+
+      {deciding ? (
+        <ModalShell title={`قرار المنصة في ${deciding.dispute_number}`} onClose={() => setDeciding(null)}>
+          <form onSubmit={resolveDispute} className="space-y-3 text-xs">
+            <p className="min-w-0 text-[11px] leading-relaxed text-slate-500">
+              المطالبة المسجَّلة: {formatMoney(deciding.claimed_amount, deciding.deal?.currency_code ?? null)} — والسبب: {deciding.reason}
+            </p>
+
+            <LabeledSelect
+              label="القرار"
+              value={decision}
+              onChange={(value) => setDecision(value as (typeof DECISIONS)[number]['value'])}
+              options={DECISIONS.map((item) => ({ value: item.value, label: item.label }))}
+            />
+            {/* What the chosen value does, in the console's own words about the
+                four constants `disputes/{id}/resolve` accepts. */}
+            <p className="text-[10px] font-bold leading-relaxed text-slate-600">
+              {decision === 'RESOLVED_REFUND'
+                ? 'يُسجَّل القرار «استرداد كامل للمشتري» وتنتقل حالة النزاع إليه؛ المبلغ أدناه هو ما تقرّه المنصة مستردًا.'
+                : decision === 'RESOLVED_PARTIAL'
+                  ? 'يُسجَّل قرار تسوية جزئية بالمبلغ الذي تكتبه أدناه؛ والباقي من المطالبة يبقى على حاله في السجل.'
+                  : decision === 'RESOLVED_RELEASE'
+                    ? 'يُسجَّل قرار إطلاق مستحقات البائع؛ لا مبلغ استرداد مع هذا القرار.'
+                    : 'يُسجَّل رد النزاع؛ لا تسوية ولا مبلغ، وتنتقل الصفقة إلى حالة النزاع المردود.'}
+            </p>
+
+            {decision === 'RESOLVED_PARTIAL' || decision === 'RESOLVED_REFUND' ? (
+              <TextInput
+                label="المبلغ المقرَّر رده (بعملة الصفقة)"
+                value={refundAmount}
+                onChange={setRefundAmount}
+                placeholder="0"
+                wide
+              />
+            ) : null}
+
+            <label className="block min-w-0 space-y-1">
+              <span className="font-bold text-slate-700">مسببات القرار (مطلوبة)</span>
+              <textarea
+                rows={3}
+                required
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="ما الذي بُني عليه القرار، وما الأدلة التي اعتُمدت…"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 p-2 focus:bg-white focus:outline-none"
+              />
+            </label>
+
+            <ErrorNote text="القرار يُسجَّل باسم الحساب المتخذ له ويُنقل أثره إلى حالة الصفقة في سجل المنصة؛ وهو قرار داخلي لا نسبة إلى جهة تحكيم خارجية." />
+
+            <SubmitRow onCancel={() => setDeciding(null)} submitting={submitting} label="اعتماد القرار" />
+          </form>
+        </ModalShell>
+      ) : null}
     </div>
   );
 };
+
+/**
+ * A decision sheet, not a centered dialog.
+ *
+ * On a phone a centered modal puts its own close button and its submit button
+ * under the thumb's dead zone, and a long form has no scroll of its own. So the
+ * panel rises from the bottom, scrolls inside `92dvh`, and closes on the backdrop
+ * or Escape — the form itself is never reset by an accidental tap because the
+ * parent keeps its state, not this shell.
+ */
+const ModalShell: React.FC<{ title: string; onClose: () => void; children: React.ReactNode }> = ({
+  title,
+  onClose,
+  children,
+}) => {
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 sm:items-center sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        onClick={(event) => event.stopPropagation()}
+        className="max-h-[92dvh] w-full space-y-4 overflow-y-auto rounded-t-2xl border border-slate-200 bg-white p-4 shadow-2xl sm:max-w-lg sm:rounded-2xl sm:p-6"
+      >
+        <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <h3 className="min-w-0 text-base font-bold text-slate-900">{title}</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="إغلاق"
+            className="shrink-0 cursor-pointer rounded-lg border border-slate-200 px-2.5 py-1 text-sm font-bold text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+          >
+            ✕
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+};
+
+const SubmitRow: React.FC<{ onCancel: () => void; submitting: boolean; label: string }> = ({
+  onCancel,
+  submitting,
+  label,
+}) => (
+  <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
+    <button
+      type="button"
+      onClick={onCancel}
+      className="flex-1 cursor-pointer rounded-xl bg-slate-100 py-2.5 font-semibold text-slate-700 hover:bg-slate-200"
+    >
+      إلغاء
+    </button>
+    <button
+      type="submit"
+      disabled={submitting}
+      className="flex-1 cursor-pointer rounded-xl bg-slate-900 py-2.5 font-bold text-white hover:bg-slate-800 disabled:opacity-50"
+    >
+      {submitting ? 'جارٍ الإرسال…' : label}
+    </button>
+  </div>
+);

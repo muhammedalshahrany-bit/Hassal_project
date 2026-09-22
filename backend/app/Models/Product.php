@@ -57,4 +57,15 @@ class Product extends Model
     {
         return $this->hasMany(ProductVariant::class);
     }
+
+    /**
+     * Photographed files, ordered as the seller arranged them.
+     *
+     * This relation, not the single `image_url` column, is what the listing
+     * reads: `image_url` has no upload path and can only hold one string.
+     */
+    public function images(): HasMany
+    {
+        return $this->hasMany(ProductImage::class)->orderBy('sort_order')->orderBy('id');
+    }
 }

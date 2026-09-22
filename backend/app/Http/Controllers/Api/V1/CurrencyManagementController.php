@@ -5,11 +5,16 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\Currency;
+use App\Services\SystemSettingsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class CurrencyManagementController extends Controller
 {
+    public function __construct(
+        protected SystemSettingsService $settingsService
+    ) {}
+
     public function index(): JsonResponse
     {
         $currencies = Currency::orderBy('is_default', 'desc')->orderBy('iso_code', 'asc')->get();
@@ -73,6 +78,11 @@ class CurrencyManagementController extends Controller
             'rate_updated_at' => now(),
             'rate_updated_by_user_id' => request()->user()->id,
         ]);
+
+        // The setting is what every price is labelled with; the flag above is
+        // what rates are measured against. One action, both updated, or the
+        // platform quotes in a currency it does not convert from.
+        $this->settingsService->set('platform.default_currency', $currency->iso_code, 'string', 'platform');
 
         return ApiResponse::success($currency, 'Default base currency updated successfully');
     }

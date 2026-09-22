@@ -10,14 +10,15 @@ use Illuminate\Console\Command;
 class ProcessWebhooksCommand extends Command
 {
     protected $signature = 'app:process-webhooks {--limit=50 : Maximum number of failed deliveries to retry}';
-    protected $description = 'Retries pending or failed webhook deliveries with exponential backoff.';
+    protected $description = 'Retries failed webhook deliveries — one attempt per scheduler tick, up to the configured attempt cap (no backoff delay).';
 
     public function handle(WebhookDispatcherService $dispatcher): int
     {
+        $maxAttempts = (int) config('hassal.webhooks.max_attempts', 5);
         $limit = (int)$this->option('limit');
         $deliveries = WebhookDelivery::with('webhook')
             ->where('status', WebhookDelivery::STATUS_FAILED)
-            ->where('attempt', '<', 5)
+            ->where('attempt', '<', $maxAttempts)
             ->whereHas('webhook', fn($q) => $q->where('is_active', true))
             ->orderBy('created_at', 'asc')
             ->limit($limit)
@@ -26,8 +27,10 @@ class ProcessWebhooksCommand extends Command
         $this->info("Found {$deliveries->count()} failed webhook deliveries to retry.");
 
         foreach ($deliveries as $delivery) {
-            $delivery->increment('attempt');
-            $dispatcher->sendDelivery($delivery->webhook, $delivery->event_name, $delivery->payload['data'] ?? []);
+            // retryDelivery() counts the attempt and updates this same row.
+            // Sending through sendDelivery() used to create a new row each
+            // time, so one failing endpoint kept generating retryable work.
+            $dispatcher->retryDelivery($delivery);
         }
 
         $this->info('Webhook retry processing completed.');

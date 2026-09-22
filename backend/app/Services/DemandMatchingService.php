@@ -17,16 +17,17 @@ use Illuminate\Support\Facades\DB;
  * explicitly so the result is fully explainable to the buyer.
  *
  * Scoring breakdown (max 100):
- *   - Product match (same product_id)         : 30 pts  [mandatory gate]
- *   - Category match                          : 15 pts
- *   - Quantity fully available                : 15 pts
- *   - Quantity partially available            :  8 pts
- *   - Price within target                     : 15 pts
- *   - Price slightly above target (≤ 10%)     :  5 pts
- *   - City/delivery location match            : 10 pts
- *   - Fulfillment method compatible           :  8 pts
- *   - Offer freshness (published ≤ 7 days)    :  5 pts
- *   - Offer expires after demand date         :  5 pts  [bonus, not deducted]
+ *   - Same category as the demand                 : 30 pts  [mandatory gate]
+ *   - Quantity fully available                    : 15 pts
+ *   - Quantity partially available                :  8 pts
+ *   - Price within target                         : 15 pts
+ *   - Price slightly above target (≤ 10%)         :  5 pts
+ *   - City/delivery location match                : 10 pts
+ *   - Offer freshness (published ≤ 7 days)        :  5 pts
+ *   - Offer expires after demand date             :  5 pts  [bonus, not deducted]
+ *
+ * Fulfillment terms are reported as a fact but score nothing: a demand carries
+ * no delivery preference to compare them against.
  */
 class DemandMatchingService
 {
@@ -40,19 +41,33 @@ class DemandMatchingService
      */
     public function matchDemand(Demand $demand): Collection
     {
-        // Only load ACTIVE offers with stock; use cursor for large datasets
+        // Only load ACTIVE offers with stock, from a business still allowed to
+        // trade; use cursor for large datasets
         $offers = Offer::query()
             ->with(['warehouse', 'variant.product'])
+            ->tradable()
             ->where('status', Offer::STATUS_ACTIVE)
             ->where('available_quantity', '>', 0)
             ->whereNull('deleted_at')
             ->get();
 
-        $matches = collect();
+        // One row per (demand, offer) — the schema says so with a unique index —
+        // and a USED row has already produced a purchase request. Re-running the
+        // engine must not turn it back into an open opportunity, or the same
+        // shelf could be asked for twice from the same match.
+        $alreadyRequested = DemandMatch::where('demand_id', $demand->id)
+            ->where('status', DemandMatch::STATUS_USED)
+            ->pluck('offer_id')
+            ->all();
+
+        $matches = new Collection;
 
         foreach ($offers as $offer) {
             // Mandatory gates: product/category, active demand, quantity and MOQ.
-            if ($demand->status !== Demand::STATUS_OPEN || !$this->productCompatible($demand, $offer) || !$this->quantityCompatible($demand, $offer)) {
+            if ($demand->status !== Demand::STATUS_OPEN
+                || in_array((int) $offer->id, array_map('intval', $alreadyRequested), true)
+                || !$this->productCompatible($demand, $offer)
+                || !$this->quantityCompatible($demand, $offer)) {
                 continue;
             }
 
@@ -89,7 +104,30 @@ class DemandMatchingService
             $matches->push($match->fresh(['offer.warehouse', 'offer.variant.product']));
         }
 
+        // A match that stops being true has to stop being offered. The engine
+        // re-runs on demand, so any ACTIVE row this pass did not reproduce —
+        // the offer sold out, was paused, or moved out of price range — is
+        // invalidated rather than left for a buyer to act on next week.
+        // USED rows belong to a purchase request already and are not ours to undo.
+        $this->invalidateStaleMatches($demand, $matches);
+
         return $matches->sortByDesc('match_score')->values();
+    }
+
+    /**
+     * Retire ACTIVE match records the current pass did not reproduce.
+     *
+     * @param Collection<DemandMatch> $currentMatches
+     */
+    private function invalidateStaleMatches(Demand $demand, Collection $currentMatches): void
+    {
+        DemandMatch::where('demand_id', $demand->id)
+            ->where('status', DemandMatch::STATUS_ACTIVE)
+            ->whereNotIn('offer_id', $currentMatches->pluck('offer_id')->all())
+            ->update([
+                'status' => DemandMatch::STATUS_INVALIDATED,
+                'updated_at' => Carbon::now(),
+            ]);
     }
 
     /**
@@ -110,7 +148,7 @@ class DemandMatchingService
             })
             ->get();
 
-        $matches = collect();
+        $matches = new Collection;
 
         foreach ($demands as $demand) {
             if ($demand->status !== Demand::STATUS_OPEN || $offer->status !== Offer::STATUS_ACTIVE || !$this->productCompatible($demand, $offer) || !$this->quantityCompatible($demand, $offer)) {
@@ -200,18 +238,14 @@ class DemandMatchingService
         $score   = 0.0;
         $reasons = [];
 
-        // ── 1. Product / variant match (30 pts) ───────────────────────────────
-        if ($offer->variant && $offer->variant->product_id) {
-            $offerProductId = $offer->variant->product_id;
-
-            // Check if demand has a linked product (via category for now; extend with product_id field later)
-            if ($offer->category_id && $demand->category_id && $offer->category_id === $demand->category_id) {
-                $score += 30;
-                $reasons['product_match'] = 'المنتج ينتمي للتصنيف المطلوب';
-            }
-        } elseif ($offer->category_id && $demand->category_id && $offer->category_id === $demand->category_id) {
-            $score += 20;
-            $reasons['category_match'] = 'تصنيف المنتج مطابق';
+        // ── 1. Category match (30 pts) ────────────────────────────────────────
+        // A demand records a category, not a product id, so the strongest thing
+        // that can honestly be said about the goods is that they sit in the
+        // category the buyer asked for. This rule used to report itself as
+        // `product_match`, which claimed a precision the data does not have.
+        if ($offer->category_id && $demand->category_id && $offer->category_id === $demand->category_id) {
+            $score += 30;
+            $reasons['category_match'] = 'العرض ضمن التصنيف المطلوب';
         }
 
         // ── 2. Quantity compatibility (15 pts full / 8 pts partial) ──────────
@@ -226,13 +260,11 @@ class DemandMatchingService
             $score += 8;
             $reasons['quantity_partial'] = "كمية جزئية متوفرة ({$offerAvail} من {$demandNeeded})";
         }
-        // else: quantity < MOQ → product incompatible, but we still score other factors
 
-        // ── 3. MOQ check: if demand quantity < MOQ, deduct ───────────────────
-        if ($demandNeeded < $moq) {
-            $score -= 10;
-            $reasons['moq_gap'] = "الكمية المطلوبة ({$demandNeeded}) أقل من الحد الأدنى للطلب ({$moq})";
-        }
+        // A demand under the offer's minimum order quantity never reaches
+        // scoring: quantityCompatible() rejects it as a gate, which is the
+        // honest answer, instead of ranking it 10 points lower than a match
+        // that could not happen either.
 
         // ── 4. Price within target (15 pts / 5 pts near-miss) ─────────────────
         if ($demand->target_unit_price && $demand->target_unit_price > 0) {
@@ -260,10 +292,14 @@ class DemandMatchingService
             }
         }
 
-        // ── 6. Fulfillment method (8 pts) ─────────────────────────────────────
+        // ── 6. Fulfillment terms: recorded, not scored ────────────────────────
+        // A demand states *what* it needs and *where*, not how it wants goods
+        // delivered, so there is nothing here to compare the offer against.
+        // Scoring this used to hand every offer 8 points for filling in one
+        // field. The terms are shown as a fact the buyer can act on; they will
+        // earn points the day a demand carries a preference to match.
         if ($offer->delivery_terms) {
-            $score += 8;
-            $reasons['fulfillment_available'] = "طريقة التوصيل متاحة ({$offer->delivery_terms})";
+            $reasons['offer_delivery_terms'] = "العرض يسمح بـ ({$offer->delivery_terms})";
         }
 
         // ── 7. Offer freshness (5 pts if published within 7 days) ─────────────

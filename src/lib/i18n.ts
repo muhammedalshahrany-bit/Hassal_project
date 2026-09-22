@@ -17,16 +17,20 @@ export const translations = {
     seller: 'إدارة العروض والمستودعات',
     demands: 'طلبات الاحتياج (RFQ)',
     maps: 'خريطة المستودعات واللوجستيات',
-    gmail: 'بريد الصفقات (Gmail)',
-    ledger: 'المحفظة وحساب الضمان Escrow',
+    members: 'عضوية المنشأة',
+    catalog: 'كتالوج الأصناف',
+    orgProfile: 'ملف المنشأة والسجل',
+    profile: 'ملفي الشخصي',
+    ledger: 'دفتر الأستاذ والقيود',
     disputes: 'النزاعات والتحكيم',
-    admin: 'لوحة الإدارة و API Explorer',
-    activeUser: 'مستخدم موثّق',
+    admin: 'لوحة قرارات المنصة',
+    config: 'إعدادات المنصة والقدرات',
+    activeUser: 'مستخدم مسجّل',
     guest: 'غير مسجل',
-    chooseOrganization: 'سجّل الدخول لاختيار المنظمة',
     commercialContext: 'المنظور التجاري:',
     sessionOrganization: 'سياق المنظمة من الجلسة',
-    currency: 'العملة الأساسية: الريال اليمني (YER)',
+    currencyPrefix: 'العملة الأساسية:',
+    notConfigured: 'غير مهيّأة',
     reset: 'تحديث',
     loading: 'جارٍ التحميل...',
     mapTitle: 'خريطة المستودعات واللوجستيات',
@@ -47,16 +51,20 @@ export const translations = {
     seller: 'Offers & warehouses',
     demands: 'Demand board (RFQ)',
     maps: 'Warehouse logistics map',
-    gmail: 'Deal email (Gmail)',
-    ledger: 'Wallet & escrow',
+    members: 'Organization members',
+    catalog: 'Product catalog',
+    orgProfile: 'Organization & legal record',
+    profile: 'My profile',
+    ledger: 'Ledger & journal entries',
     disputes: 'Disputes & arbitration',
-    admin: 'Admin & API Explorer',
-    activeUser: 'Verified user',
+    admin: 'Platform decisions',
+    config: 'Platform settings & capabilities',
+    activeUser: 'Signed in',
     guest: 'Guest',
-    chooseOrganization: 'Sign in to choose an organization',
     commercialContext: 'Business context:',
     sessionOrganization: 'Organization session context',
-    currency: 'Base currency: Yemeni rial (YER)',
+    currencyPrefix: 'Base currency:',
+    notConfigured: 'not configured',
     reset: 'Refresh',
     loading: 'Loading...',
     mapTitle: 'Warehouse logistics map',
@@ -72,7 +80,58 @@ export function getLocale(): Locale {
   return localStorage.getItem(LOCALE_KEY) === 'en' ? 'en' : 'ar';
 }
 
-export function localizedField<T extends Record<string, unknown>>(item: T, field: string, locale: Locale): string {
-  const localized = item[`${field}_${locale}`] ?? item[`${field}_ar`] ?? item[`${field}_en`];
+export function localizedField<T extends object>(item: T, field: string, locale: Locale): string {
+  const columns = item as Record<string, unknown>;
+  const localized = columns[`${field}_${locale}`] ?? columns[`${field}_ar`] ?? columns[`${field}_en`];
   return typeof localized === 'string' ? localized : '';
+}
+
+function parseRecorded(value: string | null | undefined): { date: Date; dateOnly: boolean } | null {
+  if (!value) return null;
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
+  const date = new Date(dateOnly ? `${value}T00:00:00` : value);
+  return Number.isNaN(date.getTime()) ? null : { date, dateOnly };
+}
+
+/** The business day itself, without a clock — for expiry dates and due days. */
+export function formatDate(value: string | null | undefined, locale: Locale): string {
+  const parsed = parseRecorded(value);
+  if (!parsed) return '';
+  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar' : 'en-GB', {
+    calendar: 'gregory',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(parsed.date);
+}
+
+/**
+ * A recorded moment, readable.
+ *
+ * Dates arrive from the API in two shapes and they must not be confused: a
+ * date-only value (`2027-07-15`, a business day such as an expiry date) and a
+ * timestamp (`2027-07-15T21:00:00.000000Z`, an instant such as the end of a
+ * hold). The first is shown as a day; the second carries its time, because the
+ * countdown *is* the information.
+ *
+ * The calendar is pinned to Gregorian on purpose: browsers resolve plain `ar`
+ * to an Islamic calendar for some regional variants, which would silently
+ * rewrite a date the platform stored as a Gregorian one.
+ *
+ * Returns '' when nothing was recorded or the value cannot be parsed — the
+ * caller then shows its own "غير مسجّل" wording rather than a fabricated day.
+ */
+export function formatDateTime(value: string | null | undefined, locale: Locale): string {
+  const parsed = parseRecorded(value);
+  if (!parsed) return '';
+
+  const options: Intl.DateTimeFormatOptions = {
+    calendar: 'gregory',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    ...(parsed.dateOnly ? {} : { hour: '2-digit', minute: '2-digit' }),
+  };
+
+  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar' : 'en-GB', options).format(parsed.date);
 }

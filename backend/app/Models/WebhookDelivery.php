@@ -14,6 +14,12 @@ class WebhookDelivery extends Model
     public const STATUS_DELIVERED = 'DELIVERED';
     public const STATUS_FAILED = 'FAILED';
 
+    /**
+     * Never attempted: the endpoint resolved to a private or internal address,
+     * so posting to it would have been a request forgery rather than a delivery.
+     */
+    public const STATUS_BLOCKED = 'BLOCKED';
+
     protected $fillable = [
         'webhook_id',
         'event_name',

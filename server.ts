@@ -10,12 +10,16 @@ const LARAVEL_PORT = 8000;
 let phpServer: ChildProcess | null = null;
 
 function startLaravelServer() {
-  const backendPublicDir = path.join(process.cwd(), "backend", "public");
-  console.log(`Starting Laravel PHP server on 127.0.0.1:${LARAVEL_PORT} from ${backendPublicDir}`);
+  const backendDir = path.join(process.cwd(), "backend");
+  console.log(`Starting Laravel API server on 127.0.0.1:${LARAVEL_PORT} from ${backendDir}`);
 
-  phpServer = spawn("php", ["-S", `127.0.0.1:${LARAVEL_PORT}`, "-t", backendPublicDir], {
+  // `artisan serve`, not a bare `php -S -t public`: the built-in server has no
+  // front-controller router, so `/api/v1/...` would 404 as missing files, and
+  // whichever other PHP process already held the port would silently answer
+  // instead — with whatever .env it booted under.
+  phpServer = spawn("php", ["artisan", "serve", "--host=127.0.0.1", `--port=${LARAVEL_PORT}`], {
     stdio: "inherit",
-    cwd: path.join(process.cwd(), "backend"),
+    cwd: backendDir,
   });
 
   phpServer.on("error", (err) => {

@@ -16,7 +16,8 @@ class BootstrapController extends Controller
     ) {}
 
     /**
-     * Client initialization endpoint for Flutter Mobile and Web.
+     * Bootstrap payload for an authenticated client — reference data plus the
+     * caller's roles and current organization.
      */
     public function index(Request $request): JsonResponse
     {

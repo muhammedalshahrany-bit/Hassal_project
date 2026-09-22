@@ -5,10 +5,18 @@ namespace App\Services;
 use App\Models\ApiKey;
 use App\Models\Organization;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
 class ApiKeyAuthenticationService
 {
+    /**
+     * The middleware alias a route must carry for an issued key to open it.
+     * No route in this application does yet, which is what
+     * {@see self::acceptedByAnyRoute()} reports.
+     */
+    public const MIDDLEWARE_ALIAS = 'api.key';
+
     /**
      * Generates a new API Key with a public Key ID and secret key (shown only once).
      */
@@ -68,5 +76,38 @@ class ApiKeyAuthenticationService
         $apiKey->update(['last_used_at' => Carbon::now()]);
 
         return $apiKey;
+    }
+
+    /**
+     * Does any registered route actually accept a key?
+     *
+     * `authenticate()` above is correct code with no caller on a request path:
+     * no guard and no middleware in this application resolves a key into an
+     * authenticated organization. So a key issued today opens nothing, and an
+     * integrations screen that lets a business hand one to a partner is telling
+     * that business its integration works.
+     *
+     * This asks the router rather than restating a constant, because a constant
+     * would be wrong in both directions — it would still claim "not ready" the
+     * week someone attaches the middleware, and it would have to be remembered.
+     * The screen reads are driven off the route table, so they correct themselves
+     * the moment key authentication exists.
+     */
+    public function acceptedByAnyRoute(): bool
+    {
+        foreach (Route::getRoutes() as $route) {
+            foreach ($route->gatherMiddleware() as $attached) {
+                if (!is_string($attached)) {
+                    continue;
+                }
+
+                if ($attached === self::MIDDLEWARE_ALIAS
+                    || str_starts_with($attached, self::MIDDLEWARE_ALIAS . ':')) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }

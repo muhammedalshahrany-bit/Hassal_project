@@ -25,7 +25,7 @@ return new class extends Migration
             $table->text('opportunity_reason_notes')->nullable();
 
             // Lifecycle Status
-            $table->string('status', 30)->default('DRAFT'); // DRAFT, PENDING_REVIEW, ACTIVE, PAUSED, FULLY_RESERVED, SOLD_OUT, EXPIRED, CANCELLED, ARCHIVED
+            $table->string('status', 30)->default('DRAFT'); // DRAFT, PENDING_REVIEW, ACTIVE, PAUSED, SOLD_OUT, EXPIRED, CANCELLED
 
             // Quantities
             $table->decimal('min_order_quantity', 14, 2)->default(1.00);
@@ -38,8 +38,6 @@ return new class extends Migration
 
             // Pricing & Currency
             $table->decimal('unit_price', 18, 4);
-            $table->decimal('market_reference_price', 18, 4)->nullable();
-            $table->decimal('discount_percentage', 5, 2)->nullable();
             $table->string('currency_code', 3)->default('YER');
 
             // Logistics & Dates

@@ -32,6 +32,10 @@ class Webhook extends Model
             'is_active' => 'boolean',
             'failure_count' => 'integer',
             'last_triggered_at' => 'datetime',
+            // $hidden keeps the secret out of JSON responses; it says nothing
+            // about the row itself. Encrypted at rest because this value is
+            // the key that makes "this delivery came from HASSAL" provable.
+            'secret' => 'encrypted',
         ];
     }
 
