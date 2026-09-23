@@ -13,6 +13,7 @@ import {
   X,
 } from 'lucide-react';
 import { translations, type Locale } from '../lib/i18n';
+import BrandMark from './BrandMark';
 import { useTheme } from '../lib/theme';
 import { baseCurrency, isFeatureEnabled, taxSummary, usePlatformConfig } from '../lib/config';
 import {
@@ -320,9 +321,13 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => go('marketplace')}
             className="group flex items-center gap-2.5 rounded-xl p-0.5 text-start focus-visible:ring-2 focus-visible:ring-emerald-600"
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-800 via-emerald-600 to-teal-500 text-white shadow-md shadow-emerald-500/20 transition-transform group-hover:scale-105">
-              <span className="text-xl font-bold tracking-tighter">حـ</span>
-            </span>
+            {/* The real mark, not a coloured square with a letter in it.
+                It is gold and green on a transparent field, so it needs no
+                backdrop chip and reads on both the light bar and the night one. */}
+            <BrandMark
+              size={38}
+              className="transition-transform group-hover:scale-105"
+            />
             <span className="min-w-0">
               <span className="flex items-center gap-2">
                 <span className="font-serif text-lg font-black tracking-tight text-slate-900 sm:text-xl dark:text-slate-50">

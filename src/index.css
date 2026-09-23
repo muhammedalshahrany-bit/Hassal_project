@@ -199,3 +199,26 @@ html.dark input {
     -webkit-overflow-scrolling: touch;
   }
 }
+
+/*
+ * The mark, working.
+ *
+ * A spinner says "somebody is busy". The brand breathing says "this platform is
+ * doing the thing you asked" — which is the sentence a sign-in or a
+ * registration wants to say while the server decides.
+ */
+@keyframes hassal-brand-breathe {
+  0%, 100% { opacity: 0.45; transform: scale(0.92); }
+  50%      { opacity: 1;    transform: scale(1); }
+}
+
+.hassal-brand-breathe {
+  animation: hassal-brand-breathe 1.15s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hassal-brand-breathe {
+    animation: none;
+    opacity: 1;
+  }
+}

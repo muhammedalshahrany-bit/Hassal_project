@@ -25,6 +25,7 @@ import type { OfferSortIntent } from '../lib/api';
 import type { Offer, Category, Brand, PurchaseRequest } from '../types';
 import { formatMoney, isFeatureEnabled, reservationWindowMinutes, taxSummary, usePlatformConfig } from '../lib/config';
 import { formatDate, localizedField, type Locale } from '../lib/i18n';
+import BrandMark from './BrandMark';
 import { OfferLikeButton, OfferThread, useOfferCommunity } from './OfferCommunity';
 
 interface MarketplaceViewProps {
@@ -934,8 +935,11 @@ export const MarketplaceView: React.FC<MarketplaceViewProps> = ({ onOrderSuccess
       {/* Offers Grid */}
       {loading ? (
         <div className="py-20 text-center space-y-3">
-          <div className="w-10 h-10 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-xs text-slate-500 font-medium">جاري فحص وتحديث أسعار وعروض المخزون...</p>
+          {/* The mark breathing, rather than a detached spinner: this is the
+              screen a buyer judges the whole platform on, and it is the one
+              place they wait. */}
+          <BrandMark size={44} label="حصّال" className="mx-auto animate-pulse" />
+          <p className="text-xs text-slate-500 font-medium">جارٍ فحص وتحديث أسعار وعروض المخزون...</p>
         </div>
       ) : filteredOffers.length === 0 ? (
         <div className="bg-white border border-slate-200 rounded-xl p-8 sm:p-12 text-center space-y-3">

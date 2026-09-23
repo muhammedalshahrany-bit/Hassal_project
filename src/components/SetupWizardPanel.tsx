@@ -160,7 +160,7 @@ export const SetupWizardPanel: React.FC = () => {
   }
 
   if (!status) {
-    return <div className="text-xs text-slate-500">جاري قراءة ما تسجّله المنصة حالياً…</div>;
+    return <div className="text-xs text-slate-500">جارٍ قراءة ما تسجّله المنصة حالياً…</div>;
   }
 
   const currencies = activeCurrencies();

@@ -642,7 +642,7 @@ export const SellerInventoryView: React.FC<SellerInventoryViewProps> = ({ curren
         )}
 
         {loading ? (
-          <div className="py-12 text-center text-slate-500 text-xs">جاري جلب الرف...</div>
+          <div className="py-12 text-center text-slate-500 text-xs">جارٍ جلب الرف...</div>
         ) : offers.length === 0 && !shelfError ? (
           <div className="bg-white border border-slate-200 rounded-xl p-8 text-center text-slate-500 text-xs leading-relaxed">
             لا عروض للمنشأة بعد. اضغط «طرح عرض جديد» لتسجيل مخزونك بمكان تخزينه وسبب طرحه.
@@ -1197,7 +1197,7 @@ export const SellerInventoryView: React.FC<SellerInventoryViewProps> = ({ curren
                   disabled={busy}
                   className="flex flex-[2] items-center justify-center gap-2 rounded-xl bg-emerald-600 py-2.5 font-bold text-white shadow-md hover:bg-emerald-700 disabled:opacity-50 cursor-pointer"
                 >
-                  {busy ? 'جاري الحفظ...' : asDraft ? 'حفظ المسودة' : 'حفظ العرض وطرحه'}
+                  {busy ? 'جارٍ الحفظ...' : asDraft ? 'حفظ المسودة' : 'حفظ العرض وطرحه'}
                 </button>
               </div>
             </form>
@@ -1384,7 +1384,7 @@ export const SellerInventoryView: React.FC<SellerInventoryViewProps> = ({ curren
                   className="flex-[2] rounded-xl bg-emerald-600 py-2.5 font-bold text-white shadow-md hover:bg-emerald-700 disabled:opacity-50 cursor-pointer"
                 >
                   {busy
-                    ? 'جاري الحفظ...'
+                    ? 'جارٍ الحفظ...'
                     : whEditingId === null
                       ? 'حفظ المستودع'
                       : 'حفظ التصحيح'}
@@ -1534,7 +1534,7 @@ const StockMovementsPanel: React.FC<{ offers: Offer[]; reloadKey: string }> = ({
       </div>
 
       {state === 'loading' ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-xs text-slate-500">جاري جلب السجل...</div>
+        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-xs text-slate-500">جارٍ جلب السجل...</div>
       ) : state === 'refused' ? (
         <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800 leading-relaxed">
           سجل حركة المخزون غير متاح لهذه الجلسة: {refusal}
@@ -1673,7 +1673,7 @@ const StockMovementsPanel: React.FC<{ offers: Offer[]; reloadKey: string }> = ({
             disabled={saving || !canSubmit}
             className="shrink-0 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 disabled:opacity-40 cursor-pointer"
           >
-            {saving ? 'جاري التسجيل...' : 'تسجيل الحركة'}
+            {saving ? 'جارٍ التسجيل...' : 'تسجيل الحركة'}
           </button>
         </div>
       </form>
@@ -2021,7 +2021,7 @@ const EditOfferModal: React.FC<{
               disabled={saving}
               className="flex-[2] rounded-xl bg-emerald-600 py-2.5 text-xs font-bold text-white shadow-md hover:bg-emerald-700 disabled:opacity-50 cursor-pointer"
             >
-              {saving ? 'جاري الحفظ...' : 'حفظ التعديلات'}
+              {saving ? 'جارٍ الحفظ...' : 'حفظ التعديلات'}
             </button>
           </div>
         </div>

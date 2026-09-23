@@ -219,7 +219,7 @@ export const OrganizationProfileView: React.FC<OrganizationProfileViewProps> = (
             <Fact label="التقييم" value={record.rating === null || record.rating === undefined ? recorded(null) : String(record.rating)} />
           </div>
         ) : (
-          <div className="text-xs text-slate-500">جاري قراءة الملف…</div>
+          <div className="text-xs text-slate-500">جارٍ قراءة الملف…</div>
         )}
       </PanelShell>
 

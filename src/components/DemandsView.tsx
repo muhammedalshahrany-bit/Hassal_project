@@ -210,7 +210,7 @@ export const DemandsView: React.FC<DemandsViewProps> = ({ currentPersonaId, orga
       {readError ? <ErrorNote text={readError} /> : null}
 
       {loading ? (
-        <div className="py-20 text-center text-slate-500 text-xs">جاري قراءة الطلبات…</div>
+        <div className="py-20 text-center text-slate-500 text-xs">جارٍ قراءة الطلبات…</div>
       ) : demands.length === 0 ? (
         <div className="bg-white border border-slate-200 rounded-xl p-12 text-center text-slate-500 text-xs">
           {scope === 'mine'
@@ -843,7 +843,7 @@ const NewDemandModal: React.FC<{
             onClick={() => void create()}
             className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white py-2.5 rounded-xl font-bold cursor-pointer"
           >
-            {busy ? 'جاري النشر…' : 'نشر طلب الاحتياج'}
+            {busy ? 'جارٍ النشر…' : 'نشر طلب الاحتياج'}
           </button>
         </div>
         <p className="text-[10px] text-slate-400 leading-relaxed">

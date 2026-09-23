@@ -18,6 +18,7 @@ import { api } from './lib/api';
 import { getLocale, type Locale } from './lib/i18n';
 import { applyBootstrapPayload, isFeatureEnabled, usePlatformConfig } from './lib/config';
 import { AccountSetupCard } from './components/AccountSetupCard';
+import BrandMark from './components/BrandMark';
 import type {
   ActiveOrganization,
   OrganizationSummary,
@@ -453,9 +454,7 @@ export default function App() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-bold">
-                  حـ
-                </div>
+                <BrandMark size={30} className="rounded-md" />
                 <span className="text-white font-bold text-base font-serif">حَصّـال — HASSAL</span>
               </div>
               <p className="text-[11px] leading-relaxed text-slate-400">

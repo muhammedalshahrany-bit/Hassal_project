@@ -20,6 +20,9 @@ src/lib/theme.ts         the dark/light choice, remembered under `hassal_theme`
 src/lib/googleIdentity.ts Google Identity Services loaded on demand, with the per-attempt nonce
 src/types.ts             the shapes the API answers with
 src/index.css            Tailwind v4 tokens, the app-wide dark remap, and the small-screen sweep
+src/components/BrandMark.tsx the HASSAL mark, drawn once for every screen that shows it
+public/brand/            the mark and app icons at their real pixel sizes, plus public/manifest.webmanifest
+index.html               the document head (icons, manifest, theme-colour) and the CSS-only opening that paints itself from `public/brand/icon-512.png` while the bundle loads
 server.ts                the :3000 gateway: serves the built client and proxies /api to the Laravel API
 backend/                 Laravel 13 + MySQL: routes, controllers, services, migrations, tests
 ```
@@ -33,6 +36,8 @@ backend/                 Laravel 13 + MySQL: routes, controllers, services, migr
 | Add something an operator can set | `backend/app/Support/SettingCatalog.php` and the `system_settings` row — never a literal in a component |
 | Require a permission | the `permission:` middleware on the route; a hidden button is presentation, not enforcement |
 | Restyle dark mode or phones | the sweeps in `src/index.css`, which are deliberately unlayered so they outrank the utilities |
+| Change the logo or an app icon | replace the file in `public/brand/` at its real pixel size and update `index.html` / `src/components/BrandMark.tsx`; a size never declared differently from the file's actual dimensions |
+| Change the opening, its wording or its timing | the `#hassal-boot` block in `index.html` — CSS only, no script drives it, and it clears itself whether or not animations run |
 | Change the schema | a new additive migration — `hassal_production` holds real rows and is never rebuilt |
 
 ## Run

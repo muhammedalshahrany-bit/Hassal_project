@@ -152,7 +152,7 @@ export const LedgerView: React.FC<LedgerViewProps> = ({ currentPersonaId }) => {
       >
         {!trialBalance ? (
           <div className="text-xs text-slate-500 py-3">
-            {loading ? 'جاري حساب ميزان المراجعة...' : 'لم يصل ميزان مراجعة من الخادم.'}
+            {loading ? 'جارٍ حساب ميزان المراجعة...' : 'لم يصل ميزان مراجعة من الخادم.'}
           </div>
         ) : (
           <div className="space-y-3">
@@ -204,7 +204,7 @@ export const LedgerView: React.FC<LedgerViewProps> = ({ currentPersonaId }) => {
         </div>
 
         {loading && accounts.length === 0 ? (
-          <div className="py-12 text-center text-slate-500 text-xs">جاري تحميل دليل الحسابات...</div>
+          <div className="py-12 text-center text-slate-500 text-xs">جارٍ تحميل دليل الحسابات...</div>
         ) : accounts.length === 0 ? (
           <div className="p-6 text-center text-xs text-slate-500 sm:p-8">
             لم يُنشئ الخادم أي حساب بعد. يُبنى الدليل تلقائياً عند أول قراءة لصلاحيات الدفتر.
@@ -291,7 +291,7 @@ export const LedgerView: React.FC<LedgerViewProps> = ({ currentPersonaId }) => {
         </div>
 
         {loading ? (
-          <div className="py-12 text-center text-slate-500 text-xs">جاري تحميل القيود...</div>
+          <div className="py-12 text-center text-slate-500 text-xs">جارٍ تحميل القيود...</div>
         ) : entries.length === 0 ? (
           <div className="p-6 text-center text-xs text-slate-500 space-y-1 sm:p-8">
             <p>لا توجد قيود في هذا النطاق{entityType ? ` للكيان ${entityType}` : ''}.</p>
@@ -439,7 +439,7 @@ export const LedgerView: React.FC<LedgerViewProps> = ({ currentPersonaId }) => {
       >
         {!reconciliation ? (
           <div className="text-xs text-slate-500 py-2">
-            {loading ? 'جاري تشغيل التدقيق...' : 'لم تُرجِع خدمة التدقيق نتيجة.'}
+            {loading ? 'جارٍ تشغيل التدقيق...' : 'لم تُرجِع خدمة التدقيق نتيجة.'}
           </div>
         ) : (
           <div className="space-y-3">

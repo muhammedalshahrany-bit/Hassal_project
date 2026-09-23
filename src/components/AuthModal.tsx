@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { KeyRound, Loader2, LogIn, UserPlus, X } from 'lucide-react';
+import { KeyRound, LogIn, UserPlus, X } from 'lucide-react';
+import BrandMark, { BrandWorking } from './BrandMark';
 import { api } from '../lib/api';
 import { googleSignInSettings, usePlatformConfig } from '../lib/config';
 import { clearSignInNonce, renderGoogleSignInButton, rotateSignInNonce, signInNonce } from '../lib/googleIdentity';
@@ -291,10 +292,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     <div className={googleAvailable ? 'space-y-3' : 'hidden'}>
       <div ref={googleSlot} className="flex min-h-[44px] justify-center" />
       {googleBusy && (
-        <div className="flex items-center justify-center gap-2 text-xs font-bold text-slate-500">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          {s.processing}
-        </div>
+        <BrandWorking
+          text={s.processing}
+          size={24}
+          className="justify-center text-xs font-bold text-slate-500"
+        />
       )}
       <div className="flex items-center gap-3 text-[11px] font-bold uppercase text-slate-400">
         <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
@@ -318,6 +320,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         dir={locale === 'ar' ? 'rtl' : 'ltr'}
       >
         <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-5 pb-4 dark:border-slate-800">
+          {/* The mark is the credential here: this dialog asks a business to
+              hand over its registration documents, and it should say whose
+              hands they are going into. */}
+          <BrandMark size={40} className="mt-0.5" />
           <div>
             <h2 className="text-lg font-black text-slate-900 dark:text-slate-50">
               {mode === 'reset'
@@ -423,7 +429,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 />
               </label>
               {notice && <NoticeBlock notice={notice} />}
-              <PrimaryButton disabled={submitting}>
+              <PrimaryButton disabled={submitting} working={submitting} workingText={s.processing}>
                 <KeyRound className="h-4 w-4" />
                 {submitting ? s.saving : s.savePassword}
               </PrimaryButton>
@@ -443,7 +449,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 />
               </label>
               {notice && <NoticeBlock notice={notice} />}
-              <PrimaryButton disabled={submitting}>
+              <PrimaryButton disabled={submitting} working={submitting} workingText={s.processing}>
                 {submitting ? s.saving : s.sendLink}
               </PrimaryButton>
               <button
@@ -512,7 +518,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               {notice && <NoticeBlock notice={notice} />}
 
-              <PrimaryButton disabled={submitting}>
+              <PrimaryButton disabled={submitting} working={submitting} workingText={s.processing}>
                 {mode === 'login' ? <LogIn className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
                 {submitting
                   ? s.processing
@@ -547,17 +553,28 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   );
 };
 
-const PrimaryButton: React.FC<React.PropsWithChildren<{ disabled?: boolean }>> = ({
-  children,
-  disabled,
-}) => (
-  <button
-    disabled={disabled}
-    type="submit"
-    className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-800 focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-  >
-    {children}
-  </button>
+const PrimaryButton: React.FC<
+  React.PropsWithChildren<{ disabled?: boolean; working?: boolean; workingText?: string }>
+> = ({ children, disabled, working, workingText }) => (
+  <>
+    <button
+      disabled={disabled}
+      type="submit"
+      className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-800 focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      {children}
+    </button>
+    {/* The wait belongs to the brand, and it sits under the button rather than
+        inside it: the emerald face is where the person's own words go, and a
+        form that gets rejected has to stay readable while the answer arrives. */}
+    {working && workingText ? (
+      <BrandWorking
+        text={workingText}
+        size={26}
+        className="w-full justify-center text-xs font-bold text-slate-500 dark:text-slate-400"
+      />
+    ) : null}
+  </>
 );
 
 const NoticeBlock: React.FC<{ notice: Notice }> = ({ notice }) => (
