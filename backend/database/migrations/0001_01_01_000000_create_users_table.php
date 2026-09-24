@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('email')->unique();
-            $table->string('phone')->nullable()->unique();
+            $table->string('email', 191)->unique();
+            $table->string('phone', 20)->unique();
             $table->string('national_id')->nullable();
             $table->string('status')->default('active'); // active, suspended, pending_verification
             $table->timestamp('email_verified_at')->nullable();

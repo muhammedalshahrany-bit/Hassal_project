@@ -32,7 +32,7 @@ return new class extends Migration
         // ── 1-3: Organizations enhancements ───────────────────────────────────
         Schema::table('organizations', function (Blueprint $table) {
             // Make vat_number nullable (many SMEs in Yemen don't have VAT numbers)
-            $table->string('vat_number', 50)->nullable()->change();
+           // $table->string('vat_number', 50)->nullable()->change();
 
             // Country code for multi-country expansion (default Yemen)
             if (!Schema::hasColumn('organizations', 'country_code')) {
@@ -100,7 +100,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('organizations', function (Blueprint $table) {
-            $table->string('vat_number', 50)->unique()->change();
+            //$table->string('vat_number', 50)->unique()->change();
             $table->dropColumn(array_filter([
                 Schema::hasColumn('organizations', 'country_code')  ? 'country_code'  : null,
                 Schema::hasColumn('organizations', 'city')          ? 'city'          : null,
