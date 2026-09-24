@@ -9,6 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('organizations', function (Blueprint $table) {
+             $table->engine('InnoDB');
             $table->id();
             $table->string('name_ar');
             $table->string('name_en');
