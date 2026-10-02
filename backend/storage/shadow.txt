@@ -1,0 +1,7 @@
+src/features/auth/pages/ProfileView.tsx:95: local changePassword shadows the imported name
+src/features/catalog/pages/CatalogView.tsx:410: local createProduct shadows the imported name
+src/features/platform/pages/PlatformConfigView.tsx:565: local createCurrency shadows the imported name
+src/features/trading/pages/DisputesView.tsx:134: local openDispute shadows the imported name
+src/features/trading/pages/DisputesView.tsx:182: local resolveDispute shadows the imported name
+
+shadowing collisions: 5

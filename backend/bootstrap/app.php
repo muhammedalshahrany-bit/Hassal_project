@@ -1,14 +1,14 @@
 <?php
 
-use App\Http\Middleware\AuditLogMiddleware;
-use App\Http\Middleware\EnsureAccountIsActive;
-use App\Http\Middleware\EnsureFeatureEnabled;
-use App\Http\Middleware\EnsureVerifiedOrganization;
-use App\Http\Middleware\IdempotencyMiddleware;
-use App\Http\Middleware\LocalizationMiddleware;
-use App\Http\Middleware\ResolveOrganizationContext;
-use App\Http\Middleware\SecurityHeaders;
-use App\Http\Responses\ApiResponse;
+use App\Core\Http\Middleware\AuditLogMiddleware;
+use App\Core\Http\Middleware\EnsureAccountIsActive;
+use App\Core\Http\Middleware\EnsureFeatureEnabled;
+use App\Core\Http\Middleware\EnsureVerifiedOrganization;
+use App\Core\Http\Middleware\IdempotencyMiddleware;
+use App\Core\Http\Middleware\LocalizationMiddleware;
+use App\Core\Http\Middleware\ResolveOrganizationContext;
+use App\Core\Http\Middleware\SecurityHeaders;
+use App\Core\Http\ApiResponse;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -37,6 +37,13 @@ return Application::configure(basePath: dirname(__DIR__))
         // other path. The ceilings themselves are settings — see
         // AppServiceProvider::defineRequestCeilings().
         $middleware->throttleApi();
+
+        // Which addresses may tell this application what the request really was
+        // is set in `AppServiceProvider::boot()`, not here. This closure runs
+        // while the container is still being assembled — before the config
+        // repository is bound — so reading `config()` at this point is a fatal
+        // on every request, including the artisan commands that would tell you
+        // so. The value itself, and why it matters, is in `config/hassal.php`.
 
         // Order is load-bearing. `SecurityHeaders` sits outside
         // `EnsureAccountIsActive` so the refusal a suspended account receives

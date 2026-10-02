@@ -1,0 +1,83 @@
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Trading\DealFlowTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma deal remembers the terms it was made on[39m[90m                                                                  [39m [90m27.17s[39m  
+  [32;1m✓[39;22m[90m [39m[90monly the seller on this deal can approve it[39m[90m                                                                 [39m [90m0.52s[39m  
+  [32;1m✓[39;22m[90m [39m[90mmoving the goods and closing the order are two different jobs[39m[90m                                               [39m [90m0.55s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma state the product does not define moves nothing[39m[90m                                                           [39m [90m0.51s[39m  
+  [32;1m✓[39;22m[90m [39m[90mno state claims money the platform never held[39m[90m                                                               [39m [90m0.51s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe walk to completion moves the stock exactly once[39m[90m                                                         [39m [90m0.81s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma counter pickup can close without an inspection window[39m[90m                                                     [39m [90m0.71s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma cancelled deal gives the stock back once[39m[90m                                                                  [39m [90m0.56s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma dispute needs a case file and both sides can open one[39m[90m                                                     [39m [90m0.68s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma dispute can be raised by either side and closed only by the platform[39m[90m                                      [39m [90m0.72s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma ruling that calls the order off puts the quantity back[39m[90m                                                    [39m [90m0.65s[39m  
+  [32;1m✓[39;22m[90m [39m[90meach side sees its own deals and nobody elses[39m[90m                                                               [39m [90m0.59s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Trading\DealHandoverTest[39m
+  [32;1m✓[39;22m[90m [39m[90mthere is no code to scan until the seller accepts the order[39m[90m                                                 [39m [90m0.57s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma code is not spent before the goods are moving[39m[90m                                                             [39m [90m0.66s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma code proves one delivery and no more[39m[90m                                                                      [39m [90m0.70s[39m  
+  [32;1m✓[39;22m[90m [39m[90manother orders code does not close this one[39m[90m                                                                 [39m [90m0.90s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma cancelled order loses its code with the order[39m[90m                                                             [39m [90m0.55s[39m  
+  [32;1m✓[39;22m[90m [39m[90man attested handover survives a later cancellation[39m[90m                                                          [39m [90m0.72s[39m  
+  [32;1m✓[39;22m[90m [39m[90mwhat a camera returns and what a person types are the same act[39m[90m                                              [39m [90m0.65s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma code typed under a bad light still reads[39m[90m                                                                  [39m [90m0.63s[39m  
+  [32;1m✓[39;22m[90m [39m[90mreading a code is not the same as spending it[39m[90m                                                               [39m [90m0.63s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma business cannot attest a delivery it has no part in[39m[90m                                                       [39m [90m0.71s[39m  
+  [32;1m✓[39;22m[90m [39m[90mclosing an order without the scan is refused at the state machine[39m[90m                                           [39m [90m0.67s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Trading\DealNoticeTest[39m
+  [32;1m✓[39;22m[90m [39m[90mthe seller is told what is being asked and of whom[39m[90m                                                          [39m [90m0.48s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe buyer hears that their order left the handset[39m[90m                                                           [39m [90m0.46s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma move is announced to the other side and named to it[39m[90m                                                       [39m [90m0.52s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma platform decision is attributed to the platform and reaches both[39m[90m                                          [39m [90m0.58s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma spent delivery code is announced to the side that did not scan it[39m[90m                                         [39m [90m0.68s[39m  
+  [32;1m✓[39;22m[90m [39m[90man account that muted deal traffic hears nothing[39m[90m                                                            [39m [90m0.52s[39m  
+  [32;1m✓[39;22m[90m [39m[90man account that muted notifications entirely hears nothing[39m[90m                                                  [39m [90m0.54s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Trading\InventoryReservationTest[39m
+  [32;1m✓[39;22m[90m [39m[90man ask holds nothing until the seller answers[39m[90m                                                               [39m [90m0.46s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma hold records what it claims and remembers the price[39m[90m                                                       [39m [90m0.47s[39m  
+  [32;1m✓[39;22m[90m [39m[90mstock that is not there cannot be asked for[39m[90m                                                                 [39m [90m0.43s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma shelf that emptied after the ask is not held by the acceptance[39m[90m                                            [39m [90m0.59s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma line below the sellers minimum is not opened[39m[90m                                                              [39m [90m0.41s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma seller cannot raise an ask against their own shelf[39m[90m                                                        [39m [90m0.41s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma withdrawn listing cannot be asked for through the back door[39m[90m                                               [39m [90m0.43s[39m  
+  [32;1m✓[39;22m[90m [39m[90man ask is not honoured when the seller was stopped[39m[90m                                                          [39m [90m0.43s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe database waits for the first claim to finish[39m[90m                                                            [39m [90m1.40s[39m  
+  [32;1m✓[39;22m[90m [39m[90mcancelling returns the stock once and only once[39m[90m                                                             [39m [90m0.51s[39m  
+  [32;1m✓[39;22m[90m [39m[90man unanswered hold expires and the shelf reopens[39m[90m                                                            [39m [90m0.48s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma hold still inside its grace window is left alone[39m[90m                                                          [39m [90m0.44s[39m  
+  [32;1m✓[39;22m[90m [39m[90man expired hold cannot be turned into a deal[39m[90m                                                                [39m [90m0.47s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma replayed ask asks once[39m[90m                                                                                    [39m [90m0.45s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe last of a shelf goes to one buyer and can come back[39m[90m                                                     [39m [90m0.59s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma deal converts the hold instead of releasing it[39m[90m                                                            [39m [90m0.54s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Trading\PricingAndCurrencyTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma foreign amount is converted by dividing by the rate[39m[90m                                                       [39m [90m0.36s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe base currency converts to itself at one[39m[90m                                                                 [39m [90m0.35s[39m  
+  [32;1m✓[39;22m[90m [39m[90mbase amount stays the line total because a deal stores it that way[39m[90m                                          [39m [90m0.33s[39m  
+  [32;1m✓[39;22m[90m [39m[90man unavailable currency is refused instead of priced at par[39m[90m                                                 [39m [90m0.34s[39m  
+  [32;1m✓[39;22m[90m [39m[90man inactive currency is refused even though it is still listed[39m[90m                                              [39m [90m0.35s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma zero rate is refused rather than treated as a free conversion[39m[90m                                             [39m [90m0.38s[39m  
+  [32;1m✓[39;22m[90m [39m[90mpricing refuses to run without a configured base currency[39m[90m                                                   [39m [90m0.35s[39m  
+  [32;1m✓[39;22m[90m [39m[90mno tax and no commission are charged until the operator says so[39m[90m                                             [39m [90m0.34s[39m  
+  [32;1m✓[39;22m[90m [39m[90mtax and commission come from the settings and split the amount as declared[39m[90m                                  [39m [90m0.34s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma discount bigger than the line and a negative fee are both clamped[39m[90m                                         [39m [90m0.35s[39m  
+  [32;1m✓[39;22m[90m [39m[90man omitted currency is the base currency and not an error[39m[90m                                                   [39m [90m0.33s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Trading\PurchaseRequestFlowTest[39m
+  [32;1m✓[39;22m[90m [39m[90masking holds nothing and consumes the match[39m[90m                                                                 [39m [90m0.50s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe quantity is checked against what the seller will actually do[39m[90m                                            [39m [90m0.45s[39m  
+  [32;1m✓[39;22m[90m [39m[90monly the seller answers and acceptance is what holds stock[39m[90m                                                  [39m [90m0.53s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma seller cannot accept more than the shelf holds[39m[90m                                                            [39m [90m0.57s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma refusal needs a reason and ends the conversation[39m[90m                                                          [39m [90m0.50s[39m  
+  [32;1m✓[39;22m[90m [39m[90mnegotiation records the proposed terms without rewriting the ask[39m[90m                                            [39m [90m0.54s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma buyer withdraws only an unanswered ask[39m[90m                                                                    [39m [90m0.66s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma match is worthless once the offer leaves the market[39m[90m                                                       [39m [90m0.46s[39m  
+  [32;1m✓[39;22m[90m [39m[90man expired match and an expired offer are reported differently[39m[90m                                              [39m [90m0.56s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma finished listing cannot be asked for from its card[39m[90m                                                        [39m [90m0.44s[39m  
+
+  [90mTests:[39m    [32;1m67 passed[39;22m[90m (837 assertions)[39m
+  [90mDuration:[39m [39m63.06s[39m
+

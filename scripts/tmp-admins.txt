@@ -1,0 +1,10 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+Field	Type	Null	Key	Default	Extra
+id	bigint unsigned	NO	PRI	NULL	auto_increment
+organization_id	bigint unsigned	NO	MUL	NULL	
+user_id	bigint unsigned	NO	MUL	NULL	
+role	varchar(50)	NO		staff	
+is_active	tinyint(1)	NO		1	
+joined_at	timestamp	NO		CURRENT_TIMESTAMP	DEFAULT_GENERATED
+created_at	timestamp	YES		NULL	
+updated_at	timestamp	YES		NULL	

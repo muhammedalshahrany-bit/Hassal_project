@@ -1,0 +1,29 @@
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Inventory\WarehouseBoardTest[39m
+  [32;1m✓[39;22m[90m [39m[90mthe public board ranks by distance and keeps the call person back[39m[90m                                          [39m [90m26.59s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma board with no position says so instead of placing everything next to the caller[39m[90m                           [39m [90m0.34s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma warehouse that recorded no coordinates is shown last and still shown[39m[90m                                      [39m [90m0.35s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma radius narrows the board and a half position is refused[39m[90m                                                   [39m [90m0.36s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma business reading its own board still sees whom to call[39m[90m                                                    [39m [90m0.43s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe php distance matches the shape the board presents[39m[90m                                                       [39m [90m0.34s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Platform\PlatformAdminLayerTest[39m
+  [32;1m✓[39;22m[90m [39m[90mthe sellers shelf holds every status and the market only live ones[39m[90m                                          [39m [90m0.61s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe shelf is a tenants view and not a global one[39m[90m                                                            [39m [90m0.45s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe moderation queue lists other businesses and refuses the seller[39m[90m                                          [39m [90m0.48s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe organization directory is scoped to the caller and honours search[39m[90m                                       [39m [90m0.40s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma business cannot verify itself[39m[90m                                                                             [39m [90m0.37s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma platform verification is recorded as a platform review[39m[90m                                                    [39m [90m0.42s[39m  
+  [32;1m✓[39;22m[90m [39m[90man adverse decision requires a reason and a repeated one is refused[39m[90m                                         [39m [90m0.41s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma reinstatement does not redate the original verification[39m[90m                                                   [39m [90m0.41s[39m  
+  [32;1m✓[39;22m[90m [39m[90mverification honours the legal fields the platform itself required[39m[90m                                          [39m [90m0.44s[39m  
+  [32;1m✓[39;22m[90m [39m[90msuspending a business stops it trading and being used[39m[90m                                                       [39m [90m0.49s[39m  
+  [32;1m✓[39;22m[90m [39m[90man adjustment changes the offers own quantities and records the transition[39m[90m                                  [39m [90m0.43s[39m  
+  [32;1m✓[39;22m[90m [39m[90man adjustment respects committed stock and other peoples offers[39m[90m                                             [39m [90m0.49s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe marketplace closes when its flag is off and reopens immediately[39m[90m                                         [39m [90m0.42s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe audit trail filters and stays inside the callers scope[39m[90m                                                  [39m [90m0.47s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe role vocabulary the console offers is the one assignment checks[39m[90m                                         [39m [90m0.55s[39m  
+
+  [90mTests:[39m    [32;1m21 passed[39;22m[90m (171 assertions)[39m
+  [90mDuration:[39m [39m35.62s[39m
+

@@ -1,0 +1,12 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+id	name_ar	type	status	members
+1	مؤسسة الأمل للأغذية	seller	verified	5
+2	شركة ماجد للمجمدات	seller	verified	3
+3	مطاحن الساحل	seller	verified	3
+4	مطعم السلطان	buyer	verified	3
+5	بقالة النخيل	buyer	verified	2
+6	مخبز الفجر	buyer	verified	3
+7	وسيط الميناء التجاري	intermediary	pending_kyc	1
+8	بقالة القرية	seller	suspended	1
+9	taha amr	buyer	verified	1
+10	المسؤول	buyer	verified	1

@@ -22,18 +22,22 @@
 
 | النطاق | الجداول | الكود الذي يملك القرار |
 | :--- | :--- | :--- |
-| الهوية والعضوية | `users`, `organizations`, `organization_memberships`, `roles`, `permissions`, `model_has_roles` | `AuthController`, `OrganizationController`, `config/rbac.php`, `Database\Seeders\RolesAndPermissionsSeeder` |
+| الهوية والعضوية | `users`, `organizations`, `organization_memberships`, `organization_roles`, `organization_role_permissions`, `organization_membership_permissions`, `roles`, `permissions`, `model_has_roles` | `AuthController`, `OrganizationController`, `OrganizationRoleController`, `RoleGovernanceController`, `config/rbac.php`, `Database\Seeders\RolesAndPermissionsSeeder` |
 | سياق المستأجر | — | `App\Services\TenantContext`, `App\Http\Middleware\ResolveOrganizationContext` (الاسم `tenant`) |
 | الكتالوج | `categories`, `brands`, `products`, `product_variants` | `CatalogController`, `App\Support\CategoryCatalog` |
 | المستودعات والاكتشاف الجغرافي | `warehouses` | `WarehouseController`, `App\Services\GeoDiscoveryService` |
 | العرض والمخزون | `offers`, `offer_items`, `inventory_movements`, `reservations` | `OfferController`, `InventoryMovementController`, `App\Services\InventoryReservationService` |
 | الطلب وعروض الأسعار والمطابقة | `demands`, `quotations`, `demand_matches` | `DemandController`, `App\Services\DemandMatchingService` |
-| دورة الصفقة | `purchase_requests`, `deals`, `deal_items`, `deal_status_histories`, `disputes`, `escrows` | `PurchaseRequestController`, `DealController`, `DisputeController`, `App\Services\DealStateMachineService` |
+| دورة الصفقة | `purchase_requests`, `deals`, `deal_items`, `deal_status_histories`, `deal_handovers`, `disputes` | `PurchaseRequestController`, `DealController`, `DealHandoverController`, `DisputeController`, `App\Services\DealStateMachineService`, `App\Services\DealHandoverService` |
 | التسعير والعملة | `currencies`, `system_settings` | `App\Services\PricingAndCurrencyService`, `CurrencyManagementController`, `App\Services\SystemSettingsService` |
-| دفتر الأستاذ بالقيود المزدوجة | `ledger_accounts`, `journal_entries`, `ledger_lines` | `App\Services\DoubleEntryLedgerService`, `LedgerController`, `ReconciliationController` |
+| دفتر الأستاذ بالقيود المزدوجة | `ledger_accounts`, `journal_entries`, `ledger_lines` | `App\Services\DoubleEntryLedgerService`, `LedgerController` |
 | الإعدادات والقدرات | `system_settings`, `feature_flags` | `SystemSettingController`, `FeatureFlagController`, `App\Support\SettingCatalog`, `App\Support\FlagCatalog`, `EnsureFeatureEnabled` |
 | التكامل الخارجي | `webhooks`, `webhook_deliveries`, `api_keys`, `idempotency_keys`, `notifications`, `audit_logs` | `WebhookController`, `App\Services\WebhookDispatcherService`, `ApiKeyController`, `App\Services\Notifications\NotificationManager`, `AuditLogMiddleware` |
-| الدفع عبر مزوّد خارجي | `payments` (جدول بلا كاتب) | `app/Services/Payments/*` — مكتوب لكنه **غير موصول بأي مسار**: لا `Route` ولا خدمة أخرى تذكر `PaymentGatewayManager` |
+
+> سطر «الدفع عبر مزوّد خارجي» الذي كان هنا أُزيل: `app/Services/Payments` ومحول
+> `PaymentProviderInterface` حُذفت من الكود، وجدول `payments` لم يُنشأ في أي هجرة.
+> المنصّة لا تحتفظ بأموال ولا تحرّكها — التسوية تجري خارجها، وقرار البرومبت §20
+> أن لا Wallet ولا Payment ضمن النطاق.
 
 ملاحظة على الحدود: لا يوجد فصل بحزم مستقلة (Modules / DDD)؛ الفصل هنا هو فصل
 الخدمة التي تملك القرار مقابل المتحكم الذي يقرأ الطلب فقط. ما لم يُحترم في هذا
@@ -62,10 +66,12 @@
   `App\Support\SettingCatalog`)، وغياب الرقم يعني «لم يُطلب بعد» لا «غير موجود».
   لا يوجد في الكود أي تحقّق من جهة حكومية: `kyc_verified_at` يكتبه موظف
   المنصة بعد مراجعة، ولا يجوز وصفه بأنه توثيق رسمي.
-- **`OrganizationMembership`** — الصلة بين المستخدم والمنشأة، و`role` فيها قيمة
-  من: `owner`, `admin`, `operator`, `finance`, `auditor`
-  (`AddMemberRequest`)؛ هذه **صفات داخل المنشأة** وليست أدوار Spatie الست
-  (القسم 4).
+- **`OrganizationMembership`** — الصلة بين المستخدم والمنشأة. `role` فيها **مفتاح
+  وقفٍ تملكه تلك المنشأة** (`organization_roles.key`)، لا قيمة من قائمة عالمية:
+  الخُمسة المزروعة `owner`, `admin`, `staff`, `finance`, `auditor` وما تسمّيه
+  الشركة لنفسها. هذه **صفات داخل المنشأة** لا أدوار Spatie (القسم 4)، وباب
+  العضوية يتحقق من المفتاح ضد أدوار شركته لا ضد إعداد ثابت — لأن قاموس الشركة
+  صفوف في جدول لا كلمات في `CHECK`.
 - **قاعدة النزاهة:** كل مسار مكتوب تحت مجموعة `auth:sanctum` + `tenant`
   (`routes/api.php:100`). بلا سياق منشأة لا تُكتب حركة تجارية، ومن يرسل
   `X-Organization-Id` لغير منشأته يُردّ بـ 403 `ORGANIZATION_ACCESS_DENIED`.
@@ -90,6 +96,11 @@
 
 - الهوية والعرض: `seller_organization_id`, `warehouse_id`, `product_variant_id`,
   `category_id`؟, `title_ar`, `opportunity_reason` + `opportunity_reason_notes`؟.
+- **الصنف لم يعد حقلًا على العرض (تطبيع 2026-09-25):** صنفُ العرض صنفُ منتجه،
+  عبر `product_variant_id → product_variants.product_id → products.category_id`.
+  العمود المخزَّن رُفع لأنه لم يكن تكرارًا بل خلافاً محتملاً: منتجٌ يُنقل تصنيفه
+  تُركت رفوفُه في الصنف الذي غادره. الاسم باقٍ في الاستجابة وفي المرشّح، ولا
+  يُكتب من مسار؛ الخلاف بين صنف المنتج والصنف المسمّى `CATEGORY_PRODUCT_MISMATCH`.
 - الكميات (`decimal(14,2)`): `total_quantity`, `available_quantity`,
   `reserved_quantity`, `sold_quantity`، مع `min_order_quantity` (افتراضي 1)
   و`max_order_quantity`؟.
@@ -117,9 +128,13 @@
   `base_amount`, `discount_amount`, `tax_rate_snapshot` و`tax_amount`،
   `platform_fee_rate_snapshot` و`platform_fee_amount`, `delivery_fee_amount`,
   `buyer_total_amount`, `seller_net_amount` (كلها `decimal(18,4)`؛ النِسَب
-  `decimal(6,4)`)، إضافة إلى لقطة العملة (`transaction_currency`,
-  `base_currency`, `exchange_rate`, `exchange_rate_snapshot`, `rate_source`,
-  `rate_timestamp`).
+  `decimal(6,4)`)، إضافة إلى لقطة العملة (`base_currency`, `currency_code`,
+  `exchange_rate_snapshot`, `rate_source`, `rate_timestamp`). كانت اللقطة تُخزَّن
+  مرتين — `transaction_currency` مع `currency_code`، و`exchange_rate` حيًّا بجانب
+  `exchange_rate_snapshot` المجمَّدة — فَرُفع العمودان المكرران في تطبيع
+  2026-09-25: عمودان لسعرٍ واحد معناهما أن كل تصحيح لاحقًا يجب أن يكتب مرتين أو
+  يُخطئ، واللقطة وجودُها تجميدُ الوعد لا متابعةُ السوق؛ المعدل المتحرّك يبقى في
+  `currencies.exchange_rate_to_base` ويُقرأ من هناك عند الحاجة.
 - **قاعدة التسلسل (لا اختصار فيها):**
   `عرض ACTIVE` → `طلب شراء REQUESTED` → **قبول البائع هو الذي يحجز**
   (`PurchaseRequestController::accept:338` يستدعي `InventoryReservationService::reserve`)
@@ -151,14 +166,16 @@
 
 ### 2.6 دفتر الأستاذ والمخزون
 
-- **دليل الحسابات** (ستة، `is_active=1` في القاعدة الحيّة):
-  `1010-CASH-CLEARING`, `1020-BUYER-RECEIVABLE` (أصول)،
-  `2010-ESCROW-HOLDING`, `2020-SELLER-PAYABLE`, `2030-VAT-OUTPUT` (التزامات)،
-  `4010-COMMISSION-REVENUE` (إيراد).
+- **دليل الحسابات** (اثنان، وهما كل ما في القاعدة الحيّة):
+  `1010-FEE-RECEIVABLE` (أصل) و`4010-COMMISSION-REVENUE` (إيراد).
+  حسابات `1010-CASH-CLEARING` و`1020-BUYER-RECEIVABLE` و`2010-ESCROW-HOLDING` و
+  `2020-SELLER-PAYABLE` و`2030-VAT-OUTPUT` كانت في تصميم لم يُبنَ: لا قيد يمسّها
+  بعد إزالة حالات الدفع، و`ensureChartOfAccounts()` لا ينشئ إلا الحسابين أعلاه.
 - **القيد** يسجَّل بعملة العملية ويحمل `exchange_rate_to_base = 1.000000`
-  (`DoubleEntryLedgerService:97`) — أي لا إعادة تقييم تلقائية إلى العملة
-  الأساسية داخل الدفتر. القيود تُنشأ عند `ESCROW_FUNDED` و`SETTLED`
-  و`REFUNDED` فقط، وحين يكون علم `double_entry_ledger` مفعّلًا.
+  (`DoubleEntryLedgerService`) — أي لا إعادة تقييم تلقائية إلى العملة
+  الأساسية داخل الدفتر. القيد يُنشأ عند `COMPLETED` فقط (استحقاق عمولة المنصة
+  عن صفقة وقعت فعلًا)، وحين يكون علم `double_entry_ledger` مفعّلًا — وهو مغلق
+  افتراضياً.
 - **الحركة المخزنية** (`inventory_movements`) توثّق `type` و`quantity` مع
   `previous_quantity`/`new_quantity`، وتُربط اختياريًا بـ `offer_id` و`deal_id`
   و`reference_type/reference_id`.
@@ -211,50 +228,63 @@ ACTIVE ──> CONVERTED_TO_DEAL   (عند إنشاء الصفقة)
 كلا المسارين يمرّ بـ `finalize()` الواحد (`InventoryReservationService:148`)
 تحت `lockForUpdate()`، وكلاهما يعيد الكمية إلى `available`.
 
-### 3.4 الصفقة — ست عشرة حالة
+### 3.4 الصفقة — اثنتا عشرة حالة
 
 الحالات في `Deal.php`، والانتقالات في
 `DealStateMachineService::ALLOWED_TRANSITIONS`، ومن يُنفّذها في
 `TRANSITION_RULES`. القواعد المشتركة: صفقة واحدة لكل انتقال، ورفض الانتقال
 إلى الحالة نفسها («already {status}; nothing changed»)، وسجل `deal_status_histories`
-لكل انتقال، وحدث `deal.status_changed` إلى ويبهوك الطرفين.
+لكل انتقال، وحدث `deal.status_changed` إلى ويبهوك الطرفين، وإعلان عبر
+`NotificationManager` للطرف الذي لم يحرّك الصفقة — من داخل نفس المعاملة.
 
 ```
-DRAFT (لا كاتب لها في المسارات)
-  └─> PENDING_SELLER_APPROVAL ─┬─> ACCEPTED ─┬─> PENDING_PAYMENT ─┬─> ESCROW_FUNDED* ─┐
-        (منشأ الصفقة:          │             │                    └─> PROCESSING <──────┤
-         تحويل الحجز)          │             └────────────────────> PROCESSING <───────┘
-                               └─> CANCELLED                                            │
-                                                                                         ▼
-                    READY_FOR_PICKUP ──> DELIVERED ──> INSPECTION ──> COMPLETED ──> SETTLED
-                                                        ▲   │            ▲
-   PROCESSING ──────────> DISPATCHED ───────────────────┘   │            │
-                                        DELIVERED <─────────┘            │
-                                                              DISPUTED ──┼─> RESOLVED ──> SETTLED / REFUNDED
-                                                                         └─> REFUNDED / SETTLED
-   * الوصول إلى ESCROW_FUNDED مشروط بعلم `escrow`؛ بدونه الانتقال مرفوض.
+DRAFT (لا مسار ينشئها؛ آلة الحالة تقبل الخروج منها)
+  └─> PENDING_SELLER_APPROVAL ───> ACCEPTED ───┬─> PROCESSING ───┬─> READY_FOR_PICKUP ─┐
+        (منشأ الصفقة: تحويل الحجز)             │                └─> DISPATCHED ──┐     │
+                                               ├────────────> DISPATCHED          │     │
+                                               ├─> READY_FOR_PICKUP ──────────────┤     │
+                                               └─> CANCELLED / DISPUTED           ▼     ▼
+                                                              DELIVERED ──┬─> INSPECTION ─┐
+                                                                         └─> COMPLETED ◄──┘
+   DELIVERED/INSPECTION ──> DISPUTED ──> RESOLVED ──┬─> COMPLETED
+   (وDISPUTED متاحة من ACCEPTED..INSPECTION)        └─> CANCELLED
+   COMPLETED وCANCELLED حالتا انتهاء بلا خروج.
+   لا حالة دفع في الآلة إطلاقاً: لا PENDING_PAYMENT ولا ESCROW_FUNDED ولا
+   SETTLED ولا REFUNDED — إزالة مقصودة، فالمنصّة لا تمسّ مالاً والتسوية
+   خارجها (البرومبت §20).
 ```
 
+- **بوابة التسليم (`deal_handovers`):** تُصدر آلة الحالة رمزاً عند `ACCEPTED`
+  (`DealHandover::issueFor`)؛ ولا يُقبل الانتقال إلى `INSPECTION` أو `COMPLETED`
+  قبل مسح الرمز لمطابقة الصفقة (`HANDOVER_NOT_VERIFIED`). حالات مسح الرمز
+  الصالحة: `DELIVERED` و`INSPECTION` و`DISPUTED` و`RESOLVED`؛ والإلغاء يُبطل
+  الرمز (`INVALIDATED`) دون أن يمحوه إن كان مُستعملاً.
 - **الممثلون:** `buyer` و`seller` تُحسب من علاقة المنشأة الفاعلة بالصفقة،
-  و`platform` هو `SuperAdmin`. حالات لا يملكها إلا الطرف الآخر:
-  `ACCEPTED` للبائع، `INSPECTION` و`COMPLETED` للمشتري، `RESOLVED` و`REFUNDED`
-  للمنصة. هذا داخل الخدمة لا في Middleware لأن مسارًا واحدًا يخدم الطرفين.
-- **الآثار:** `ACCEPTED` يوقّع البائع (`seller_user_id`, `accepted_at`)؛
-  `ESCROW_FUNDED` ينشئ سجل `escrows` بحالة `HELD` ويقيّد دفترًا إن كان علم
-  الدفتر مفعّلًا؛ `DELIVERED`/`INSPECTION` تحسبان `inspection_deadline_at`؛
-  `SETTLED` تطلق سجل الضمان إلى `RELEASED` وتقيّد التسوية وتنقل الكمية من
-  `reserved` إلى `sold`؛ `CANCELLED` تعيد الكمية إلى `available`.
-- **الأمانات (Escrow) سجل محاسبي لا حيازة مال:** لا يوجد مزوّد دفع موصول،
-  فتحصيل «الأمان» يعني أن المنصة قررت أنها تنتظر مالًا، لا أنها تمسكه.
+  و`platform` هو `SuperAdmin`. حالات لا يملكها إلا الطرف الآخر: `ACCEPTED`
+  للبائع، `INSPECTION` و`COMPLETED` للمشتري، `RESOLVED` للمنصة. هذا داخل
+  الخدمة لا في Middleware لأن مسارًا واحدًا يخدم الطرفين.
+- **الآثار:** `ACCEPTED` يوقّع البائع (`seller_user_id`, `accepted_at`) ويصدر
+  رمز التسليم؛ `DELIVERED`/`INSPECTION` تحسبان `inspection_deadline_at`؛
+  `COMPLETED` تنقل الكمية من `reserved` إلى `sold` وتقيّد عمولة المنصة في
+  الدفتر إن فُعّل علمه؛ `CANCELLED` تعيد الكمية إلى `available` وتُبطل رمز
+  التسليم.
+- **نقود الصفقة رقمٌ لا حركة:** `unit_price` و`buyer_total_amount` لقطة ما
+  اتفق عليه الطرفان؛ لا مسار في API يحرّك مبلغاً ولا يرفع إيصال دفع.
 
-### 3.5 النزاع — سبع حالات
+### 3.5 النزاع — خمس حالات
 
-`OPEN → UNDER_REVIEW → EVIDENCE_REQUIRED →` ثلاثة قرارات:
-`RESOLVED_REFUND`، `RESOLVED_RELEASE`، `RESOLVED_PARTIAL`، أو `REJECTED`.
-كل قرار يحرّك الصفقة المقابلة (`DisputeController:129-133`): الاسترداد الكامل
-→ `Deal::STATUS_REFUNDED`، إطلاق المبلغ للبائع → `SETTLED`، التسوية الجزئية →
-`RESOLVED`. الأدلة `evidence_urls` JSON في نفس الصف — لا جدول أدلة ولا رفع
-ملفات في هذا المسار.
+`OPEN → UNDER_REVIEW → EVIDENCE_REQUIRED →` ثم قرار واحد من اثنين (`Dispute::RESOLVED_STATUSES`):
+
+- `RESOLVED_RELEASE`: الصفقة قائمة؛ تخرج من `DISPUTED` إلى `RESOLVED` وتُغلق
+  لاحقاً بـ `COMPLETED` حين يُمسح رمز التسليم.
+- `RESOLVED_CANCELLATION`: الصفقة مُلغاة؛ انتقالان بالآلة — `DISPUTED →
+  RESOLVED → CANCELLED` — فتُرجع الكمية إلى `available` ويبطل رمز التسليم،
+  بدل كتابة هذه الآثار يدوياً في المتحكم.
+
+قرار النزاع يُرسَل بالاسم الذي يخزّنه السجل (`status ∈ RESOLVED_*`) لا بقاموس
+`decision` ثانٍ، ولا مبلغ استرداد: منصّة لم تحتفظ مالاً لا تملك أن تردّه.
+`claimed_amount` رقم يصف مطالبة رافع النزاع، لا أمر دفع. الأدلة `evidence_urls`
+JSON في نفس الصف — لا جدول أدلة ولا رفع ملفات في هذا المسار.
 
 ### 3.6 الطلب وعروض الأسعار والمطابقة
 
@@ -267,48 +297,105 @@ DRAFT (لا كاتب لها في المسارات)
 ### 3.7 حالات لم تُستَهلك بعد
 
 - `Deal::STATUS_DRAFT` معرفة ومسموح الخروج منها، لكن لا مسار ينشئها.
-- `Payment` بخمس حالات (`PENDING/PROCESSING/SUCCEEDED/FAILED/REFUNDED`) وجدولها
-  فارغ: الكاتبان الوحيدان داخل `app/Services/Payments` الذي لا يستدعيه أحد.
 - `ApiKey` (`ACTIVE/REVOKED/EXPIRED`) تُنشأ وتُلغى لكن لا حارس يقبلها.
 
 ---
 
-## 4. الأدوار والصلاحيات (المصفوفة الحقيقية)
+## 4. الأدوار والصلاحيات (بابان لا يبلغان صفوف الآخر)
 
-المصدر الوحيد: `backend/config/rbac.php` — **42 صلاحية** و**قاموسان**
-يُطبّقهما `RolesAndPermissionsSeeder` الذي **يحذف** ما يُحذف من الإعداد حتى لا
-تبقى في القاعدة صلاحيات يظنّها المسؤول مضبوطة.
+المصدر: `backend/config/rbac.php` — **44 صلاحية** و**قاموسان** يُطبّقهما
+`RolesAndPermissionsSeeder` الذي **يحذف** ما يُحذف من الإعداد حتى لا تبقى في
+القاعدة صلاحيات يظنّها المسؤول مضبوطة.
+
+الأولوية في هذا الفصل ليست التسمية بل العزل: صلاحيةٌ واحدة لا تُطلب بطريقتين ولا
+تُمنح من باب واحد للجهتين.
+
+**نطاق الاسم هو القرار، لا مصدر الصفّ.** `App\Support\RbacScope` يقسم الفهرس إلى
+ثلاثة أقسام لا تتداخل وتفي به: `platform` (10) و`business` (24) و`both` (10).
+التقسيم مكتوب لا مُستنتَج: `RolesAndPermissionsSeeder::assertScopesCover()` يفشل
+الزرع إذا غاب اسم عن الثلاثة أو ظهر في اثنين، لأن قائمةً لم يكتبها أحد لا تُراجع.
+أما عمود `permissions.scope` فمرآة تُستعمل للاستعلام والتقرير فقط — قرار اللحظة
+يقرأ الإعداد.
+
+**البابان:**
+
+| الباب | المسارات | الحارس | ما يُحرَّر |
+| :--- | :--- | :--- | :--- |
+| حساب المنصة | `/api/v1/rbac/platform*` | `roles.manage` | أدوار المنصة ومنح الحساب المباشرة |
+| داخل الشركة | `/api/v1/organizations/{id}/roles` و`/{id}/members/{userId}/permissions` و`/{id}/members/permissions/bulk` | `members.manage` | وقوف الشركة وتجاوزات أعضائها |
+
+`roles.manage` لا تُقرأ في أي مسار منشأة، و`members.manage` وقوفٌ تجاري لا يبلغ
+أدوار المنصة؛ فلا صلاحية واحدة تفتح البابين، ولا باب يكتب سطرًا في صفوف الآخر.
+الرفض اسمه: `ROLE_PERMISSION_REFUSED` حيث تُرفأ صلاحية نطاقها
+`platform` إلى دور شركة، و`ACCOUNT_PERMISSION_REFUSED` حيث تُمنح صلاحية
+`business` خالصة للحساب عبر `RbacScope::unacceptableOnAccount()`، و
+`MEMBER_PERMISSION_REFUSED` في تجاوز العضو.
+
+**وقفة الفرد بلا شركة.** الاستثناء الوحيد على قاعدة «الأعمال تُقرأ من سطر العضوية»
+هو ما declaresُه `rbac.person_capabilities`: قائمة مغلقة (`offers.like`
+و`comments.create` و`notifications.view`) يمارسها الحساب باسمه حين لا تكون منشأة في
+السياق (`TenantContext::id() === null`) وكان الحساب نشطاً. لا تُخزَّن هذه الصلاحية في
+أي صف منح؛ يقررها الباب نفسه في `User::hasPermissionTo()` — فلا وجود لسطر يتسرب مع
+صاحبه خارج الشركة. التداول خارج القائمة كلها: طلب الشراء والحجز والأمر بابٌ باسم
+منشأة موثَّقة، لأن الطرف المقابل يستحق أن يعرف من يوقّع. و`RbacMatrixTest`
+يحرّس القائمة: كل اسم فيها مذكور في الفهرس ولا اسم بنطاق `platform` يدخلها،
+وإلا صارت «وقفة الفرد» باباً للخطة نفسها. الأسطر الناتجة (اهتمام/سؤال/بلاغ) تسمّي
+كاتبها دائماً، ويسجل `organization_id` منشأة السياق إن وُجدت ويصبح `NULL`
+للمستهلك — والإعلان العام يسقط الحقل الفارغ لا يخترع بديلاً له.
+
+**موضعُ تحريرٍ واحد لكل باب في كل عميل.** البابان قرارُهما في الخادم، وليسَا
+شاشتين تكتبان الصف نفسه: منحُ الحساب المباشرة يُحرَّر من صفّ الحساب حيث يُقرأ
+اسمه — «حسابات المنصة» في الويب (`UsersPanel` + `AccountPermissionsEditor`،
+فرديًا ومن شريط التحديد جماعيًا) و`lib/features/admin/account_permissions_sheet.dart`
+في الجوال — أما مصفوفة أدوار المنصة فتبقى وحدها في
+`PlatformPermissionsPanel` لأن تلك تحرّر وقوفًا لا أشخاصًا. وباب الشركة يُحرَّر من
+قائمة الأعضاء: `MembersView` و`OrganizationRolesPanel` في الويب،
+و`lib/features/org/members_screen.dart` + `member_overrides_sheet.dart` في الجوال.
+النسخة الثانية من الكتابة نفسها هي الطريق الذي يجعل أحد الموضعين يفرض قاعدةً لا
+تعرفها الأخرى، ولذلك حُذف الموضع المكرر لا الشاشة الجديدة.
 
 **أدوار المنصة** (`platform_roles`) هي ما يمسك الحساب أينما كان:
 
 | الدور | ما يُمنح | الطبيعة |
 | :--- | :--- | :--- |
-| `SuperAdmin` | كل الصلاحيات (42) | مالك المنصة |
+| `SuperAdmin` | `*` — كل الـ 45 | مالك المنصة |
 | `Auditor` | 9 | قراءة مالية عبر المنصة كلها (`ledger.view`) |
 
-**وأما ما يكونه الشخص داخل شركة** فسطر في `organization_memberships.role` لا دور
-Spatie، ويُقرأ من `rbac.membership_permissions`:
+**وأما ما يكونه الشخص داخل شركة** فسطران لا سطر: `organization_memberships.role`
+يذكر مفتاح الوقوف، وقيمة ذلك المفتاح صفوف في `organization_roles`
+المُسندة بشركة، وما يملكه الوقوف صفوف في `organization_role_permissions`، وما
+يُزاد على وقفه أو يُسحب منه صفوف في `organization_membership_permissions`
+بـ `effect` يقول `grant` أو `deny`.
 
-| الوقوف | ما يُمنح | الطبيعة |
-| :--- | :--- | :--- |
-| `owner` | 35 من 42 | كل ما يجوز للشركة على نفسها؛ يُنشئ مفاتيح الآلة ويعيّن بقية الوقوف |
-| `admin` | 34 | مثل المالك بلا مفاتيح الآلة؛ يُدير يوم الشركة وشؤونه |
-| `staff` | 22 | يجهّز ويفرش ويشحن؛ لا حذف إعلان ولا اعتماد شروط ولا توظيف |
-| `finance` | 13 | يعتمد الصفقات ويرى الدفاتر والتقارير؛ لا يحرك مخزونًا |
-| `auditor` | 9 | يرى كل شيء داخل الشركة ولا يغيّر شيئًا |
+الشركة تُنشئ وقوفها: `owner` و`admin` و`staff` و`finance` و`auditor` تُزرع لكل
+شركة كـ `is_system` بقيمها من `rbac.membership_permissions` (35 و34 و22 و13 و9
+من 45)، وبجانبها يسمّي صاحبُ الشركة أمينَ مستودع لا يُسعّر، أو مكتبَ شراء يجهّز
+الطلبات ولا يعتمد شيئًا. المفتاح فريد داخل الشركة لا خارجها، ويقارَن حسّاسًا
+للحالة (`utf8mb4_bin`) — لأن صفّين يقرآن `Admin` و`admin` وقوفان عند القاعدة
+ووقوفٌ واحد عند كل شاشة تعرضهما.
 
-الفارق ليس تسمية: المنح على الحساب كان يعني أن موظفًا في مصنع صار مدير منشأة في
-كل شركة دخلتها قدمه، وأن مغادرته الشركة لا تسحب شيئًا. الآن يغادر السطر وتنتهي
-السلطة بلا أحد يتذكر أن يلغي مربع اختيار.
+القيمة الفعلية لعضو = صفوف وقوفه (أو إعداد الوقوف المعروف إن لم تُحرَّر صفوف
+بعد) + منحُه − سحبُه، ثم تُصفّى النتيجة بـ
+`RbacScope::exercisableInsideOrganization()` والفهرس. السحب موجود لأن شركةً لا
+تستطيع إلا أن تزيد لا تجيب الطلب العادي «البقوا على وقوفهم، لكن هذا واحدٌ لا يحذف
+إعلانات»؛ والباب الذي لا يجيبه يُنزل الشخص عن وقوفه، وهو يغيّر أكثر مما طُلب. المنح
+والسحب لنفس الاسم في نفس الطلب `MEMBER_PERMISSION_CONTRADICTION`، ووقف `owner`
+المحميّ بالاسم الأساسي (`members.manage`, `organizations.manage`)
+`OWNER_STANDING_PROTECTED` — لأن مالكًا يفقد قدرته على التوظيف لا يستردّها من
+شاشة.
+
+الفارق بين هذا وما قبله ليس تسمية: المنح على الحساب كان يعني أن موظفًا في مصنع
+صار مدير منشأة في كل شركة دخلتها قدمه، وأن مغادرته الشركة لا تسحب شيئًا. الآن
+يغادر سطر العضوية فتنتهي سلطته التجارية كلها بلا أحد يتذكر أن يلغي مربع اختيار،
+ويبقى له ما مُنح على حسابه لأنه ملكٌ للمنصة لا لتلك الشركة.
 
 **صلاحيات لا تملكها أي شركة، ولا يمكن إضافتها هنا:** `offers.moderate`
 (اعتماد إعلان غيرك)، `community.moderate`، `organizations.verify` (قرار أن منشأةً
 يحق لها التداول)، `disputes.resolve` (الفصل في خصومة بين طرفين)، `users.manage`،
-`settings.manage`، `currencies.manage` — لأن من له مصلحة في النتيجة لا يفصل فيها.
-`ledger.view` هو الاستثناء المُسمّى: مسارات الدفتر تقرأ `TenantContext`، فطلب
-شركةٍ دفاترها فعلٌ تجاري، أما قراءة دفاتر كل الشركات فتأتي من أدوار المنصة التي لا
-سياق منشأة لها. يفرض ذلك
-`tests/Feature/MembershipPermissionsTest.php`.
+`roles.manage`، `settings.manage`، `currencies.manage` — لأن من له مصلحة في
+النتيجة لا يفصل فيها. `ledger.view` هو الاستثناء المُسمّى: مسارات الدفتر تقرأ
+`TenantContext`، فطلب شركةٍ دفاترها فعلٌ تجاري، أما قراءة دفاتر كل الشركات فتأتي
+من أدوار المنصة التي لا سياق منشأة لها.
 
 **التنفيذ في الخادم لا في الواجهة:** كل صلاحية مذكورة تُستخدم فعلًا في
 `routes/api.php` كـ `permission:` أو داخل خدمة/متحكم كـ `can()`،
@@ -322,6 +409,11 @@ Spatie، ويُقرأ من `rbac.membership_permissions`:
 تتفق الواجهة والخادم على معنى صلاحية واحدة ويختلفان على الثانية. تُعيد الطريقة
 قائمة الصلاحيات التي يراها الحساب نفسه (`getAllPermissions()`)، ولذلك أزرار
 اللوحة تُبنى من جواب الخادم لا من تخمين العميل.
+
+**الحدود الثلاثة مُختبَرة:** `tests/Feature/MembershipPermissionsTest.php` — ما
+يجوز لوقوف الشركة وما لا يجوز؛ `tests/Feature/PermissionIsolationTest.php` — أن
+البابين لا يبلغان صفوف بعضهما، وأن المنح والسحب والتجاوز الجماعي تصل إلى القرار
+الفعلي لا إلى الصف فقط؛ و`RbacMatrixTest` — أن الفهرس والنقاط متساويان.
 
 **انحراف معروف في القاعدة الحيّة:** جدول `roles` قد يحمل سطرًا لا تعرفه
 الإعدادات (`Intermediary` من نسخة سابقة). `config/rbac.php` لا يذكره، والـ seeder
@@ -343,8 +435,8 @@ Spatie، ويُقرأ من `rbac.membership_permissions`:
 | :--- | :--- |
 | `OfferActivatedEvent` | `OfferController` يكتب الحالة ثم `WebhookDispatcherService::dispatch('offer.created', …)` |
 | `PurchaseRequestedEvent` | `InventoryReservationService::reserve()` يحجز تحت قفل على الصف (`lockForUpdate`)، و`NotificationManager` يكتب إشعارًا |
-| `DealAcceptedEvent` / `GoodsDispatchedEvent` / … | `DealStateMachineService::transition()` يطبّق القواعد ويكتب في `deal_status_histories` ويطلق `deal.status_changed` للطرفين |
-| `DealCompletedEvent` | `SETTLED`: تحديث `escrows`، قيد دفتر (إن فُعّل علمه)، وتحريك الكميات |
+| `DealAcceptedEvent` / `GoodsDispatchedEvent` / … | `DealStateMachineService::transition()` يطبّق القواعد ويكتب في `deal_status_histories` ويطلق `deal.status_changed` للطرفين، ويعلن للطرف الآخر عبر `NotificationManager` من داخل نفس المعاملة |
+| `DealCompletedEvent` | لا حدث: عند `COMPLETED` تنتقل الكمية من `reserved` إلى `sold`، ويُقيَّد ربح العمولة في الدفتر إن فُعّل علمه — قرار مباشر في `transition()` |
 | `DisputeOpenedEvent` | `DisputeController::store` ينشئ السجل ويحوّل الصفقة إلى `DISPUTED` |
 
 نتيجة مباشرة يجب أن تُعرف: **كل ما يُقرأ من قاعدة أو يستدعى شريكًا يحدث أثناء

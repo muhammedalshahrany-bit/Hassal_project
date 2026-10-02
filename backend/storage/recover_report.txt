@@ -1,0 +1,159 @@
+parsed C:/Users/alshh/.qoder/projects/D--hassal-app-flutter/01160dd6-f8b1-4ee2-a4e2-fcbc55a6730c.jsonl (seq=7611)
+parsed C:/Users/alshh/.qoder/projects/D--hassal-app-flutter/91058cfd-f9a7-4637-a5bb-275d9ccd9efd.jsonl (seq=8177)
+recovered: app/console/commands/verifysandboxdatacommand.php
+recovered: app/http/controllers/api/v1/authcontroller.php
+recovered: app/http/controllers/api/v1/dealcontroller.php
+created: app/http/controllers/api/v1/dealhandovercontroller.php
+created: app/http/controllers/api/v1/devicecontroller.php
+recovered: app/http/controllers/api/v1/disputecontroller.php
+recovered: app/http/controllers/api/v1/inventorymovementcontroller.php
+recovered: app/http/controllers/api/v1/offercommentcontroller.php
+recovered: app/http/controllers/api/v1/offercontroller.php
+recovered: app/http/controllers/api/v1/offerlikecontroller.php
+recovered: app/http/controllers/api/v1/organizationcontroller.php
+recovered: app/http/controllers/api/v1/organizationdocumentcontroller.php
+created: app/http/controllers/api/v1/organizationrolecontroller.php
+created: app/http/controllers/api/v1/preferencecontroller.php
+recovered: app/http/controllers/api/v1/productimagecontroller.php
+recovered: app/http/controllers/api/v1/purchaserequestcontroller.php
+recovered: app/http/controllers/api/v1/reportexportcontroller.php
+created: app/http/controllers/api/v1/rolegovernancecontroller.php
+created: app/http/controllers/api/v1/supportcontroller.php
+recovered: app/http/controllers/api/v1/warehousecontroller.php
+recovered: app/http/controllers/api/v1/webhookcontroller.php
+recovered: app/http/middleware/auditlogmiddleware.php
+recovered: app/http/middleware/ensurefeatureenabled.php
+recovered: app/http/middleware/securityheaders.php
+recovered: app/http/requests/addmemberrequest.php
+created: app/http/requests/concerns/carriesdevice.php
+created: app/http/requests/devicesyncrequest.php
+created: app/http/requests/deviceupdaterequest.php
+recovered: app/http/requests/googlesigninrequest.php
+recovered: app/http/requests/loginrequest.php
+recovered: app/http/requests/registerrequest.php
+recovered: app/http/resources/offerresource.php
+created: app/http/resources/warehouseresource.php
+recovered: app/models/deal.php
+created: app/models/dealhandover.php
+recovered: app/models/dispute.php
+recovered: app/models/offer.php
+created: app/models/organizationmemberpermission.php
+recovered: app/models/organizationmembership.php
+created: app/models/organizationrole.php
+created: app/models/supportticket.php
+recovered: app/models/user.php
+created: app/models/userdevice.php
+created: app/services/auth/deviceregistry.php
+recovered: app/services/auth/googleidtokenverifier.php
+created: app/services/dealhandoverservice.php
+recovered: app/services/dealstatemachineservice.php
+recovered: app/services/demandmatchingservice.php
+recovered: app/services/doubleentryledgerservice.php
+recovered: app/services/geodiscoveryservice.php
+recovered: app/services/inventoryreservationservice.php
+recovered: app/services/notifications/notificationmanager.php
+recovered: app/services/pricingandcurrencyservice.php
+recovered: app/services/webhookdispatcherservice.php
+created: app/support/dealnotices.php
+recovered: app/support/flagcatalog.php
+created: app/support/geo.php
+created: app/support/handoverrefusal.php
+created: app/support/lockorder.php
+created: app/support/offernotices.php
+created: app/support/preferencecatalog.php
+created: app/support/qrcode.php
+created: app/support/rbacscope.php
+created: app/support/sensitivepayload.php
+recovered: app/support/settingcatalog.php
+created: app/support/uploadprobe.php
+
+recovered(differs-from-HEAD): 39
+created(missing): 27
+identical: 3
+edit issues: 49
+  app/console/commands/installsystemcommand.php: old_string not found (edit seq 5217)
+  app/console/commands/installsystemcommand.php: old_string not found (edit seq 5328)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 744)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4119)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4120)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4123)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4125)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4127)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4129)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4130)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4131)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4200)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4201)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4203)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4204)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4211)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4212)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4213)
+  app/http/controllers/api/v1/dealcontroller.php: old_string not found (edit seq 4100)
+  app/http/controllers/api/v1/offercontroller.php: old_string not found (edit seq 4091)
+  app/http/controllers/api/v1/offercontroller.php: old_string not found (edit seq 4092)
+  app/http/controllers/api/v1/offercontroller.php: old_string not found (edit seq 4093)
+  app/http/controllers/api/v1/offercontroller.php: old_string not found (edit seq 4094)
+  app/http/controllers/api/v1/offercontroller.php: old_string not found (edit seq 4097)
+  app/http/controllers/api/v1/offercontroller.php: old_string not found (edit seq 4098)
+  app/http/controllers/api/v1/offercontroller.php: old_string not found (edit seq 7451)
+  app/http/controllers/api/v1/offercontroller.php: old_string not found (edit seq 7452)
+  app/http/controllers/api/v1/offercontroller.php: old_string not found (edit seq 7459)
+  app/http/controllers/api/v1/organizationcontroller.php: count>1 without allow_multiple (verify)
+  app/http/controllers/api/v1/organizationcontroller.php: ambiguous x3 applied to first (verify)
+  app/http/controllers/api/v1/organizationrolecontroller.php: old_string not found (edit seq 4378)
+  app/http/controllers/api/v1/organizationrolecontroller.php: old_string not found (edit seq 4379)
+  app/http/controllers/api/v1/organizationrolecontroller.php: old_string not found (edit seq 4463)
+  app/http/controllers/api/v1/organizationrolecontroller.php: old_string not found (edit seq 4465)
+  app/http/requests/registerrequest.php: old_string not found (edit seq 4134)
+  app/http/requests/registerrequest.php: old_string not found (edit seq 4136)
+  app/http/requests/registerrequest.php: old_string not found (edit seq 4137)
+  app/http/requests/registerrequest.php: old_string not found (edit seq 4139)
+  app/models/offer.php: old_string not found (edit seq 4086)
+  app/models/offer.php: old_string not found (edit seq 4088)
+  app/models/offer.php: old_string not found (edit seq 4089)
+  app/providers/appserviceprovider.php: old_string not found (edit seq 1414)
+  app/providers/appserviceprovider.php: old_string not found (edit seq 1415)
+  app/services/dealstatemachineservice.php: old_string not found (edit seq 4981)
+  app/services/geodiscoveryservice.php: old_string not found (edit seq 2557)
+  app/services/geodiscoveryservice.php: old_string not found (edit seq 2575)
+  app/services/geodiscoveryservice.php: old_string not found (edit seq 2587)
+  app/support/flagcatalog.php: old_string not found (edit seq 5059)
+  app/support/qrcode.php: old_string not found (edit seq 5959)
+files with edits but no snapshot: 36
+  app/http/requests/googlesigninrequest.php
+  app/http/requests/registerrequest.php
+  app/http/controllers/api/v1/authcontroller.php
+  app/models/user.php
+  app/http/middleware/securityheaders.php
+  app/services/auth/googleidtokenverifier.php
+  app/http/middleware/auditlogmiddleware.php
+  app/http/controllers/api/v1/organizationdocumentcontroller.php
+  app/http/controllers/api/v1/productimagecontroller.php
+  app/models/offer.php
+  app/http/controllers/api/v1/offercontroller.php
+  app/http/controllers/api/v1/inventorymovementcontroller.php
+  app/services/inventoryreservationservice.php
+  app/services/doubleentryledgerservice.php
+  app/providers/appserviceprovider.php
+  app/services/geodiscoveryservice.php
+  app/http/resources/offerresource.php
+  app/support/settingcatalog.php
+  app/http/controllers/api/v1/purchaserequestcontroller.php
+  app/http/controllers/api/v1/warehousecontroller.php
+  app/services/pricingandcurrencyservice.php
+  app/http/controllers/api/v1/dealcontroller.php
+  app/services/demandmatchingservice.php
+  app/models/organizationmembership.php
+  app/http/controllers/api/v1/organizationcontroller.php
+  app/http/requests/addmemberrequest.php
+  app/support/flagcatalog.php
+  app/models/dispute.php
+  app/http/controllers/api/v1/disputecontroller.php
+  app/services/webhookdispatcherservice.php
+  app/http/controllers/api/v1/webhookcontroller.php
+  app/http/middleware/ensurefeatureenabled.php
+  app/http/controllers/api/v1/reportexportcontroller.php
+  app/console/commands/installsystemcommand.php
+  app/http/controllers/api/v1/offerlikecontroller.php
+  app/http/controllers/api/v1/offercommentcontroller.php

@@ -1,0 +1,15 @@
+backend/app/Http/Controllers/Api/V1/AuthController.php
+backend/app/Http/Controllers/Api/V1/OfferController.php
+backend/app/Http/Controllers/Api/V1/OrganizationController.php
+backend/app/Http/Controllers/Api/V1/OrganizationDocumentController.php
+backend/app/Http/Controllers/Api/V1/ProductImageController.php
+backend/app/Http/Controllers/Api/V1/PurchaseRequestController.php
+backend/app/Http/Requests/GoogleSignInRequest.php
+backend/app/Http/Requests/RegisterRequest.php
+backend/app/Http/Resources/OfferResource.php
+backend/app/Models/Dispute.php
+backend/app/Models/Offer.php
+backend/app/Models/User.php
+backend/app/Services/Auth/GoogleIdTokenVerifier.php
+backend/app/Services/GeoDiscoveryService.php
+backend/app/Support/SettingCatalog.php

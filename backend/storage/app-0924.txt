@@ -1,0 +1,73 @@
+
+################################################################################
+2026-09-24T14:26:40.383Z  failed=false  all=false
+################################################################################
+--- OLD ---
+    await loadSession();
+  };
+
+  const handleOrderSuccess = (purchaseRequest: PurchaseRequest) => {
+--- NEW ---
+    await loadSession();
+  };
+
+  /**
+   * End this browser's session.
+   *
+   * One function because two doors lead here — the header's sign-out, and the
+   * person revoking this device's own row on the account screen — and the second
+   * one has no token left to ask with. Both clear the same five things and go
+   * back to the market, which is the only view a guest may hold.
+   */
+  const signOut = async () => {
+    await api.logout();
+    setCurrentUser(null);
+    setCurrentOrg(null);
+    setOrganizations([]);
+    setProfileCompletion(null);
+    // Sign out takes the screen with it: every business view is gated on
+    // a session, so leaving the tab on one would render a blank page
+    // under a header that says "sign in".
+    setActiveView('marketplace');
+  };
+
+  const handleOrderSuccess = (purchaseRequest: PurchaseRequest) => {
+
+################################################################################
+2026-09-24T14:26:52.029Z  failed=false  all=false
+################################################################################
+--- OLD ---
+          onLogout={async () => {
+            await api.logout();
+            setCurrentUser(null);
+            setCurrentOrg(null);
+            setOrganizations([]);
+            setProfileCompletion(null);
+            // Sign out takes the screen with it: every business view is gated on
+            // a session, so leaving the tab on one would render a blank page
+            // under a header that says "sign in".
+            setActiveView('marketplace');
+          }}
+--- NEW ---
+          onLogout={() => { void signOut(); }}
+
+################################################################################
+2026-09-24T14:27:02.285Z  failed=false  all=false
+################################################################################
+--- OLD ---
+            <ProfileView
+              currentUser={currentUser}
+              locale={locale}
+              onSessionChanged={() => { void loadSession(); }}
+              onNotify={setToastMessage}
+            />
+--- NEW ---
+            <ProfileView
+              currentUser={currentUser}
+              locale={locale}
+              onSessionChanged={() => { void loadSession(); }}
+              onSignOut={() => { void signOut(); }}
+              onNotify={setToastMessage}
+            />
+
+edits: 3

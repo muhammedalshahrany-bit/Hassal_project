@@ -1,0 +1,200 @@
+
+===== src/App.tsx  2026-09-25T14:52:41.922Z  D--hassa#22970
+--- OLD (not found):
+          onLogout={async () => {
+            await api.logout();
+            setCurrentUser(null);
+            setCurrentOrg(null);
+            setOrganizations([]);
+            setProfileCompletion(null);
+            // Sign out takes the screen with it: every business view is gated on
+            // a session, so leaving the tab on one would render a blank page
+            // under a header that says "sign in".
+            setActiveView('marketplace');
+          }}
+--- NEW (what it should have become):
+          onLogout={() => { void signOut(); }}
+--- reconstruction around the first line of NEW:
+  </div>
+      )}
+
+      <div>
+        {/* Main Sticky Header */}
+        <Header
+          currentUser={currentUser}
+          currentOrg={currentOrg}
+          organizations={organizations}
+          onSelectOrganization={(organizationId) => { void selectOrganization(organizationId); }}
+          onLogin={() => setAuthMode('login')}
+          onRegister={() => setAuthMode('register')}
+          onLogout={() => { void signOut(); }}
+          canNavigate={canOpenView}
+          locale={locale}
+          onChangeLocale={changeLocale}
+          activeView={activeView}
+          onNavigate={navigateToView}
+        />
+
+        {/* View Switcher */}
+        <main className="pb-24 md:pb-16">
+          {/* What the account still owes, asked once and dismissible. The
+              server's `profil
+
+===== src/App.tsx  2026-09-25T14:52:49.581Z  D--hassa#22975
+--- OLD (not found):
+              onSessionChanged={() => { void loadSession(); }}
+              onNotify={setToastMessage}
+            />
+          )}
+
+          {activeView === 'admin' && canOpenView('admin') && (
+--- NEW (what it should have become):
+              onSessionChanged={() => { void loadSession(); }}
+              // Revoking the row this page was read from ends the session, so the
+              // devices panel hands it back here rather than guessing locally.
+              onSignOut={() => { void signOut(); }}
+              onNotify={setToastMessage}
+            />
+          )}
+
+          {activeView === 'admin' && canOpenView('admin') && (
+--- reconstruction around the first line of NEW:
+ <CatalogView can={hasPermission} />
+          )}
+
+          {activeView === 'org' && canOpenView('org') && (
+            <OrganizationProfileView
+              organizationId={currentOrg?.id ?? null}
+              organizationName={orgName}
+              myRole={currentOrg?.membership_role ?? null}
+              isSuperAdmin={hasRole('SuperAdmin')}
+              can={hasPermission}
+              onSessionChanged={() => { void loadSession(); }}
+            />
+          )}
+
+          {activeView === 'profile' && canOpenView('profile') && (
+            <ProfileView
+              currentUser={currentUser}
+              locale={locale}
+              onSessionChanged={() => { void loadSession(); }}
+              onSignOut={() => { void signOut(); }}
+              onNotify={setToastMessage}
+    
+
+===== src/App.tsx  2026-09-28T16:28:03.041Z  D--hassa#39822
+--- OLD (not found):
+  const navigateToView = (view: string) => {
+    if (!canOpenView(view)) {
+      setToastMessage(REFUSAL_MESSAGES[view] ?? 'هذه الشاشة غير متاحة للحساب الحالي');
+      setTimeout(() => setToastMessage(null), 5000);
+      return;
+    }
+
+    setActiveView(view);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+--- NEW (what it should have become):
+  const navigateToView = (view: string) => {
+    if (!canOpenView(view)) {
+      setToastMessage(REFUSAL_MESSAGES[view] ?? 'هذه الشاشة غير متاحة للحساب الحالي');
+      setTimeout(() => setToastMessage(null), 5000);
+      return;
+    }
+
+    showView(view);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  /**
+   * Puts a destination on screen *and* in the address bar.
+   *
+   * One function writes both, because the two drifting apart is how a person
+   * ends up looking at their business file with `/market` in the URL — and then
+   * sending that address to a colleague who lands somewhere else entirely. The
+   * query is dropped on purpose: the parameters an arrival carried (`?deal=4`)
+   * belonged to that arrival, and carrying them into the next screen would make
+   * a row a person has already left look like the one still open.
+   */
+  const showView = useCallback((view: string) => {
+    setActiveView(view);
+    const next = pathForView(view);
+    if (next !== window.location.pathname) {
+      window.history.pushState({ view }, '', next);
+    }
+  }, []);
+
+  /**
+   * Two facts about the browser, kept in step with the screen.
+   *
+   * On the way in: an address from the flat world (`/demands`) is rewritten to
+   * the branch that now holds it (`/deals/demands`) with `replaceState`, so the
+   * person's bookmark ends up correct and «back» does not return them to an
+   * address this build answered by redirecting. An address that names nothing
+   * becomes the market rather than a blank panel.
+   *
+   * Ongoing: «back» and «forward» are the browser's own, and a view that only
+   * changed in React state would leave them moving the URL under a screen that
+   * never changed.
+   */
+  useEffect(() => {
+    const { path, query } = resolveLocation(
+      window.location.pathname + window.location.search
+    );
+    const target = path === '/' ? pathForView(DEFAULT_VIEW) : path;
+    if (target !== window.location.pathname) {
+      window.history.replaceState({}, '', target + query);
+    }
+
+    const onPop = () => {
+      setActiveView(viewForPath(window.location.pathname) ?? DEFAULT_VIEW);
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
+  /**
+   * An address is a request, not a grant.
+   *
+   * Once the server has answered who this is, a view this session may not open
+   * is traded for the market and the reason is said out loud — the same sentence
+   * a blocked tab click produces. Before that answer arrives the screen is left
+   * alone: `canOpenView` is false for every business door while `/auth/me` is
+   * still in flight, and a fallback keyed on that would bounce a permitted
+   * person off their own page on every reload.
+   */
+  useEffect(() => {
+    if (!sessionRead) return;
+    if (canOpenView(activeView)) return;
+    showView(DEFAULT_VIEW);
+    setToastMessage(REFUSAL_MESSAGES[activeView] ?? 'هذه الشاشة غير متاحة للحساب الحالي');
+    const clear = setTimeout(() => setToastMessage(null), 5000);
+    return () => clearTimeout(clear);
+    // `sessionRead` is the only dependency that matters: the check re-runs when
+    // the answer arrives and whenever the address changes.
+  }, [sessionRead, activeView]);
+
+--- reconstruction around the first line of NEW:
+support':
+        // Same shape as `profile`, and for the same reason: filing a report is
+        // not a business capability. The route behind it asks only for a token,
+        // so an account with no active membership is still allowed the desk —
+        // indeed is the account that most needs to reach it.
+        return Boolean(currentUser);
+      default:
+        return false;
+    }
+  };
+
+  const navigateToView = (view: string) => {
+    if (!canOpenView(view)) {
+      setToastMessage(REFUSAL_MESSAGES[view] ?? 'هذه الشاشة غير متاحة للحساب الحالي');
+      setTimeout(() => setToastMessage(null), 5000);
+      return;
+    }
+
+    // Remembered for the support desk, and only when the move is *away* from a
+    // screen: a report filed from the account sheet has to say where the person
+    /

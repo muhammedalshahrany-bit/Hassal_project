@@ -1,0 +1,27 @@
+
+  [37;44m INFO [39;49m Seeding database.  
+
+  Database\Seeders\SandboxSeeder [90m.............................................................................[39m [33;1mRUNNING[39;22m  
+  Database\Seeders\DatabaseSeeder [90m............................................................................[39m [33;1mRUNNING[39;22m  
+  Database\Seeders\RolesAndPermissionsSeeder [90m.................................................................[39m [33;1mRUNNING[39;22m  
+  Database\Seeders\RolesAndPermissionsSeeder [90m.............................................................[39m [90m201 ms[39m [32;1mDONE[39;22m  
+
+  Database\Seeders\DatabaseSeeder [90m........................................................................[39m [90m305 ms[39m [32;1mDONE[39;22m  
+
+  منشآت: 8
+  حسابات: 24
+  عروض: 15
+  طلبات احتياج: 5
+  طلبات شراء: 5
+  محجوزات: 18
+  أوامر شراء: 14
+  رموز تسليم: 13
+  نزاعات: 4
+
+  أوامر وصلت ولم يُمسح رمزها بعد (لا تُغلق قبل المسح):
+    DL-261001-QBIDVI  →  EE7L6LXXH4JFV47C
+
+  تسجيل الدخول (كلمة المرور واحدة لكل حسابات المنشآت):
+    amal.owner@hassal.test — بائع، مالك  |  amal.staff@hassal.test — بائع، موظف  |  sultan.owner@hassal.test — مشترٍ، مالك  |  nakhil.staff@hassal.test — مشترٍ، موظف (يرتّب البضاعة)  |  salma.consumer@hassal.test — مستهلك، بلا منشأة (تتصفح وتبلغ)
+  Database\Seeders\SandboxSeeder [90m......................................................................[39m [90m15,504 ms[39m [32;1mDONE[39;22m  
+

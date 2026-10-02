@@ -1,0 +1,8 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+id	name	holders	emails
+1	SuperAdmin	1	alshhranymuha39@gmail.com
+2	SellerAdmin	0	NULL
+3	SellerStaff	0	NULL
+4	BuyerAdmin	0	NULL
+5	BuyerStaff	0	NULL
+6	Auditor	0	NULL

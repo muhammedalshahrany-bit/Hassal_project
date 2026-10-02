@@ -7,7 +7,7 @@
 |
 | Environment-level wiring only. Anything the operator is expected to change
 | after installation lives in the `system_settings` table and is read through
-| App\Services\SystemSettingsService, because changing a value must not require
+| App\Platform\Services\SystemSettingsService, because changing a value must not require
 | a deploy or a code edit.
 |
 | This file deliberately contains NO country, currency, tax rate, commission
@@ -19,6 +19,34 @@
 */
 
 return [
+
+    // The first platform operator, for an install that runs with no terminal in
+    // front of it — a container entrypoint, a CI step. `app:install-system`
+    // reads these before it prompts, and an option given on the command line
+    // still wins over both.
+    //
+    // There is no default password here, and none anywhere in this repository:
+    // an unset value falls back to the interactive prompt rather than to a
+    // string an installer would quietly accept. What reaches the database is
+    // the hash the `User` model makes on assignment, never the value itself, so
+    // nothing in this block is recoverable from the row afterwards.
+    'install' => [
+        'admin_name' => env('HASSAL_ADMIN_NAME'),
+        'admin_email' => env('HASSAL_ADMIN_EMAIL'),
+        'admin_password' => env('HASSAL_ADMIN_PASSWORD'),
+    ],
+
+    // The demo world's shared sign-in, for `SandboxSeeder` only.
+    //
+    // No default, for the same reason the installer has none: a password the
+    // repository knows is a password nobody chose. `SandboxSeeder` refuses to run
+    // without it, so a developer states out loud that these accounts are open in
+    // this environment — which is also why the seeder itself is refused in
+    // production, and why a production install has no account whose password
+    // appears in a file.
+    'sandbox' => [
+        'password' => env('HASSAL_SANDBOX_PASSWORD'),
+    ],
 
     // Installed product surface. These are deployment choices, not feature
     // toggles the admin flips; the admin-facing flags live in feature_flags.
@@ -122,6 +150,24 @@ return [
         ],
     ],
 
+    // Which addresses may rewrite what this application believes about the
+    // request: the client IP, the protocol and the host.
+    //
+    // This is a correctness setting before it is a security one. Every request
+    // reaches Laravel through the gateway, so with no trusted proxy
+    // `throttle:10,1` on `POST /auth/login` counts the gateway's own address —
+    // ten sign-ins a minute for the entire platform — `$request->isSecure()` is
+    // false on a TLS deployment so HSTS is never sent, and every audit row names
+    // the proxy as the actor.
+    //
+    // `*` is right for the architecture this ships in, where Laravel binds to
+    // 127.0.0.1 and the gateway is the only public listener. A deployment that
+    // exposes the app directly must name its load balancer instead: trusting any
+    // address lets a client forge its own IP and walk round its own ban.
+    'network' => [
+        'trusted_proxies' => env('HASSAL_TRUSTED_PROXIES', '*'),
+    ],
+
     // Request ceilings. The editable numbers are `security.*` in
     // `system_settings`; these are what the limiter falls back to on a database
     // that has never been installed, so a missing row throttles rather than
@@ -142,16 +188,11 @@ return [
         'expiry_grace_seconds' => (int) env('HASSAL_RESERVATION_GRACE_SECONDS', 60),
     ],
 
-    // Integration providers are adapters behind a contract. No provider is
-    // enabled by merely existing here: an adapter must be configured AND its
-    // feature flag turned on, and an unconfigured adapter must make the
-    // platform say "not available" rather than fake a result.
-    'integrations' => [
-        'payment' => env('HASSAL_PAYMENT_PROVIDER', 'manual'),
-        'currency_rates' => env('HASSAL_RATE_PROVIDER', 'manual'),
-        'verification' => env('HASSAL_VERIFICATION_PROVIDER', 'manual'),
-        'maps' => env('HASSAL_MAPS_PROVIDER', 'openstreetmap'),
-    ],
+    // Deliberately absent: a block naming "which payment provider" or "which
+    // verification provider" this installation calls. No code reads such a
+    // switch, and a configuration key that nothing consumes is not a setting —
+    // it is a promise the platform does not keep. HASSAL records trades; money
+    // changes hands between the two businesses, outside it.
 
     // Webhook delivery. Signatures are timestamped to make replay bounded.
     'webhooks' => [

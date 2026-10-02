@@ -80,17 +80,21 @@ runtime via `POST /api/v1/feature-flags/{key}/toggle` (SuperAdmin). A disabled c
 | `geo_discovery` | الفرص القريبة / Nearby Discovery | `true` | `feature:geo_discovery` on `GET /offers/nearby`. Off ⇒ radius search is unavailable; city-text search still works. |
 | `api_keys` | مفاتيح API / API Keys | `false` | `feature:api_keys` on the `/api-keys/*` group. **Off by design:** issuing a key is built (hashed, scoped, revocable) but no request guard authenticates one, so `ApiKeyAuthenticationService::authenticate()` has no callers and a key handed to a partner opens nothing today. |
 | `webhooks` | إشعارات الويب هوك / Webhooks | `false` | `feature:webhooks` on the `/webhooks/*` management group. Delivery itself goes through `WebhookDispatcherService` + the `app:process-webhooks` command; out URLs are filtered by `OutboundEndpointPolicy` (internal addresses refused) and signed with HMAC. |
-| `double_entry_ledger` | دفتر الأستاذ المزدوج / Double-Entry Ledger | `false` | Two places: `feature:double_entry_ledger` on `/ledger/*` and `/reconciliation/*`, **and** `DealStateMachineService`, which only calls `recordEscrowFunding` / `recordDealSettlement` / `recordEscrowRefund` when the flag is on. Off ⇒ the money endpoints 503 and deal transitions skip ledger entries. |
-| `escrow` | حساب الضمان المالي / Escrow | `false` | Not a route — `TRANSITION_RULES` in `DealStateMachineService` gates `ESCROW_FUNDED` and `REFUNDED` on it (`'feature' => 'escrow'`). Off ⇒ those two transitions throw "requires the 'escrow' capability", so the deal cannot pass through an escrow step. It does **not** switch settlement to a "direct settlement mode"; it simply refuses those states. Off by default because no payment gateway and no real funds are connected. |
+| `double_entry_ledger` | دفتر الأستاذ المزدوج / Double-Entry Ledger | `false` | Two places: `feature:double_entry_ledger` on `/ledger/*`, **and** `DealStateMachineService`, which at `COMPLETED` calls `DoubleEntryLedgerService::recordDealFee()` only when the flag is on — one fee accrual (`1010-FEE-RECEIVABLE` / `4010-COMMISSION-REVENUE`). Off ⇒ the ledger endpoints 503 and deal transitions post nothing. |
 
-> **Flags that do not exist:** `demands`, `disputes`, `reconciliation` and `offer_review_required` are not flag
-> keys. Disputes are gated by the `disputes.open` / `disputes.resolve` permissions and reconciliation by
-> `ledger.view` + `feature:double_entry_ledger`; offer moderation is the `offer.requires_review` *setting*,
+> **There is no `escrow` flag** (removed 2026-10-01 with the whole payment layer, per §20 of the platform
+> master prompt). `FlagCatalog` carries no payment or escrow capability on purpose: HASSAL records deal
+> money as a snapshot number, it never holds funds.
+
+> **Flags that do not exist:** `demands`, `disputes`, `reconciliation`, `escrow` and `offer_review_required`
+> are not flag keys. Disputes are gated by the `disputes.open` / `disputes.resolve` permissions; there is no
+> reconciliation route at all; offer moderation is the `offer.requires_review` *setting*,
 > not a flag. Keeping a switch that gates no code path would advertise a control that does not exist.
 >
 > **Current live values may differ from the seeded defaults** — they are operator data. As measured on
-> 2026-09-19 in this deployment, `api_keys`, `webhooks` and `double_entry_ledger` had been switched on
-> by an administrator, and `escrow` remained off.
+> 2026-10-01 in this deployment every flag matches its seeded default: `marketplace`, `demand_rfq`,
+> `matching_engine`, `geo_discovery` and `community` are on, while `api_keys`, `webhooks` and
+> `double_entry_ledger` are off.
 
 ---
 

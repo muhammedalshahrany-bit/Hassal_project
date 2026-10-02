@@ -4,11 +4,10 @@ info:
   description: >
     RESTful API for the HASSAL B2B food-stuff marketplace: inventory listings from
     registered businesses, purchase requests a seller reviews, quantity holds created
-    by that review, deal state machines with inspection and settlement windows, a
-    double-entry ledger of what a deal recorded, and RFQ demands. The platform does
-    not hold money: no payment gateway, wallet or escrow custody is implemented, and
-    a deal's ESCROW_FUNDED state is a status the counterparties record, not funds the
-    platform keeps.
+    by that review, a twelve-state deal machine gated by a one-time handover proof at
+    pickup, a double-entry ledger that posts only the platform fee accrual, and RFQ
+    demands. The platform does not hold money: no payment gateway, wallet or escrow
+    custody exists, and a deal's recorded amount is a pricing snapshot, not funds.
   version: 2.0.0-production
   contact:
     name: HASSAL Engineering

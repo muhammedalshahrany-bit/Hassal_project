@@ -1,0 +1,12 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+deals.currency_code
+demands.currency_code
+escrows.currency_code
+journal_entries.currency_code
+ledger_accounts.currency_code
+offer_items.currency_code
+offers.currency_code
+payments.currency_code
+purchase_requests.currency_code
+quotations.currency_code
+reservations.currency_code

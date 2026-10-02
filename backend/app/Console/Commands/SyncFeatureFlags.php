@@ -2,15 +2,15 @@
 
 namespace App\Console\Commands;
 
-use App\Models\FeatureFlag;
-use App\Services\FeatureFlagService;
-use App\Support\CatalogSync;
-use App\Support\FlagCatalog;
+use App\Platform\Models\FeatureFlag;
+use App\Platform\Services\FeatureFlagService;
+use App\Platform\Support\CatalogSync;
+use App\Platform\Support\FlagCatalog;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Reconcile the `feature_flags` table with App\Support\FlagCatalog.
+ * Reconcile the `feature_flags` table with App\Platform\Support\FlagCatalog.
  *
  * Same failure this exists for as with the settings table: the catalog and the
  * installed rows drifted apart. This deployment had no `marketplace` row, and

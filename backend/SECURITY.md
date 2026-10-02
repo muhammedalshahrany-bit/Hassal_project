@@ -42,12 +42,18 @@ the record through a relationship that is already scoped. 17 of the 23
 | `CurrencyManagementController` | Platform-admin surface, `role:SuperAdmin` |
 | `FeatureFlagController` | `permission:settings.manage`, which no business role holds (`routes/api.php:404`) |
 | `NotificationController` | Scoped by `user_id`, not by organization (`NotificationController.php:16,26,34,42`) |
-| `ReconciliationController` | Platform-wide financial audit; guarded by `permission:ledger.view` |
 
-`ledger.view` is held by `SuperAdmin` and `Auditor` only (`config/rbac.php:70,132`),
-and `Auditor` is defined as a read-only observer across the platform — so
-`/ledger/*` and `/reconciliation/audit` being cross-tenant is the design, not a
-hole. No business role can reach them.
+`/ledger/*` needs `ledger.view` + `feature:double_entry_ledger`, and
+`ledger.view` is held by `SuperAdmin`, the platform `Auditor` (line 230) and the
+organization roles `owner`, `admin`, `finance` and `auditor`
+(`config/rbac.php:340,361,386,397`). That is not a cross-tenant leak:
+`LedgerController` filters every query by the caller's active
+organization (`organization_id`) unless the account carries `role:SuperAdmin`
+(`LedgerController.php:29-36,59-62`) — so the books one company sees are its own,
+and only `SuperAdmin` reads across organizations; even the platform `Auditor` is
+organization-scoped by the same filter. There is no `/reconciliation/audit`:
+the route and `ReconciliationController` were removed 2026-10-01 together with the
+payment layer, so the table above no longer needs a row for them.
 
 **This is not IDOR immunity — but it is now tested.** Because the boundary is
 written per query rather than enforced by the framework, a new endpoint that
@@ -218,13 +224,13 @@ selected mutating routes, not to the API as a whole.
   corrections go in as compensating entries. There is **no** trigger, and a
   person with direct database access can change history. If immutability has to
   survive that, it needs database triggers or an append-only store.
-- **No custody is assumed.** `Payment::create` exists only inside
-  `app/Services/Payments/BankTransferPaymentProvider.php:33` and
-  `CashOnDeliveryPaymentProvider.php:25`, and **no route, controller or other
-  service references that layer at all** — so no code path can write a payment
-  row from the API today, and `payments` is empty. The escrow flag gates deal
-  transitions in `DealStateMachineService::TRANSITION_RULES`, and escrow rows
-  are an accounting record. Nothing in this repository moves money.
+- **No custody is assumed, and no payment code exists to assume it.** The
+  `Payment` model, the `payments`/`escrows` tables and the whole
+  `app/Services/Payments` adapter layer were deleted on 2026-10-01 (§20 of the
+  platform master prompt: Transaction ≠ Payment). Nothing in this repository
+  moves money: a deal's amount is a recorded snapshot, the ledger posts only the
+  platform fee accrual at `COMPLETED`, behind the default-off
+  `double_entry_ledger` flag.
 
 ---
 
@@ -325,20 +331,17 @@ link is built from `APP_URL` and redirects onward to that address.
    quotations, dispute resolution, inventory movements, notification marking
    and the ledger/report surfaces.
 3. Ledger immutability has no database enforcement (section 5).
-4. `payments` and the `app/Services/Payments` adapters exist but nothing calls
-   them; a real gateway integration is unwritten, so payment data protection is
-   not yet a live concern.
-5. Webhook delivery is synchronous inside the request that triggers it: a slow
+4. Webhook delivery is synchronous inside the request that triggers it: a slow
    partner endpoint adds latency to a user-visible call, and there is no queue
    worker to isolate it.
-6. `system_status` now measures whether the database connection opens, but that
+5. `system_status` now measures whether the database connection opens, but that
    is its entire scope: cache, storage, mail and the outbound-webhook listener
    are not probed, so `OPERATIONAL` is not a whole-stack health signal.
-7. The signed document link (section 6) carries its signature in the query
+6. The signed document link (section 6) carries its signature in the query
    string, so any access log, referrer or browser-sync path that sees the
    request holds a working link for its fifteen minutes. Far smaller than a
    permanent public path, but not zero. A first-party download view behind the
    session, or a shorter window, remains open.
-8. No upload is scanned for malware, and no per-account rate limit bounds how
+7. No upload is scanned for malware, and no per-account rate limit bounds how
    much one business can file — the ceilings in `config('hassal.uploads')`
    bound size and count only.

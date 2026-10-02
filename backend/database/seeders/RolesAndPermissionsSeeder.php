@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Core\Rbac\RbacScope;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
@@ -34,8 +35,21 @@ class RolesAndPermissionsSeeder extends Seeder
 
         $wantedPermissions = $matrix['permissions'];
 
+        // The scope is converged before the rows, so a permission that is new to
+        // the catalog is born carrying the boundary rather than sitting at the
+        // column default until somebody notices. `assertScopesCover` is the
+        // fail-fast the config cannot express on its own: a name listed under two
+        // scopes has no boundary, and a name listed nowhere has not been decided.
+        $this->assertScopesCover($matrix['permissions'], (array) ($matrix['permission_scopes'] ?? []));
+
         foreach ($wantedPermissions as $name) {
-            Permission::firstOrCreate(['name' => $name, 'guard_name' => self::GUARD]);
+            $permission = Permission::firstOrCreate(['name' => $name, 'guard_name' => self::GUARD]);
+
+            $scope = RbacScope::scopeOf($name);
+
+            if ($permission->scope !== $scope) {
+                $permission->forceFill(['scope' => $scope])->save();
+            }
         }
 
         foreach ($matrix['roles'] as $roleName => $rolePermissions) {
@@ -46,6 +60,68 @@ class RolesAndPermissionsSeeder extends Seeder
         $this->pruneStaleEntries($wantedPermissions, array_keys($matrix['roles']));
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
+    }
+
+    /**
+     * Refuse to seed a matrix whose boundary has not actually been decided.
+     *
+     * `config/rbac.php` names three scopes and every permission belongs to one of
+     * them, so three mistakes are possible and all three are silent: a name
+     * listed under two scopes (the boundary is then a rumour, and the first list
+     * consulted wins), a scoped name the catalog never declared (the row can never
+     * exist, so the entry is decoration), and a catalogued name nobody classified.
+     * The last one is the dangerous one, because `RbacScope::scopeOf()` answers it
+     * `business` — a reasonable default at read time and an unreviewed decision at
+     * seed time, which is the only moment anybody is in a position to make it.
+     *
+     * @param  array<int, string>  $permissions
+     * @param  array<string, array<int, string>>  $scopes
+     */
+    private function assertScopesCover(array $permissions, array $scopes): void
+    {
+        if ($scopes === []) {
+            throw new \RuntimeException('config/rbac.php declares permissions but no `permission_scopes`; refusing to seed an RBAC matrix whose platform/business boundary is undocumented.');
+        }
+
+        $declared = array_values(array_filter(
+            [RbacScope::PLATFORM, RbacScope::BOTH, RbacScope::BUSINESS],
+            static fn (string $scope): bool => ($scopes[$scope] ?? []) !== []
+        ));
+
+        if (count($declared) !== 3) {
+            throw new \RuntimeException('config/rbac.php must name all three scopes — platform, both and business — and it is missing: ' . implode(', ', array_diff(['platform', 'both', 'business'], $declared)));
+        }
+
+        $unknown = array_values(array_diff(
+            array_merge(...array_map(static fn (string $scope): array => $scopes[$scope], $declared)),
+            $permissions
+        ));
+
+        if ($unknown !== []) {
+            throw new \RuntimeException('config/rbac.php scopes names that are not in its permission catalog: ' . implode(', ', $unknown));
+        }
+
+        // A name under two scopes is a name with no boundary: `scopeOf()` would
+        // answer whichever list it happens to consult first, and the row would
+        // carry an answer that changed with the order of a lookup.
+        foreach ($declared as $index => $scope) {
+            for ($other = $index + 1; $other < count($declared); $other++) {
+                $claimedTwice = array_values(array_intersect($scopes[$scope], $scopes[$declared[$other]]));
+
+                if ($claimedTwice !== []) {
+                    throw new \RuntimeException("config/rbac.php scopes the same name as both `{$scope}` and `{$declared[$other]}`: " . implode(', ', $claimedTwice));
+                }
+            }
+        }
+
+        $unclassified = array_values(array_diff(
+            $permissions,
+            array_merge(...array_map(static fn (string $scope): array => $scopes[$scope], $declared))
+        ));
+
+        if ($unclassified !== []) {
+            throw new \RuntimeException('config/rbac.php declares permissions no scope names — every name must be `platform`, `both` or `business`, and silence is not a decision: ' . implode(', ', $unclassified));
+        }
     }
 
     /**

@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\FeatureFlag;
+use App\Platform\Models\FeatureFlag;
 use Illuminate\Database\Migrations\Migration;
 
 /**
@@ -37,7 +37,7 @@ return new class extends Migration
 
         // The flag service memoises for an hour, and an invisible change to a
         // flag that gates a route is a silent 503 nobody can explain.
-        app(\App\Services\FeatureFlagService::class)->flushCache();
+        app(\App\Platform\Services\FeatureFlagService::class)->flushCache();
     }
 
     public function down(): void

@@ -1,0 +1,83 @@
+
+### 2026-09-19T08:59:08.972Z C:\Users#9227
+cd /d/hassal && rm src/components/LedgerEscrowView.tsx && sed -n 285,330p src/App.tsx
+
+### 2026-09-19T08:59:13.876Z C:\Users#9232
+cd /d/hassal && sed -i 's/LedgerEscrowView/LedgerView/g' src/App.tsx && grep -n "LedgerView\|from './components/LedgerView'" src/App.tsx
+
+### 2026-09-19T09:04:00.228Z C:\Users#9341
+cd /d/hassal && printf "import type { Offer } from './types';\nconst x = {} as Offer;\nconsole.log(x.sku, x.unit_name_ar, x.seller_rating);\n" > src/probe.ts && npx tsc --noEmit 2>&1 | grep probe; rm src/probe.ts
+
+### 2026-09-19T09:04:38.578Z C:\Users#9351
+cd /d/hassal && printf "import { useState } from 'react';\nimport type { Offer, Category, Brand } from '../types';\nexport const P = () => {\n const [offers] = useState<Offer[]>([]);\n return offers.filter((o) => o.sku).map((o) => o.unit_name_ar);\n};\n" > src/components/probe3.tsx && npx tsc --noEmit 2>&1 | grep probe3; rm src/components/probe3.tsx
+
+### 2026-09-19T09:11:42.702Z C:\Users#9536
+cd /d/hassal && sed -i 's/o\.sku/o.variant_sku/g; s/offer\.sku/offer.variant_sku/g' src/components/MarketplaceView.tsx && grep -n "variant_sku" src/components/MarketplaceView.tsx
+
+### 2026-09-19T09:11:53.873Z C:\Users#9541
+cd /d/hassal && sed -i 's/\.unit_name_ar/.unit/g' src/components/MarketplaceView.tsx src/components/SellerInventoryView.tsx && grep -n "\.unit\b" src/components/MarketplaceView.tsx | head
+
+### 2026-09-19T09:44:43.444Z C:\Users#10137
+cd /d/hassal && node -e " const fs=require('fs'); const p='src/components/DealsPipelineView.tsx'; let L=fs.readFileSync(p,'utf8').split('\n'); const start=744, end=945; // inner content lines [start, end) if(!L[start].includes('flex items-start justify-between')) throw new Error('unexpected start: '+L[start]); if(!L[end].includes('</article>')) throw new Error('unexpected end: '+L[end]); const inner=L.slice(start,end).map(l=>l.length? ' '+l : l); L=[...L.slice(0,start), ...inner, L[end], ' );', ...L.slice(end+1)]; fs.writeFileSync(p,L.join('\n')); console.log('reindented', inner.length, 'lines'); "
+
+### 2026-09-19T09:44:49.971Z C:\Users#10142
+cd /d/hassal && node -e " const fs=require('fs'); const p='src/components/DealsPipelineView.tsx'; let L=fs.readFileSync(p,'utf8').split('\n'); const start=744, end=945; if(!L[start].includes('flex items-start justify-between')) throw new Error('unexpected start: '+L[start]); if(!L[end].includes('</article>')) throw new Error('unexpected end: '+L[end]); const inner=L.slice(start,end).map(l=>l.length ? ' '+l : l); L=[].concat(L.slice(0,start), inner, [L[end], ' );'], L.slice(end+1)); fs.writeFileSync(p,L.join('\n')); console.log('reindented lines:', inner.length); "
+
+### 2026-09-19T11:20:01.741Z C:\Users#11222
+cd /d/hassal && node -e " const fs=require('fs'); const api=fs.readFileSync('src/lib/api.ts','utf8'); const names=[...api.matchAll(/^ (?:async |)([a-zA-Z0-9_]+)\s*\(/gm)].map(m=>m[1]).filter(n=>!['constructor','request','get','post','put','del','patch','qs'].includes(n)); const files=fs.readdirSync('src/components').concat(fs.readdirSync('src/lib')); const used=new Set(); for(const f of files){const s=fs.readFileSync('src/components/'+f,'utf8');const l=fs.readFileSync('src/lib/'+f,'utf8');for(const n of names){if(new RegExp('api\\\\.'+n+'\\\\(').test(s)||new RegExp('\\\\.'+n+'\\\\(').test(l))used.add(n);}} console.log('UNWIRED api methods:'); console.log(names.filter(n=>!used.has(n)).join('\
+
+### 2026-09-25T20:28:58.151Z C:\Users#30176
+cd /d/hassal && node -e " const fs=require('fs'); const p='src/components/LedgerView.tsx'; const lines=fs.readFileSync(p,'utf8').split('\n'); lines.splice(434,54); fs.writeFileSync(p, lines.join('\n')); console.log('ok', lines.length); " && sed -n '425,440p' src/components/LedgerView.tsx
+
+### 2026-10-02T07:52:53.183Z C:\Users#7617
+cd /d/hassal && grep -rn "types'" src --include=*.ts --include=*.tsx | grep -v "@/features/" ; echo "--- non-type imports of types file ---"; grep -rn "from '\.\./types'\|from '\./types'" src ; echo "--- deleting ---"; rm src/types.ts && npx tsc --noEmit 2>&1 | head -40
+
+### 2026-10-02T08:06:45.773Z C:\Users#7876
+cd /d/hassal && node scripts/tmp-split-api.mjs 2>&1 | tail -20 && echo "=== auth head ===" && sed -n '12,45p' src/features/auth/api.ts
+
+### 2026-10-02T08:07:08.103Z C:\Users#7886
+cd /d/hassal && node scripts/tmp-split-api.mjs 2>&1 | tail -4 && echo "=== auth 1-60 ===" && sed -n '13,50p' src/features/auth/api.ts
+
+### 2026-10-02T08:07:43.716Z C:\Users#7903
+cd /d/hassal && node scripts/tmp-split-api.mjs 2>&1 | tail -3 && echo "=== auth 13-40 ===" && sed -n '13,40p' src/features/auth/api.ts && echo "=== org api imports ===" && sed -n '12,22p' src/features/organizations/api.ts
+
+### 2026-10-02T08:08:59.133Z C:\Users#7924
+cd /d/hassal && cat >> src/features/organizations/api.ts <<'EOF' /** * The checklist a verification refusal arrived with, or `null`. * * A screen that hardcoded "upload your registration certificate" would be wrong * the moment an operator turned that requirement off, so the refusal carries * which items the platform actually requires and which are done. */ export function verificationGate<T>(result: ApiResult<T>): VerificationGateDetails | null { if (result.error_code !== 'ORGANIZATION_NOT_VERIFIED') return null; return (result.error?.details as VerificationGateDetails | undefined) ?? null; } EOF node -e " const fs=require('fs');const p='src/features/organizations/api.ts'; let t=fs.readFile
+
+### 2026-10-02T08:10:07.067Z C:\Users#7956
+cd /d/hassal && rm src/lib/api.ts && npx tsc --noEmit 2>&1 | head -30
+
+### 2026-10-02T08:15:12.394Z C:\Users#8012
+cd /d/hassal && node scripts/tmp-fix-type-imports.mjs && head -8 src/features/auth/types.ts && npx tsc --noEmit 2>&1 | grep -c .
+
+### 2026-10-02T08:15:41.338Z C:\Users#8027
+cd /d/hassal && node scripts/tmp-fix-type-imports.mjs && head -6 src/features/auth/types.ts && echo "=== errors ===" && npx tsc --noEmit 2>&1 | head -25
+
+### 2026-10-02T08:16:31.579Z C:\Users#8037
+cd /d/hassal && node -e " const fs=require('fs'); for(const f of ['auth','identity','marketplace','organizations','trading']){ const p='src/features/'+f+'/types.ts'; let t=fs.readFileSync(p,'utf8'); const before=t; t=t.replace(/^(import type[^\n]*\n)+\n?\/\*\n\n\*\n/, m => { const imports=m.match(/^import type[^\n]*\n/g).join(''); return imports+'\n/**\n'; }); if(t!==before){fs.writeFileSync(p,t);console.log('repaired '+p);}else console.log('NO MATCH '+p); } " && head -6 src/features/auth/types.ts
+
+### 2026-10-02T08:17:03.324Z C:\Users#8050
+cd /d/hassal && node scripts/tmp-recompute-type-imports.mjs && head -6 src/features/trading/types.ts && echo "=== tsc ===" && npx tsc --noEmit 2>&1 | wc -l
+
+### 2026-10-02T08:20:02.598Z C:\Users#8103
+cd /d/hassal && node scripts/tmp-find-collisions.mjs $(find src -name '*.tsx' -o -name '*.ts' | grep -v "features/") 2>&1 | head -20
+
+### 2026-10-02T08:20:28.894Z C:\Users#8113
+cd /d/hassal && perl -pi -e 's/\bcreateProduct\b/saveProduct/g if $. == 410 || $. == 426 || $. == 818' src/components/CatalogView.tsx && perl -pi -e 's/\bopenDispute\b/fileDispute/g if $. == 134 || $. == 151 || $. == 348; s/\bresolveDispute\b/ruleDispute/g if $. == 182 || $. == 188 || $. == 424' src/components/DisputesView.tsx && perl -pi -e 's/\bcreateCurrency\b/addCurrency/g if $. == 575 || $. == 578 || $. == 660' src/components/PlatformConfigView.tsx && perl -pi -e 's/\bchangePassword\b/submitPasswordChange/g if $. == 94 || $. == 107 || $. == 233' src/components/ProfileView.tsx && grep -n "saveProduct\|fileDispute\|ruleDispute\|addCurrency\|submitPasswordChange" src/components/{CatalogVie
+
+### 2026-10-02T08:21:01.690Z C:\Users#8118
+cd /d/hassal && perl -pi -e 's/\bsaveProduct\b/submitNewProduct/g if $. == 410 || $. == 818; s/\bsubmitNewProduct\b/saveProduct/g if $. == 522; s/\bsaveProduct\b/createProduct/g if $. == 426' src/components/CatalogView.tsx && perl -pi -e 's/\bfileDispute\b/openDispute/g if $. == 151; s/\bruleDispute\b/resolveDispute/g if $. == 188' src/components/DisputesView.tsx && perl -pi -e 's/\baddCurrency\b/createCurrency/g if $. == 578' src/components/PlatformConfigView.tsx && perl -pi -e 's/\bsubmitPasswordChange\b/changePassword/g if $. == 107' src/components/ProfileView.tsx && npx tsc --noEmit 2>&1 | head -20
+
+### 2026-10-02T08:34:17.042Z C:\Users#8348
+cd /d/hassal && git ls-tree -r --name-only HEAD -- src > /tmp/head-src.txt && cat > /tmp/deleted.txt <<'EOF' src/App.tsx src/main.tsx src/components/Header.tsx src/lib/config.ts src/lib/i18n.ts src/lib/theme.ts src/lib/navigation.ts src/lib/googleIdentity.ts src/components/panel.tsx src/components/BrandMark.tsx src/components/CameraCapture.tsx src/components/AuthModal.tsx src/components/AccountSetupCard.tsx src/components/SigninDevicesPanel.tsx src/components/ProfileView.tsx src/components/CatalogView.tsx src/components/CommunityModerationPanel.tsx src/components/OfferCommunity.tsx src/components/PermissionPicker.tsx src/components/AccountPermissionsEditor.tsx src/components/PlatformPermissi
+
+### 2026-10-02T08:43:40.717Z C:\Users#8485
+cd /d/hassal && node scripts/tmp-missed.mjs src/App.tsx src/components/MarketplaceView.tsx 2>&1 | head -120
+
+### 2026-10-02T08:43:59.955Z C:\Users#8490
+cd /d/hassal && for m in "showView" "signOut" "onSignOut" "viewForPath" "pathForView" "resolveLocation"; do echo "App.tsx: $m = $(grep -c "$m" backend/storage/web-recovery/stage/src/App.tsx)"; done; echo; echo "=== MarketplaceView missed"; node scripts/tmp-missed.mjs src/components/MarketplaceView.tsx 2>&1 | head -60
+
+### 2026-10-02T08:46:10.700Z C:\Users#8523
+cd /d/hassal && node scripts/tmp-dump-edits.mjs DisputesView.tsx 2>&1 | tail -30
+
+commands: 27

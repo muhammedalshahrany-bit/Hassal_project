@@ -6,7 +6,7 @@ namespace Tests\Support;
  * A Google-shaped ID token, minted locally so verification can be tested.
  *
  * The point of this class is that the tests exercise the real check: an RSA
- * signature over the exact bytes `App\Services\Auth\GoogleIdTokenVerifier`
+ * signature over the exact bytes `App\Auth\Services\GoogleIdTokenVerifier`
  * expects, a key set in the shape Google publishes, and the freedom to break
  * one claim at a time. A test that replaced the verifier with a double would
  * prove the controller calls something; this proves the controller calls

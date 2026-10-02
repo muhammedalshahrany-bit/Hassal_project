@@ -1,0 +1,59 @@
+[32m================================================================[39m
+[32m  HASSAL B2B Marketplace - Commercial System Installation CLI  [39m
+[32m================================================================[39m
+--- Step 1: Pre-flight Environment & Requirements Checks ---
+   Checking PHP Version (Required: >= 8.3.0) -> Current: 8.3.33
+[32m   [PASS] PHP version compatible.[39m
+[32m   [PASS] Extension 'pdo' loaded.[39m
+[32m   [PASS] Extension 'pdo_mysql' loaded.[39m
+[32m   [PASS] Extension 'bcmath' loaded.[39m
+[32m   [PASS] Extension 'mbstring' loaded.[39m
+[32m   [PASS] Extension 'openssl' loaded.[39m
+[32m   [PASS] Extension 'json' loaded.[39m
+[32m   [PASS] Extension 'tokenizer' loaded.[39m
+[32m   [PASS] Extension 'xml' loaded.[39m
+[32m   [PASS] Extension 'ctype' loaded.[39m
+[32m   [PASS] Extension 'curl' loaded.[39m
+[32m   [PASS] Directory writable: D:\hassal\backend\storage\app[39m
+[32m   [PASS] Directory writable: D:\hassal\backend\storage\framework[39m
+[32m   [PASS] Directory writable: D:\hassal\backend\storage\framework/cache[39m
+[32m   [PASS] Directory writable: D:\hassal\backend\storage\framework/sessions[39m
+[32m   [PASS] Directory writable: D:\hassal\backend\storage\framework/views[39m
+[32m   [PASS] Directory writable: D:\hassal\backend\storage\logs[39m
+[32m   [PASS] Directory writable: D:\hassal\backend\bootstrap/cache[39m
+[32m✔ All system prerequisites verified successfully.[39m
+--- Step 2: Database Connectivity & Schema Migrations ---
+[32m✔ Database connection established.[39m
+   Executing safe database migrations (migrate --force)...
+
+   INFO  Nothing to migrate.  
+
+
+[32m✔ Migrations completed successfully.[39m
+--- Step 3: RBAC Roles & Permissions Matrix ---
+
+  [37;44m INFO [39;49m Seeding database.  
+
+  Database\Seeders\RolesAndPermissionsSeeder [90m.................................................................[39m [33;1mRUNNING[39;22m  
+  Database\Seeders\RolesAndPermissionsSeeder [90m.............................................................[39m [90m720 ms[39m [32;1mDONE[39;22m  
+
+[32m✔ Roles and permissions configured.[39m
+--- Step 4: Multi-Currency & Database-backed Exchange Rates ---
+[32m✔ Base and secondary currencies seeded with configurable rates.[39m
+--- Step 5: Structured Dynamic System Settings ---
+[32m✔ Structured system settings seeded.[39m
+--- Step 6: Feature Flags Engine ---
+[32m✔ Feature flags seeded.[39m
+--- Step 7: Double-Entry Ledger Chart of Accounts ---
+[32m✔ Standard chart of accounts initialized.[39m
+--- Step 8: Standard FMCG & Food Industry Classification ---
+[32m✔ Industry categories initialized.[39m
+--- Step 9: First Platform Operator ---
+[32m✔ Platform operator ready: alshhranymuha39@gmail.com (role: SuperAdmin).[39m
+[33m  Store the password in your own password manager. It is not recoverable from the database or from this console.[39m
+--- Step 10: Storage Linking & Production Cache Optimization ---
+   Optimizing config, route, and view caches...
+[32m✔ Production caches generated.[39m
+[32m================================================================[39m
+[32m  HASSAL Commercial Platform Installed & Ready for Deployment!  [39m
+[32m================================================================[39m

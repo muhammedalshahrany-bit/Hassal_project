@@ -51,7 +51,7 @@
 | - PricingAndCurrencyService       - DemandMatchingService               |
 | - FeatureFlagService              - SystemSettingsService               |
 | - WebhookDispatcherService        - ApiKeyAuthenticationService         |
-| - (Payments adapters: present, not wired into any route)                |
+| - DealHandoverService             - NotificationManager                 |
 +-------------------------------------------------------------------------+
              |                                              |
              v                                              v
@@ -84,7 +84,7 @@
 تحتوي على المنطق التجاري الحقيقي للمنصة، وأصنافها الفعلية هي الموجودة في `app/Services`:
 
 - **`InventoryReservationService`:** المعنية بالعمليات الذرية لحجز المخزون، وتحرير الحجوزات المنتهية، عبر استعلامات مؤمنة بـ `DB::transaction` و `lockForUpdate()`.
-- **`DealStateMachineService`:** المعنية بتطبيق آلة الحالة (State Machine) لصفقات التداول، ومطابقة الشروط والصلاحيات قبل كل انتقال، وإنشاء سجل الـ `escrow` المحاسبي عند `ESCROW_FUNDED`.
+- **`DealStateMachineService`:** المعنية بتطبيق آلة الحالة (State Machine) لصفقات التداول — اثنتا عشرة حالة بلا أي حالة دفع — ومطابقة الممثل (مشتري/بائع/منصة) والشروط قبل كل انتقال، وبوابة إثبات التسليم قبل `INSPECTION`/`COMPLETED`، وإصدار رمز `deal_handovers` عند `ACCEPTED`، وتقييد عمولة المنصة في الدفتر عند `COMPLETED` إن فُعّل علمه، وإعلان الطرف الآخر من داخل نفس المعاملة.
 - **`DoubleEntryLedgerService`:** المعنية بتدوين حركات القيود المحاسبية الثنائية والتحقق من توازن الأطراف قبل الحفظ.
 - **`GeoDiscoveryService`:** المعنية بحساب معادلة المسافات المكانية (Haversine Formula) وتطبيق مؤشرات البحث الجغرافي.
 - **`PricingAndCurrencyService`:** تحويل العملات عبر سعر الصرف المخزّن للعملة، وحساب أسعار الصفقة والعمولة. لا يوجد محرك تسعير تلقائي ولا توصيات أسعار.
@@ -93,10 +93,14 @@
 - **`WebhookDispatcherService`:** بناء الحدث وتوقيعه وإرساله وتسجيل المحاولة في `webhook_deliveries`.
 - **`ApiKeyAuthenticationService`:** التحقق من مفاتيح API بالتجزئة المشفّرة (SHA-256).
 
-> **طبقة الدفع:** `app/Contracts/PaymentProviderInterface` ومنفّذاه
-> (`CashOnDeliveryPaymentProvider`, `BankTransferPaymentProvider`) و`PaymentGatewayManager`
-> موجودة كالكود، لكن **لا يشير إليها أي Controller أو مسار أو أمر مجدول** خارج ذلك المجلد.
-> لا شيء في النظام يمرّ مدفوعًا فعليًا عبرها، ولا يوجد مزوّد Mada أو بطاقة ائتمان.
+- **`DealHandoverService`:** إثبات التسليم — رمز لكل صفقة مقبولة، ومسح لمرة واحدة يبقي الدليل، وبوابة تقرأها آلة الحالة. QR محلي (`App\Support\QrCode`) بلا CDN ولا اعتماد خارجي.
+- **`NotificationManager`:** قناة داخل التطبيق للإشعارات المرتبطة بأحداث الصفقة والعرض والاعتمادات؛ لا SMS/FCM موصولين بعد.
+
+> **لا طبقة دفع في هذا النظام.** كانت هنا قسماً كاملاً (`PaymentProviderInterface`
+> ومنفّذاه و`PaymentGatewayManager`) وهو كود غير موصول؛ حُذف كله مع نموذجي
+> `Payment`/`Escrow` وعلاقتهما وجدوليهما — الذين لم تكن لهم هجرة إنشاء أصلاً.
+> القرار موثّق في `DOMAIN_MODEL.md` §3.4: المنصّة تسجّل ما اتفق عليه الطرفان
+> ولا تمسّ مالاً (البرومبت §20).
 
 ### 2.3 طبقة العزل وتعدد المؤسسات (Multi-Tenancy Layer)
 - **مفهوم العزل التنظيمي:** لا يملك المستخدم بيانات تداول مباشرة؛ بل تملكها **المؤسسة (`Organization`)**.
@@ -226,33 +230,29 @@
 
 ---
 
-## 5. طبقة بوابات الدفع (Payment Provider Layer)
+## 5. معمارية إثبات التسليم (Deal Handover Proof)
 
-الواجهة الفعلية في `app/Contracts/PaymentProviderInterface.php`:
+> هذا القسم كان «طبقة بوابات الدفع» وواجهتها `PaymentProviderInterface` بـ
+> `chargeEscrow`/`refund`/`releaseToSeller`. الطبقة لم تُوصل قطّ، وحُذفت هي
+> وحالاتها من آلة الحالة ومن الوثائق معاً — لا يُترك وصف نظام لم يُبنَ بجانب
+> وصف نظام يعمل. ما يحلّ محله الهندسيًا هو هذا القسم: إثبات أن البضاعة وصلت،
+> لا إثبات أن المال تحرّك.
 
-```php
-interface PaymentProviderInterface
-{
-    public function getIdentifier(): string;
-    public function getName(): string;
-    public function chargeEscrow(Deal $deal, float $amount, string $currency, array $metadata = []): Payment;
-    public function refund(Payment $payment, float $amount, ?string $reason = null): bool;
-    public function releaseToSeller(Payment $payment, float $amount): bool;
-}
-```
+- **الإصدار:** `ACCEPTED` في `DealStateMachineService` يستدعي `DealHandover::issueFor()`
+  داخل نفس المعاملة — لا صفقة مقبولة بلا رمز، ورمز واحد لكل صفقة (`deal_id` فريد).
+- **الرمز:** `code varchar(24)` فريد، مع تسمية `QR` محلية التوليد
+  (`App\Support\QrCode` — بلا خدمة خارجية)، تُعرض من `GET /api/v1/deals/{id}/handover/label`.
+- **المسح:** `POST /api/v1/deals/{id}/handover/verify` — يُقبل في حالات
+  `DELIVERED/INSPECTION/DISPUTED/RESOLVED` فقط، يحوّل الرمز إلى `USED` مرة واحدة،
+  ويسجّل الماسح (مستخدمًا ومنشأة) والوقت والملاحظات.
+- **البوابة:** انتقالا `INSPECTION` و`COMPLETED` مرفوضان بـ `HANDOVER_NOT_VERIFIED`
+  ما لم يكن للصفقة رمز `USED` — القرار في آلة الحالة لا في الواجهات.
+- **الإبطال:** `CANCELLED` تُبطل الرمز غير المستعمل (`INVALIDATED`) وتترك المستعمل
+  كما هو: لا تُمحى شهادة تسليم حدثت فعلاً.
+- **النقل:** `GET /api/v1/deals/{id}/handover` للقراءة من الطرفين وفق `deals.view`.
 
-المنفّذات الموجودة: `CashOnDeliveryPaymentProvider` و `BankTransferPaymentProvider`، وحاوية
-`App\Services\Payments\PaymentGatewayManager`. لا يوجد `OnlineMadaProvider` ولا `CreditCardProvider`
-ولا صنف باسم `PaymentManager`.
-
-> **حالة التوصيل (كما هي في الكود):** لا يشير إلى هذه الأصناف الثلاثة أيّ ملف خارج مجلد
-> `app/Services/Payments` — لا Controller ولا مسار ولا أمر مجدول ولا انتقال في آلة الحالة. أي أن
-> الطبقة **غير موصولة بالنظام**: لا يوجد أي مسار دفع في `routes/api.php`، ولا يكتب أي سطر في جدول
-> `payments` في كل الشجرة (المرجع الوحيد خارج المجلد هو علاقة `Deal::payments()`). الجدول يبقى فارغًا.
-> الصفقة تصل إلى `ESCROW_FUNDED` عبر `DealStateMachineService`
-> الذي ينشئ سجل `escrow` وقيدًا محاسبيًا في حساب `2010-ESCROW-HOLDING` — **سجلٌ محاسبي لا حيازة مال**:
-> لا طرف ثالث يقبض مبلغًا ولا يوجد مزوّد دفع حقيقي موصول. ربط هذه الطبقة ببوابة فعلية عملٌ مطلوب
-> ولا يجوز ادعاؤه قبل تنفيذه والاختبار عليه.
+التسوية النقدية تبقى خارج المنصة تمامًا؛ الرمز يثبت اليد التي سلّمت واليد التي
+استلمت، والكميات تتحرك في المخزون وفق آلة الحالة لا وفق أي مبلغ.
 
 ---
 

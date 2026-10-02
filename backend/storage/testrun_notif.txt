@@ -1,0 +1,61 @@
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\GoogleSignInTest[39m
+  [32;1m✓[39;22m[90m [39m[90mfirst google sign in provisions an account with nothing more than the assertion proves[39m[90m                     [39m [90m27.56s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma repeat sign in is found by the subject and not by the address[39m[90m                                             [39m [90m0.44s[39m  
+  [32;1m✓[39;22m[90m [39m[90man existing password account is linked to the address google verified[39m[90m                                       [39m [90m0.47s[39m  
+  [32;1m✓[39;22m[90m [39m[90man account already bound to another google account is not rebound[39m[90m                                           [39m [90m0.38s[39m  
+  [32;1m✓[39;22m[90m [39m[90mprovisioning can be turned off and leaves unknown addresses outside[39m[90m                                         [39m [90m0.36s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma closed switch refuses before any token is read[39m[90m                                                            [39m [90m0.36s[39m  
+  [32;1m✓[39;22m[90m [39m[90man enabled switch with no client id refuses as unconfigured[39m[90m                                                 [39m [90m0.38s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma token addressed to another application is refused[39m[90m                                                         [39m [90m0.41s[39m  
+  [32;1m✓[39;22m[90m [39m[90man address google has not verified is refused[39m[90m                                                               [39m [90m0.38s[39m  
+  [32;1m✓[39;22m[90m [39m[90man expired token is refused and a fresh one from the same bytes is not[39m[90m                                      [39m [90m0.42s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma token that expired seconds ago is still honoured[39m[90m                                                          [39m [90m0.44s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma token issued from the future is refused[39m[90m                                                                   [39m [90m0.36s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma token from another issuer is refused even signed by the same key[39m[90m                                          [39m [90m0.37s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma token carried from another sign in request is refused by the nonce[39m[90m                                        [39m [90m0.38s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma payload signed by another key is refused however it is addressed[39m[90m                                          [39m [90m1.00s[39m  
+  [32;1m✓[39;22m[90m [39m[90mgoogle cannot log into an account the platform has suspended[39m[90m                                                [39m [90m0.41s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma passwordless account cannot be probed through the password form[39m[90m                                           [39m [90m0.40s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma passwordless account can set its first password and then sign in with it[39m[90m                                  [39m [90m0.41s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma suspended google account still cannot read its own profile[39m[90m                                                [39m [90m0.41s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\MembershipPermissionsTest[39m
+  [32;1m✓[39;22m[90m [39m[90mthe matrix covers every standing and names only real permissions[39m[90m                                            [39m [90m0.36s[39m  
+  [32;1m✓[39;22m[90m [39m[90mno standing in a company reaches a capability that belongs to the platform[39m[90m                                  [39m [90m0.36s[39m  
+  [32;1m✓[39;22m[90m [39m[90mownership is the widest standing inside the company[39m[90m                                                         [39m [90m0.37s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma standing is read per company and does not follow the person[39m[90m                                               [39m [90m0.40s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe access a company granted is the access ending the membership takes back[39m[90m                                 [39m [90m0.40s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe retired business roles grant nothing and change nothing[39m[90m                                                 [39m [90m0.45s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe route layer answers from the company standing[39m[90m                                                           [39m [90m0.58s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe profile endpoint reports the effective set and no more[39m[90m                                                  [39m [90m0.44s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\OfferCommunityTest[39m
+  [32;1m✓[39;22m[90m [39m[90minterest is one row per actor and a second press adds nothing[39m[90m                                               [39m [90m0.44s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe same person pressing from two businesses is one signal[39m[90m                                                  [39m [90m0.42s[39m  
+  [32;1m✓[39;22m[90m [39m[90mremoving interest only reaches the actors own row[39m[90m                                                           [39m [90m0.47s[39m  
+  [32;1m✓[39;22m[90m [39m[90minterest is never recorded for a company the caller does not belong to[39m[90m                                      [39m [90m0.43s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma listing nobody can buy cannot be liked[39m[90m                                                                    [39m [90m0.43s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe liked list is per person across every company they work for[39m[90m                                             [39m [90m0.53s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma consumer with no organization likes and is named by person only[39m[90m                                           [39m [90m0.45s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma consumer report is recorded and names no company[39m[90m                                                          [39m [90m0.48s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma suspended account holds no person capability[39m[90m                                                              [39m [90m0.39s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma question and the sellers answer are labelled by who they are[39m[90m                                              [39m [90m0.50s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma reply cannot be attached to another listings thread[39m[90m                                                       [39m [90m0.46s[39m  
+  [32;1m✓[39;22m[90m [39m[90mpre moderation holds a comment out of the public thread until a reviewer publishes it[39m[90m                       [39m [90m0.49s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe author withdrawing a comment hides it without deleting the record[39m[90m                                       [39m [90m0.48s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma stranger cannot withdraw another business comment[39m[90m                                                         [39m [90m0.55s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma report asks for a review and decides nothing itself[39m[90m                                                       [39m [90m0.48s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe moderation queues are closed to business roles and open to the platform[39m[90m                                 [39m [90m0.57s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe listing publishes counts it can prove and no opinion it cannot[39m[90m                                          [39m [90m0.49s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\RbacMatrixTest[39m
+  [32;1m✓[39;22m[90m [39m[90mevery permission the catalog declares is enforced somewhere[39m[90m                                                 [39m [90m0.20s[39m  
+  [32;1m✓[39;22m[90m [39m[90mno route checks a capability the catalog never declared[39m[90m                                                     [39m [90m0.07s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe seeded matrix matches the catalog[39m[90m                                                                       [39m [90m0.32s[39m  
+  [32;1m✓[39;22m[90m [39m[90mbusiness roles never hold a platform only capability[39m[90m                                                        [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mperson capabilities are real and never platform scoped[39m[90m                                                      [39m [90m0.06s[39m  
+
+  [90mTests:[39m    [32;1m49 passed[39;22m[90m (325 assertions)[39m
+  [90mDuration:[39m [39m48.05s[39m
+

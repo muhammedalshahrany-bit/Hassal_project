@@ -1,37 +1,40 @@
 <?php
 
-use App\Http\Controllers\Api\V1\ApiKeyController;
-use App\Http\Controllers\Api\V1\AuthController;
-use App\Http\Controllers\Api\V1\BootstrapController;
-use App\Http\Controllers\Api\V1\CommunityModerationController;
-use App\Http\Controllers\Api\V1\CurrencyManagementController;
-use App\Http\Controllers\Api\V1\DealController;
-use App\Http\Controllers\Api\V1\DemandController;
-use App\Http\Controllers\Api\V1\DisputeController;
-use App\Http\Controllers\Api\V1\FeatureFlagController;
-use App\Http\Controllers\Api\V1\InventoryMovementController;
-use App\Http\Controllers\Api\V1\LedgerController;
-use App\Http\Controllers\Api\V1\OfferCommentController;
-use App\Http\Controllers\Api\V1\OfferController;
-use App\Http\Controllers\Api\V1\OfferLikeController;
-use App\Http\Controllers\Api\V1\OrganizationController;
-use App\Http\Controllers\Api\V1\OrganizationDocumentController;
-use App\Http\Controllers\Api\V1\ProductCatalogController;
-use App\Http\Controllers\Api\V1\ProductImageController;
-use App\Http\Controllers\Api\V1\ReconciliationController;
-use App\Http\Controllers\Api\V1\ReportExportController;
-use App\Http\Controllers\Api\V1\ReservationController;
-use App\Http\Controllers\Api\V1\SetupWizardController;
-use App\Http\Controllers\Api\V1\SystemSettingController;
-use App\Http\Controllers\Api\V1\UserManagementController;
-use App\Http\Controllers\Api\V1\WarehouseController;
-use App\Http\Controllers\Api\V1\WebhookController;
-use App\Http\Controllers\Api\V1\NotificationController;
-use App\Http\Controllers\Api\V1\PurchaseRequestController;
-use App\Http\Responses\ApiResponse;
-use App\Models\AuditLog;
-use App\Services\TenantContext;
-use Illuminate\Http\Request;
+use App\Platform\Controllers\ApiKeyController;
+use App\Auth\Controllers\AuthController;
+use App\Auth\Controllers\BootstrapController;
+use App\Community\Controllers\CommunityModerationController;
+use App\Platform\Controllers\CurrencyManagementController;
+use App\Trading\Controllers\DealController;
+use App\Trading\Controllers\DealHandoverController;
+use App\Marketplace\Controllers\DemandController;
+use App\Auth\Controllers\DeviceController;
+use App\Trading\Controllers\DisputeController;
+use App\Platform\Controllers\FeatureFlagController;
+use App\Inventory\Controllers\InventoryMovementController;
+use App\Trading\Controllers\LedgerController;
+use App\Community\Controllers\OfferCommentController;
+use App\Marketplace\Controllers\OfferController;
+use App\Community\Controllers\OfferLikeController;
+use App\Organizations\Controllers\OrganizationController;
+use App\Organizations\Controllers\OrganizationDocumentController;
+use App\Organizations\Controllers\OrganizationRoleController;
+use App\Catalog\Controllers\ProductCatalogController;
+use App\Catalog\Controllers\ProductImageController;
+use App\Platform\Controllers\ReportExportController;
+use App\Trading\Controllers\ReservationController;
+use App\Identity\Controllers\RoleGovernanceController;
+use App\Platform\Controllers\SetupWizardController;
+use App\Platform\Controllers\SystemSettingController;
+use App\Identity\Controllers\UserManagementController;
+use App\Inventory\Controllers\WarehouseController;
+use App\Platform\Controllers\WebhookController;
+use App\Notifications\Controllers\NotificationController;
+use App\Trading\Controllers\PurchaseRequestController;
+use App\Auth\Controllers\PreferenceController;
+use App\SupportDesk\Controllers\SupportController;
+use App\Core\Http\ApiResponse;
+use App\Platform\Controllers\AuditLogController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
@@ -85,6 +88,11 @@ Route::prefix('v1')->group(function () {
     Route::prefix('marketplace')->group(function () {
         Route::get('/offers', [OfferController::class, 'index']);
         Route::get('/offers/nearby', [OfferController::class, 'nearby'])->middleware('feature:geo_discovery');
+        // The platform's pinned listings, above the market rather than inside it.
+        // Registered before `/offers/{id}` for the same reason `nearby` is: a
+        // route declared after it would hand the word `featured` to a detail read
+        // and answer a strip request with a 404 for an offer that does not exist.
+        Route::get('/offers/featured', [OfferController::class, 'featured']);
         Route::get('/offers/{id}', [OfferController::class, 'show']);
 
         // The published thread under a listing is part of the listing. Reading
@@ -139,6 +147,27 @@ Route::prefix('v1')->group(function () {
             Route::post('/password', [AuthController::class, 'changePassword'])->middleware('idempotency');
 
             Route::post('/logout', [AuthController::class, 'logout']);
+
+            // The account's devices, and this handset's own lock.
+            //
+            // No permission gates these, deliberately: a device row is found
+            // through the token that reads it, so the scope is the account itself
+            // and a route here that took an id from outside would be an
+            // enumeration question waiting to be asked. `biometric_unlock` is a
+            // label the account shows and revokes, never a way in — the
+            // fingerprint opens the token stored on the phone, at the phone.
+            Route::get('/devices', [DeviceController::class, 'index']);
+            Route::post('/devices', [DeviceController::class, 'sync'])->middleware('idempotency');
+            Route::patch('/devices/{id}', [DeviceController::class, 'update'])->middleware('idempotency');
+            Route::delete('/devices/{id}', [DeviceController::class, 'destroy'])->middleware('idempotency');
+
+            // What this person decided about their own screens, carried by the
+            // account rather than by one device: the same keys must answer on the
+            // phone and in the browser, and a preference nobody can name is a
+            // preference no client can draw without guessing.
+            Route::get('/preferences', [PreferenceController::class, 'index']);
+            Route::put('/preferences', [PreferenceController::class, 'update'])->middleware('idempotency');
+            Route::get('/preferences/catalog', [PreferenceController::class, 'catalog']);
         });
 
         // The inbox is already filtered to the acting user in the controller;
@@ -149,6 +178,28 @@ Route::prefix('v1')->group(function () {
             Route::get('/unread-count', [NotificationController::class, 'unreadCount']);
             Route::post('/read-all', [NotificationController::class, 'readAll']);
             Route::post('/{id}/read', [NotificationController::class, 'read']);
+        });
+
+        // The support desk: somebody's account misbehaved, and the complaint is
+        // about the platform, not about another business (that is §4.13's
+        // comment report or §4.8's dispute).
+        //
+        // Filing carries no permission and no `verified_tenant`, on purpose: the
+        // account this door exists for is the one whose paper was rejected, whose
+        // screen broke, or whose phone cannot get in — and refusing them the form
+        // is silencing the complaint. The queue and the answer are the platform's
+        // side of the same desk, and they are gated: `support.manage` is held by
+        // no business role, because a counterparty must never read what the
+        // other is complaining about.
+        Route::prefix('support')->group(function () {
+            Route::post('/tickets', [SupportController::class, 'store'])->middleware('throttle:10,1');
+            Route::get('/tickets', [SupportController::class, 'index']);
+
+            Route::middleware('permission:support.manage')->group(function () {
+                Route::get('/queue', [SupportController::class, 'queue']);
+                Route::get('/summary', [SupportController::class, 'summary']);
+                Route::put('/tickets/{id}/answer', [SupportController::class, 'answer'])->middleware('idempotency');
+            });
         });
 
         // Marketplace Seller & Buyer Operations
@@ -171,6 +222,12 @@ Route::prefix('v1')->group(function () {
             // a separate route with a separate permission — not the seller's.
             Route::put('/offers/{id}/review', [OfferController::class, 'review'])->middleware(['permission:offers.moderate', 'idempotency']);
 
+            // Promotion, which is not the same decision as publication. A seller
+            // holding `offers.moderate` over their own shelf may not move the
+            // market's front page, so the capability is its own — `offers.feature`
+            // — and it is granted to no business role (see `config/rbac.php`).
+            Route::put('/offers/{id}/feature', [OfferController::class, 'feature'])->middleware(['permission:offers.feature', 'idempotency']);
+
             // Atomic Reservations
             //
             // Read the buyer's own holds, and release one the buyer no longer
@@ -186,12 +243,12 @@ Route::prefix('v1')->group(function () {
         // Offer community: interest, questions, and reports.
         //
         // A like and a comment are attributed rows, not counters a client
-        // maintains: they carry the organization and the user that produced
-        // them, which is also what makes removing them a decision the backend
-        // can check. Publishing either one is a commercial act, so it sits
-        // behind the verification gate; taking one back does not need the gate,
-        // and an actor should never be blocked from deleting their own row
-        // because their paperwork lapsed in the meantime.
+        // maintains: they carry the user that produced them, and the
+        // organization in context when one exists. A consumer with no company
+        // acts in their own name — `offers.like` and `comments.create` are
+        // person capabilities, so these doors need no membership. Publishing a
+        // trade is a commercial act and its doors stay behind the organization
+        // gates; publishing a question is not.
         Route::prefix('marketplace')->middleware('feature:community')->group(function () {
             Route::post('/offers/{id}/like', [OfferLikeController::class, 'store'])->middleware(['permission:offers.like', 'verified_tenant', 'idempotency']);
             Route::delete('/offers/{id}/like', [OfferLikeController::class, 'destroy'])->middleware(['permission:offers.like', 'idempotency']);
@@ -229,6 +286,18 @@ Route::prefix('v1')->group(function () {
         Route::prefix('deals')->middleware(['permission:deals.view', 'feature:marketplace'])->group(function () {
             Route::post('/', [DealController::class, 'store'])->middleware(['permission:deals.create', 'verified_tenant', 'idempotency']);
             Route::post('/{id}/transition', [DealController::class, 'transition'])->middleware('idempotency');
+
+            // The handover code: issued by the seller's acceptance, shown to
+            // whichever party opens the order, and spent once by a scan at the
+            // gate. No deal reaches COMPLETED without that scan, so this is not a
+            // convenience endpoint beside the flow — it is a step in it (§4.7).
+            Route::get('/{id}/handover', [DealHandoverController::class, 'show']);
+            // The same code as a printed label: an SVG of the symbol itself, for
+            // the box that leaves the warehouse before the phone that carries it.
+            Route::get('/{id}/handover/label', [DealHandoverController::class, 'label']);
+            Route::post('/{id}/handover/verify', [DealHandoverController::class, 'verify'])
+                ->middleware(['permission:deals.deliver', 'idempotency']);
+
             Route::get('/{id}', [DealController::class, 'show']);
             Route::get('/', [DealController::class, 'index']);
         });
@@ -238,11 +307,6 @@ Route::prefix('v1')->group(function () {
             Route::get('/journal-entries', [LedgerController::class, 'journalEntries']);
             Route::get('/accounts', [LedgerController::class, 'accounts']);
             Route::get('/trial-balance', [LedgerController::class, 'trialBalance']);
-        });
-
-        // Financial Reconciliation Audit
-        Route::prefix('reconciliation')->middleware(['permission:ledger.view', 'feature:double_entry_ledger'])->group(function () {
-            Route::get('/audit', [ReconciliationController::class, 'audit']);
         });
 
         // Inventory Movements Ledger
@@ -272,6 +336,22 @@ Route::prefix('v1')->group(function () {
             Route::put('/{id}/status', [UserManagementController::class, 'updateStatus'])->middleware('idempotency');
             Route::post('/{id}/roles', [UserManagementController::class, 'assignRole'])->middleware('idempotency');
             Route::delete('/{id}/roles/{roleName}', [UserManagementController::class, 'revokeRole']);
+        });
+
+        // Platform permission matrix — the account door.
+        //
+        // `roles.manage` and not `users.manage`: editing what a role is worth is a
+        // different act from editing an account, and the console that had both
+        // under one capability could not say which of them an operator was being
+        // given. The scope makes the door one-directional — a business capability
+        // can never be attached from here, and no organization route reads this
+        // permission — so the platform's own powers and the companies' powers are
+        // edited by two doors that cannot reach each other's rows.
+        Route::middleware('permission:roles.manage')->prefix('rbac')->group(function () {
+            Route::get('/platform', [RoleGovernanceController::class, 'index']);
+            Route::put('/platform/roles/{roleName}/permissions', [RoleGovernanceController::class, 'updateRolePermissions'])->middleware('idempotency');
+            Route::get('/platform/users/{id}/permissions', [RoleGovernanceController::class, 'showUserPermissions']);
+            Route::put('/platform/users/permissions', [RoleGovernanceController::class, 'updateUserPermissions'])->middleware('idempotency');
         });
 
         // Reports & Data Export
@@ -389,6 +469,25 @@ Route::prefix('v1')->group(function () {
             Route::delete('/{id}/members/{userId}', [OrganizationController::class, 'removeMember'])->middleware('permission:members.manage');
             Route::post('/{id}/members', [OrganizationController::class, 'addMember'])->middleware(['permission:members.manage', 'idempotency']);
 
+            // The company permission matrix — the organization door.
+            //
+            // Same capability that staffs the company (`members.manage`), because
+            // it is the same act: saying what a person here may do. Every route
+            // takes the organization id from the path and the controller asks the
+            // caller's membership *in that company*, so the tenant header is never
+            // the authority for editing another business's matrix.
+            //
+            // `/{id}/members/permissions/bulk` is registered after the individual
+            // path only because the two cannot collide — the segment the individual
+            // route expects at the end is `permissions`, and here it is `bulk`.
+            Route::get('/{id}/roles', [OrganizationRoleController::class, 'index'])->middleware('permission:members.manage');
+            Route::post('/{id}/roles', [OrganizationRoleController::class, 'store'])->middleware(['permission:members.manage', 'idempotency']);
+            Route::put('/{id}/roles/{key}', [OrganizationRoleController::class, 'update'])->middleware(['permission:members.manage', 'idempotency']);
+            Route::delete('/{id}/roles/{key}', [OrganizationRoleController::class, 'destroy'])->middleware(['permission:members.manage', 'idempotency']);
+            Route::get('/{id}/members/{userId}/permissions', [OrganizationRoleController::class, 'memberPermissions'])->middleware('permission:members.manage');
+            Route::put('/{id}/members/{userId}/permissions', [OrganizationRoleController::class, 'updateMemberPermissions'])->middleware(['permission:members.manage', 'idempotency']);
+            Route::put('/{id}/members/permissions/bulk', [OrganizationRoleController::class, 'bulkMemberPermissions'])->middleware(['permission:members.manage', 'idempotency']);
+
             Route::get('/{id}/members', [OrganizationController::class, 'members']);
             Route::get('/{id}', [OrganizationController::class, 'show']);
             Route::get('/', [OrganizationController::class, 'index']);
@@ -429,42 +528,9 @@ Route::prefix('v1')->group(function () {
         });
 
         // Audit Trail — SuperAdmin sees everything; everyone else is hard-scoped
-        // to their own organization and is rejected if no tenant resolved.
-        Route::get('/audit-logs', function (Request $request) {
-            $user = $request->user();
-
-            if ($user->hasRole('SuperAdmin')) {
-                $query = AuditLog::with(['user:id,name,email', 'organization:id,name_ar,name_en']);
-
-                if ($request->filled('organization_id')) {
-                    $query->where('organization_id', (int) $request->query('organization_id'));
-                }
-            } else {
-                $currentOrgId = TenantContext::id();
-
-                if ($currentOrgId === null) {
-                    return ApiResponse::error('No organization context for this request.', 'NO_ORGANIZATION_CONTEXT', 403);
-                }
-
-                $query = AuditLog::with(['user:id,name,email'])
-                    ->where('organization_id', $currentOrgId);
-            }
-
-            if ($request->filled('action')) {
-                $query->where('action', $request->query('action'));
-            }
-
-            if ($request->filled('auditable_type')) {
-                $query->where('auditable_type', $request->query('auditable_type'));
-            }
-
-            if ($request->filled('user_id')) {
-                $query->where('user_id', (int) $request->query('user_id'));
-            }
-
-            $logs = $query->orderBy('id', 'desc')->paginate(min((int) $request->query('per_page', 20), 100));
-
-            return ApiResponse::paginated($logs, 'Audit logs retrieved');
-        })->middleware('permission:audit.view');
+        // to their own organization and is rejected if no tenant resolved. The
+        // scoping rule itself is `AuditTrailQueries`'s, in the Platform module
+        // beside the record it reads.
+        Route::get('/audit-logs', [AuditLogController::class, 'index'])->middleware('permission:audit.view');
     });
 });

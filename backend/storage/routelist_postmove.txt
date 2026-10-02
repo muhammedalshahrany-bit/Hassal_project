@@ -1,0 +1,161 @@
+
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37m/[39m[38;5;103m ...................................................................................... routes/web.php:11[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/api-keys[39m[38;5;103m .......................................... App\Platform\Controllers\ApiKeyController@index[39m
+  [33mPOST[39m      [37mapi/v1/api-keys[39m[38;5;103m .......................................... App\Platform\Controllers\ApiKeyController@store[39m
+  [31mDELETE[39m    [37mapi/v1/api-keys/[39m[33m{id}[39m[38;5;103m .................................... App\Platform\Controllers\ApiKeyController@revoke[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/audit-logs[39m[38;5;103m ..................................................................... routes/api.php:534[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/auth/devices[39m[38;5;103m .......................................... App\Auth\Controllers\DeviceController@index[39m
+  [33mPOST[39m      [37mapi/v1/auth/devices[39m[38;5;103m ........................................... App\Auth\Controllers\DeviceController@sync[39m
+  [33mPATCH[39m     [37mapi/v1/auth/devices/[39m[33m{id}[39m[38;5;103m .................................... App\Auth\Controllers\DeviceController@update[39m
+  [31mDELETE[39m    [37mapi/v1/auth/devices/[39m[33m{id}[39m[38;5;103m ................................... App\Auth\Controllers\DeviceController@destroy[39m
+  [33mPOST[39m      [37mapi/v1/auth/forgot-password[39m[38;5;103m ........................... App\Auth\Controllers\AuthController@forgotPassword[39m
+  [33mPOST[39m      [37mapi/v1/auth/google[39m[38;5;103m ............................................ App\Auth\Controllers\AuthController@google[39m
+  [33mPOST[39m      [37mapi/v1/auth/login[39m[38;5;103m .............................................. App\Auth\Controllers\AuthController@login[39m
+  [33mPOST[39m      [37mapi/v1/auth/logout[39m[38;5;103m ............................................ App\Auth\Controllers\AuthController@logout[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/auth/me[39m[38;5;103m .................................................... App\Auth\Controllers\AuthController@me[39m
+  [33mPOST[39m      [37mapi/v1/auth/password[39m[38;5;103m .................................. App\Auth\Controllers\AuthController@changePassword[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/auth/preferences[39m[38;5;103m .................................. App\Auth\Controllers\PreferenceController@index[39m
+  [33mPUT[39m       [37mapi/v1/auth/preferences[39m[38;5;103m ................................. App\Auth\Controllers\PreferenceController@update[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/auth/preferences/catalog[39m[38;5;103m ........................ App\Auth\Controllers\PreferenceController@catalog[39m
+  [33mPATCH[39m     [37mapi/v1/auth/profile[39m[38;5;103m .................................... App\Auth\Controllers\AuthController@updateProfile[39m
+  [33mPOST[39m      [37mapi/v1/auth/register[39m[38;5;103m ........................................ App\Auth\Controllers\AuthController@register[39m
+  [33mPOST[39m      [37mapi/v1/auth/reset-password[39m[38;5;103m ............................. App\Auth\Controllers\AuthController@resetPassword[39m
+  [33mPOST[39m      [37mapi/v1/auth/switch-organization[39m[38;5;103m ................... App\Auth\Controllers\AuthController@switchOrganization[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/bootstrap[39m[38;5;103m .......................................... App\Auth\Controllers\BootstrapController@index[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/catalog/products[39m[38;5;103m ........................ App\Catalog\Controllers\ProductCatalogController@products[39m
+  [33mPOST[39m      [37mapi/v1/catalog/products[39m[38;5;103m .................... App\Catalog\Controllers\ProductCatalogController@storeProduct[39m
+  [33mPUT[39m       [37mapi/v1/catalog/products/[39m[33m{id}[39m[38;5;103m .............. App\Catalog\Controllers\ProductCatalogController@updateProduct[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/catalog/products/[39m[33m{id}[39m[37m/variants[39m[38;5;103m .......... App\Catalog\Controllers\ProductCatalogController@variants[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/catalog/products/[39m[33m{productId}[39m[37m/images[39m[38;5;103m .......... App\Catalog\Controllers\ProductImageController@index[39m
+  [33mPOST[39m      [37mapi/v1/catalog/products/[39m[33m{productId}[39m[37m/images[39m[38;5;103m .......... App\Catalog\Controllers\ProductImageController@store[39m
+  [33mPUT[39m       [37mapi/v1/catalog/products/[39m[33m{productId}[39m[37m/images/[39m[33m{imageId}[39m[38;5;103m App\Catalog\Controllers\ProductImageController@update[39m
+  [31mDELETE[39m    [37mapi/v1/catalog/products/[39m[33m{productId}[39m[37m/images/[39m[33m{imageId}[39m[38;5;103m App\Catalog\Controllers\ProductImageController@destr…[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/community/comments[39m[38;5;103m ............... App\Community\Controllers\CommunityModerationController@comments[39m
+  [33mPUT[39m       [37mapi/v1/community/comments/[39m[33m{id}[39m[37m/moderate[39m[38;5;103m . App\Community\Controllers\CommunityModerationController@moderate[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/community/reports[39m[38;5;103m ................. App\Community\Controllers\CommunityModerationController@reports[39m
+  [33mPOST[39m      [37mapi/v1/community/reports/[39m[33m{id}[39m[37m/review[39m[38;5;103m App\Community\Controllers\CommunityModerationController@reviewReport[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/community/summary[39m[38;5;103m ................. App\Community\Controllers\CommunityModerationController@summary[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/currencies[39m[38;5;103m ............................ App\Platform\Controllers\CurrencyManagementController@index[39m
+  [33mPOST[39m      [37mapi/v1/currencies[39m[38;5;103m ............................ App\Platform\Controllers\CurrencyManagementController@store[39m
+  [33mPUT[39m       [37mapi/v1/currencies/[39m[33m{id}[39m[38;5;103m ...................... App\Platform\Controllers\CurrencyManagementController@update[39m
+  [33mPOST[39m      [37mapi/v1/currencies/[39m[33m{id}[39m[37m/set-default[39m[38;5;103m ...... App\Platform\Controllers\CurrencyManagementController@setDefault[39m
+  [33mPOST[39m      [37mapi/v1/deals[39m[38;5;103m ................................................ App\Trading\Controllers\DealController@store[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/deals[39m[38;5;103m ................................................ App\Trading\Controllers\DealController@index[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/deals/[39m[33m{id}[39m[38;5;103m ............................................ App\Trading\Controllers\DealController@show[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/deals/[39m[33m{id}[39m[37m/handover[39m[38;5;103m ........................... App\Trading\Controllers\DealHandoverController@show[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/deals/[39m[33m{id}[39m[37m/handover/label[39m[38;5;103m .................... App\Trading\Controllers\DealHandoverController@label[39m
+  [33mPOST[39m      [37mapi/v1/deals/[39m[33m{id}[39m[37m/handover/verify[39m[38;5;103m .................. App\Trading\Controllers\DealHandoverController@verify[39m
+  [33mPOST[39m      [37mapi/v1/deals/[39m[33m{id}[39m[37m/transition[39m[38;5;103m ........................... App\Trading\Controllers\DealController@transition[39m
+  [33mPOST[39m      [37mapi/v1/demands[39m[38;5;103m ........................................ App\Marketplace\Controllers\DemandController@store[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/demands[39m[38;5;103m ........................................ App\Marketplace\Controllers\DemandController@index[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/demands/[39m[33m{id}[39m[37m/matches[39m[38;5;103m ......................... App\Marketplace\Controllers\DemandController@matches[39m
+  [33mPOST[39m      [37mapi/v1/demands/[39m[33m{id}[39m[37m/quotations[39m[38;5;103m .............. App\Marketplace\Controllers\DemandController@submitQuotation[39m
+  [33mPOST[39m      [37mapi/v1/disputes[39m[38;5;103m .......................................... App\Trading\Controllers\DisputeController@store[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/disputes[39m[38;5;103m .......................................... App\Trading\Controllers\DisputeController@index[39m
+  [33mPOST[39m      [37mapi/v1/disputes/[39m[33m{id}[39m[37m/resolve[39m[38;5;103m ........................... App\Trading\Controllers\DisputeController@resolve[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/feature-flags[39m[38;5;103m ................................ App\Platform\Controllers\FeatureFlagController@index[39m
+  [33mPOST[39m      [37mapi/v1/feature-flags/[39m[33m{key}[39m[37m/toggle[39m[38;5;103m .................. App\Platform\Controllers\FeatureFlagController@toggle[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/health[39m[38;5;103m .......................................................................... routes/api.php:50[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/inventory-movements[39m[38;5;103m ................... App\Inventory\Controllers\InventoryMovementController@index[39m
+  [33mPOST[39m      [37mapi/v1/inventory-movements/adjust[39m[38;5;103m . App\Inventory\Controllers\InventoryMovementController@recordAdjustment[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/ledger/accounts[39m[38;5;103m ................................. App\Trading\Controllers\LedgerController@accounts[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/ledger/journal-entries[39m[38;5;103m .................... App\Trading\Controllers\LedgerController@journalEntries[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/ledger/trial-balance[39m[38;5;103m ........................ App\Trading\Controllers\LedgerController@trialBalance[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/marketplace/brands[39m[38;5;103m ........................ App\Catalog\Controllers\ProductCatalogController@brands[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/marketplace/categories[39m[38;5;103m ................ App\Catalog\Controllers\ProductCatalogController@categories[39m
+  [31mDELETE[39m    [37mapi/v1/marketplace/comments/[39m[33m{id}[39m[38;5;103m ................ App\Community\Controllers\OfferCommentController@destroy[39m
+  [33mPOST[39m      [37mapi/v1/marketplace/comments/[39m[33m{id}[39m[37m/report[39m[38;5;103m .......... App\Community\Controllers\OfferCommentController@report[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/marketplace/liked-offers[39m[38;5;103m ....................... App\Community\Controllers\OfferLikeController@mine[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/marketplace/moderation-queue[39m[38;5;103m .......... App\Marketplace\Controllers\OfferController@moderationQueue[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/marketplace/my-offers[39m[38;5;103m ............................ App\Marketplace\Controllers\OfferController@mine[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/marketplace/offers[39m[38;5;103m .............................. App\Marketplace\Controllers\OfferController@index[39m
+  [33mPOST[39m      [37mapi/v1/marketplace/offers[39m[38;5;103m .............................. App\Marketplace\Controllers\OfferController@store[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/marketplace/offers/featured[39m[38;5;103m .................. App\Marketplace\Controllers\OfferController@featured[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/marketplace/offers/nearby[39m[38;5;103m ...................... App\Marketplace\Controllers\OfferController@nearby[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/marketplace/offers/[39m[33m{id}[39m[38;5;103m .......................... App\Marketplace\Controllers\OfferController@show[39m
+  [33mPUT[39m       [37mapi/v1/marketplace/offers/[39m[33m{id}[39m[38;5;103m ........................ App\Marketplace\Controllers\OfferController@update[39m
+  [31mDELETE[39m    [37mapi/v1/marketplace/offers/[39m[33m{id}[39m[38;5;103m ....................... App\Marketplace\Controllers\OfferController@destroy[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/marketplace/offers/[39m[33m{id}[39m[37m/comments[39m[38;5;103m ........... App\Community\Controllers\OfferCommentController@index[39m
+  [33mPOST[39m      [37mapi/v1/marketplace/offers/[39m[33m{id}[39m[37m/comments[39m[38;5;103m ........... App\Community\Controllers\OfferCommentController@store[39m
+  [33mPUT[39m       [37mapi/v1/marketplace/offers/[39m[33m{id}[39m[37m/feature[39m[38;5;103m ............... App\Marketplace\Controllers\OfferController@feature[39m
+  [33mPOST[39m      [37mapi/v1/marketplace/offers/[39m[33m{id}[39m[37m/like[39m[38;5;103m .................. App\Community\Controllers\OfferLikeController@store[39m
+  [31mDELETE[39m    [37mapi/v1/marketplace/offers/[39m[33m{id}[39m[37m/like[39m[38;5;103m ................ App\Community\Controllers\OfferLikeController@destroy[39m
+  [33mPUT[39m       [37mapi/v1/marketplace/offers/[39m[33m{id}[39m[37m/review[39m[38;5;103m ................. App\Marketplace\Controllers\OfferController@review[39m
+  [33mPUT[39m       [37mapi/v1/marketplace/offers/[39m[33m{id}[39m[37m/status[39m[38;5;103m ........... App\Marketplace\Controllers\OfferController@updateStatus[39m
+  [33mPOST[39m      [37mapi/v1/marketplace/offers/[39m[33m{id}[39m[37m/submit[39m[38;5;103m ................. App\Marketplace\Controllers\OfferController@submit[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/marketplace/reservations[39m[38;5;103m ...................... App\Trading\Controllers\ReservationController@index[39m
+  [33mPOST[39m      [37mapi/v1/marketplace/reservations/[39m[33m{id}[39m[37m/cancel[39m[38;5;103m ......... App\Trading\Controllers\ReservationController@cancel[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/marketplace/warehouses[39m[38;5;103m ........................ App\Inventory\Controllers\WarehouseController@index[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/notifications[39m[38;5;103m .......................... App\Notifications\Controllers\NotificationController@index[39m
+  [33mPOST[39m      [37mapi/v1/notifications/read-all[39m[38;5;103m ............... App\Notifications\Controllers\NotificationController@readAll[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/notifications/unread-count[39m[38;5;103m ....... App\Notifications\Controllers\NotificationController@unreadCount[39m
+  [33mPOST[39m      [37mapi/v1/notifications/[39m[33m{id}[39m[37m/read[39m[38;5;103m ................. App\Notifications\Controllers\NotificationController@read[39m
+  [33mPOST[39m      [37mapi/v1/organizations[39m[38;5;103m .......................... App\Organizations\Controllers\OrganizationController@store[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/organizations[39m[38;5;103m .......................... App\Organizations\Controllers\OrganizationController@index[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/organizations/document-queue[39m[38;5;103m ... App\Organizations\Controllers\OrganizationDocumentController@queue[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/organizations/document-summary[39m[38;5;103m App\Organizations\Controllers\OrganizationDocumentController@summary[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/organizations/membership-roles[39m[38;5;103m App\Organizations\Controllers\OrganizationController@membershipRoles[39m
+  [33mPUT[39m       [37mapi/v1/organizations/[39m[33m{id}[39m[38;5;103m .................... App\Organizations\Controllers\OrganizationController@update[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/organizations/[39m[33m{id}[39m[38;5;103m ...................... App\Organizations\Controllers\OrganizationController@show[39m
+  [33mPOST[39m      [37mapi/v1/organizations/[39m[33m{id}[39m[37m/members[39m[38;5;103m ......... App\Organizations\Controllers\OrganizationController@addMember[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/organizations/[39m[33m{id}[39m[37m/members[39m[38;5;103m ........... App\Organizations\Controllers\OrganizationController@members[39m
+  [33mPUT[39m       [37mapi/v1/organizations/[39m[33m{id}[39m[37m/members/permissions/bulk[39m[38;5;103m App\Organizations\Controllers\OrganizationRoleControll…[39m
+  [33mPUT[39m       [37mapi/v1/organizations/[39m[33m{id}[39m[37m/members/[39m[33m{userId}[39m[38;5;103m App\Organizations\Controllers\OrganizationController@updateMem…[39m
+  [31mDELETE[39m    [37mapi/v1/organizations/[39m[33m{id}[39m[37m/members/[39m[33m{userId}[39m[38;5;103m App\Organizations\Controllers\OrganizationController@removeMem…[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/organizations/[39m[33m{id}[39m[37m/members/[39m[33m{userId}[39m[37m/permissions[39m[38;5;103m App\Organizations\Controllers\OrganizationRoleCont…[39m
+  [33mPUT[39m       [37mapi/v1/organizations/[39m[33m{id}[39m[37m/members/[39m[33m{userId}[39m[37m/permissions[39m[38;5;103m App\Organizations\Controllers\OrganizationRoleCont…[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/organizations/[39m[33m{id}[39m[37m/roles[39m[38;5;103m ........... App\Organizations\Controllers\OrganizationRoleController@index[39m
+  [33mPOST[39m      [37mapi/v1/organizations/[39m[33m{id}[39m[37m/roles[39m[38;5;103m ........... App\Organizations\Controllers\OrganizationRoleController@store[39m
+  [33mPUT[39m       [37mapi/v1/organizations/[39m[33m{id}[39m[37m/roles/[39m[33m{key}[39m[38;5;103m .... App\Organizations\Controllers\OrganizationRoleController@update[39m
+  [31mDELETE[39m    [37mapi/v1/organizations/[39m[33m{id}[39m[37m/roles/[39m[33m{key}[39m[38;5;103m ... App\Organizations\Controllers\OrganizationRoleController@destroy[39m
+  [33mPUT[39m       [37mapi/v1/organizations/[39m[33m{id}[39m[37m/verification[39m[38;5;103m . App\Organizations\Controllers\OrganizationController@verification[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/organizations/[39m[33m{organizationId}[39m[37m/documents[39m[38;5;103m App\Organizations\Controllers\OrganizationDocumentControl…[39m
+  [33mPOST[39m      [37mapi/v1/organizations/[39m[33m{organizationId}[39m[37m/documents[39m[38;5;103m App\Organizations\Controllers\OrganizationDocumentControl…[39m
+  [31mDELETE[39m    [37mapi/v1/organizations/[39m[33m{organizationId}[39m[37m/documents/[39m[33m{documentId}[39m[38;5;103m App\Organizations\Controllers\OrganizationDo…[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/organizations/[39m[33m{organizationId}[39m[37m/documents/[39m[33m{documentId}[39m[37m/file[39m[38;5;103m organization-documents.file › App\Organ…[39m
+  [33mPUT[39m       [37mapi/v1/organizations/[39m[33m{organizationId}[39m[37m/documents/[39m[33m{documentId}[39m[37m/review[39m[38;5;103m App\Organizations\Controllers\Organiz…[39m
+  [33mPOST[39m      [37mapi/v1/purchase-requests[39m[38;5;103m ................ App\Trading\Controllers\PurchaseRequestController@storeFromOffer[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/purchase-requests[39m[38;5;103m ......................... App\Trading\Controllers\PurchaseRequestController@index[39m
+  [33mPOST[39m      [37mapi/v1/purchase-requests/matches/[39m[33m{matchId}[39m[38;5;103m App\Trading\Controllers\PurchaseRequestController@storeFromMat…[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/purchase-requests/[39m[33m{id}[39m[38;5;103m ..................... App\Trading\Controllers\PurchaseRequestController@show[39m
+  [33mPOST[39m      [37mapi/v1/purchase-requests/[39m[33m{id}[39m[37m/accept[39m[38;5;103m ............ App\Trading\Controllers\PurchaseRequestController@accept[39m
+  [33mPOST[39m      [37mapi/v1/purchase-requests/[39m[33m{id}[39m[37m/accept-proposal[39m[38;5;103m App\Trading\Controllers\PurchaseRequestController@acceptPro…[39m
+  [33mPOST[39m      [37mapi/v1/purchase-requests/[39m[33m{id}[39m[37m/cancel[39m[38;5;103m ............ App\Trading\Controllers\PurchaseRequestController@cancel[39m
+  [33mPOST[39m      [37mapi/v1/purchase-requests/[39m[33m{id}[39m[37m/propose[39m[38;5;103m .......... App\Trading\Controllers\PurchaseRequestController@propose[39m
+  [33mPOST[39m      [37mapi/v1/purchase-requests/[39m[33m{id}[39m[37m/reject[39m[38;5;103m ............ App\Trading\Controllers\PurchaseRequestController@reject[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/rbac/platform[39m[38;5;103m ............................. App\Identity\Controllers\RoleGovernanceController@index[39m
+  [33mPUT[39m       [37mapi/v1/rbac/platform/roles/[39m[33m{roleName}[39m[37m/permissions[39m[38;5;103m App\Identity\Controllers\RoleGovernanceController@updat…[39m
+  [33mPUT[39m       [37mapi/v1/rbac/platform/users/permissions[39m[38;5;103m App\Identity\Controllers\RoleGovernanceController@updateUserPermis…[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/rbac/platform/users/[39m[33m{id}[39m[37m/permissions[39m[38;5;103m App\Identity\Controllers\RoleGovernanceController@showUserPer…[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/reports/export/deals-csv[39m[38;5;103m ........... App\Platform\Controllers\ReportExportController@exportDealsCsv[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/reports/sales-summary[39m[38;5;103m ................ App\Platform\Controllers\ReportExportController@salesSummary[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/settings[39m[38;5;103m ................................... App\Platform\Controllers\SystemSettingController@index[39m
+  [33mPOST[39m      [37mapi/v1/settings/update[39m[38;5;103m ........................... App\Platform\Controllers\SystemSettingController@update[39m
+  [33mPOST[39m      [37mapi/v1/setup-wizard/configure[39m[38;5;103m ................... App\Platform\Controllers\SetupWizardController@configure[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/setup-wizard/status[39m[38;5;103m ......................... App\Platform\Controllers\SetupWizardController@status[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/support/queue[39m[38;5;103m ................................. App\SupportDesk\Controllers\SupportController@queue[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/support/summary[39m[38;5;103m ............................. App\SupportDesk\Controllers\SupportController@summary[39m
+  [33mPOST[39m      [37mapi/v1/support/tickets[39m[38;5;103m ............................... App\SupportDesk\Controllers\SupportController@store[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/support/tickets[39m[38;5;103m ............................... App\SupportDesk\Controllers\SupportController@index[39m
+  [33mPUT[39m       [37mapi/v1/support/tickets/[39m[33m{id}[39m[37m/answer[39m[38;5;103m .................. App\SupportDesk\Controllers\SupportController@answer[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/users[39m[38;5;103m ..................................... App\Identity\Controllers\UserManagementController@index[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/users/roles[39m[38;5;103m ............................... App\Identity\Controllers\UserManagementController@roles[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/users/[39m[33m{id}[39m[38;5;103m ................................. App\Identity\Controllers\UserManagementController@show[39m
+  [33mPOST[39m      [37mapi/v1/users/[39m[33m{id}[39m[37m/roles[39m[38;5;103m ..................... App\Identity\Controllers\UserManagementController@assignRole[39m
+  [31mDELETE[39m    [37mapi/v1/users/[39m[33m{id}[39m[37m/roles/[39m[33m{roleName}[39m[38;5;103m .......... App\Identity\Controllers\UserManagementController@revokeRole[39m
+  [33mPUT[39m       [37mapi/v1/users/[39m[33m{id}[39m[37m/status[39m[38;5;103m .................. App\Identity\Controllers\UserManagementController@updateStatus[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/warehouses[39m[38;5;103m .................................... App\Inventory\Controllers\WarehouseController@index[39m
+  [33mPOST[39m      [37mapi/v1/warehouses[39m[38;5;103m .................................... App\Inventory\Controllers\WarehouseController@store[39m
+  [33mPUT[39m       [37mapi/v1/warehouses/[39m[33m{id}[39m[38;5;103m .............................. App\Inventory\Controllers\WarehouseController@update[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/webhooks[39m[38;5;103m ......................................... App\Platform\Controllers\WebhookController@index[39m
+  [33mPOST[39m      [37mapi/v1/webhooks[39m[38;5;103m ......................................... App\Platform\Controllers\WebhookController@store[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mapi/v1/webhooks/[39m[33m{id}[39m[37m/deliveries[39m[38;5;103m .................... App\Platform\Controllers\WebhookController@deliveries[39m
+  [33mPOST[39m      [37mapi/v1/webhooks/[39m[33m{id}[39m[37m/ping[39m[38;5;103m ................................ App\Platform\Controllers\WebhookController@ping[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mreset-password/[39m[33m{token}[39m[38;5;103m ................................................ password.reset › routes/web.php:13[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37msanctum/csrf-cookie[39m[38;5;103m .................... sanctum.csrf-cookie › Laravel\Sanctum › CsrfCookieController@show[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mstorage/[39m[33m{path}[39m[38;5;103m storage.local › vendor/laravel/framework/src/Illuminate/Filesystem/FilesystemServiceProvid…[39m
+  [33mPUT[39m       [37mstorage/[39m[33m{path}[39m[38;5;103m storage.local.upload › vendor/laravel/framework/src/Illuminate/Filesystem/FilesystemServic…[39m
+  [34mGET[39m[38;5;103m|[39m[38;5;103mHEAD[39m  [37mup[39m[38;5;103m ........... vendor/laravel/framework/src/Illuminate/Foundation/Configuration/ApplicationBuilder.php:224[39m
+
+                                                                                                  [34;1mShowing [157] routes[39;22m
+

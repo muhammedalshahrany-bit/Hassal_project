@@ -1,0 +1,38 @@
+== offers: total = available + reserved + sold ==
+  15 listings checked
+
+== active holds vs the listing's reserved column ==
+  ! offer #1: active holds 0 != reserved_quantity 20.00
+  ! offer #2: active holds 0 != reserved_quantity 18.00
+  ! offer #4: active holds 10 != reserved_quantity 22.00
+  ! offer #5: active holds 0 != reserved_quantity 50.00
+  ! offer #6: active holds 0 != reserved_quantity 37.00
+  ! offer #7: active holds 0 != reserved_quantity 22.00
+  ! offer #8: active holds 0 != reserved_quantity 40.00
+  ! offer #9: active holds 8 != reserved_quantity 22.00
+  18 holds counted
+
+== order money fields ==
+  14 orders checked
+
+== every order's state is accounted for in its history ==
+  ! deal DL-260925-R9AUY8: status PENDING_SELLER_APPROVAL but history ends at nothing
+  54 history rows
+
+== handover codes vs their orders ==
+  13 codes checked
+
+== coverage of the states a screen walks ==
+  offers:        ACTIVE, CANCELLED, DRAFT, EXPIRED, PAUSED, PENDING_REVIEW, SOLD_OUT
+  purchases req: ACCEPTED, CANCELLED, PROPOSED, REJECTED, REQUESTED
+  reservations:  ACTIVE, CANCELLED, CONVERTED_TO_DEAL, EXPIRED
+  orders:        ACCEPTED, CANCELLED, COMPLETED, DELIVERED, DISPATCHED, DISPUTED, INSPECTION, PENDING_SELLER_APPROVAL, PROCESSING, READY_FOR_PICKUP, RESOLVED
+  codes:         ACTIVE, INVALIDATED, USED
+  disputes:      EVIDENCE_REQUIRED, OPEN, RESOLVED_CANCELLATION, RESOLVED_RELEASE
+
+== who holds the platform ==
+  SuperAdmin: alshhranymuha39@gmail.com
+  sandbox accounts: 21
+  organizations: 8 (sandbox-flagged 8)
+
+9 disagreement(s) above.

@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('feature_flags', function (Blueprint $table) {
             $table->id();
-            $table->string('key')->unique(); // marketplace, demands, geo_discovery, escrow, online_payments, webhooks, api_keys, analytics, disputes, notifications, multi_currency, multi_language, broker_module, organization_verification
+            $table->string('key')->unique(); // the keys live in App\Platform\Support\FlagCatalog
             $table->string('name_ar');
             $table->string('name_en');
             $table->text('description_ar')->nullable();

@@ -1,0 +1,15 @@
+app/http/controllers/api/v1/authcontroller.php
+app/http/controllers/api/v1/offercontroller.php
+app/http/controllers/api/v1/organizationcontroller.php
+app/http/controllers/api/v1/organizationdocumentcontroller.php
+app/http/controllers/api/v1/productimagecontroller.php
+app/http/controllers/api/v1/purchaserequestcontroller.php
+app/http/requests/googlesigninrequest.php
+app/http/requests/registerrequest.php
+app/http/resources/offerresource.php
+app/models/dispute.php
+app/models/offer.php
+app/models/user.php
+app/services/auth/googleidtokenverifier.php
+app/services/geodiscoveryservice.php
+app/support/settingcatalog.php

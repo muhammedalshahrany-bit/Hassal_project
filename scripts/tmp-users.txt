@@ -1,0 +1,25 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+id	name	email	roles
+2	هدى الأهدل	amal.owner@hassal.test	NULL
+3	ماجد الأهدل	amal.admin@hassal.test	NULL
+4	سامي باوزير	amal.staff@hassal.test	NULL
+5	ريم السقاف	amal.finance@hassal.test	NULL
+6	نادر بامطرف	amal.auditor@hassal.test	NULL
+7	خالد ماجد	majid.owner@hassal.test	NULL
+8	فتحي سالم	majid.staff@hassal.test	NULL
+9	أمل قاسم	majid.finance@hassal.test	NULL
+10	ياسر الساحلي	sahil.owner@hassal.test	NULL
+11	منير الساحلي	sahil.admin@hassal.test	NULL
+12	طارق الحداد	sahil.staff@hassal.test	NULL
+13	عبده السلطان	sultan.owner@hassal.test	NULL
+14	سالم النوباني	sultan.staff@hassal.test	NULL
+15	هدى ناصر	sultan.finance@hassal.test	NULL
+16	فاضل النخيلي	nakhil.owner@hassal.test	NULL
+17	إخلاص عوض	nakhil.staff@hassal.test	NULL
+18	أمين الفجري	fajr.owner@hassal.test	NULL
+19	سعيد بن شحنة	fajr.admin@hassal.test	NULL
+20	مرفت هيثم	fajr.finance@hassal.test	NULL
+21	وليد الوسيطي	wasta.owner@hassal.test	NULL
+22	سالم القرية	qaria.owner@hassal.test	NULL
+24	مستهلك فحص حي	live.consumer.1790877428@hassal.test	NULL
+25	مستهلك فحص حي	live.consumer.1790878224@hassal.test	NULL

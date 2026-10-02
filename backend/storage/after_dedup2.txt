@@ -1,0 +1,141 @@
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Marketplace\DemandMatchingTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma demand is answered only by offers that fit the rules[39m[90m                                                     [39m [90m40.34s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe engine explains its answer in terms the data supports[39m[90m                                                   [39m [90m0.78s[39m  
+  [32;1m✓[39;22m[90m [39m[90man offer the buyer cannot actually be served from is not matched[39m[90m                                            [39m [90m0.74s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma partial supply is offered as a partial not as a fill[39m[90m                                                      [39m [90m0.72s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma match that stops being true is retired[39m[90m                                                                    [39m [90m0.88s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma demand can only be read by the business that raised it[39m[90m                                                    [39m [90m0.83s[39m  
+  [32;1m✓[39;22m[90m [39m[90man expired demand stops being answered[39m[90m                                                                      [39m [90m0.83s[39m  
+  [32;1m✓[39;22m[90m [39m[90mpublishing an offer answers an open demand without being asked[39m[90m                                              [39m [90m0.88s[39m  
+  [32;1m✓[39;22m[90m [39m[90mre running the engine never duplicates a pair[39m[90m                                                               [39m [90m0.85s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Marketplace\DemandQuotationTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma request with no currency and no date takes the platforms own both[39m[90m                                         [39m [90m0.71s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma request priced in a currency the platform retired is refused and never stored[39m[90m                             [39m [90m0.73s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma quote states only two numbers and the platform computes the third[39m[90m                                         [39m [90m0.72s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma closed request is refused before the form is read[39m[90m                                                         [39m [90m0.72s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma business cannot answer its own request[39m[90m                                                                    [39m [90m0.69s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma quote in a retired currency is refused in the words the seller used[39m[90m                                       [39m [90m0.72s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma request without a business behind it never reaches the board[39m[90m                                              [39m [90m0.69s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Marketplace\FeaturedOffersTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma pin is a platform act and not a sellers[39m[90m                                                                   [39m [90m0.88s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe strip carries only live listings whatever it was pinned for[39m[90m                                             [39m [90m0.88s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma pinned listing disappears from the strip when its date passes[39m[90m                                             [39m [90m0.81s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe newest pin leads and the ceiling is the platforms[39m[90m                                                       [39m [90m1.01s[39m  
+  [32;1m✓[39;22m[90m [39m[90mremoving a pin takes the listing back out of the strip[39m[90m                                                      [39m [90m0.83s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe account behind a pin is visible to those who can place one[39m[90m                                              [39m [90m0.79s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma visitor sees the pin and not the person who placed it[39m[90m                                                     [39m [90m0.74s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Marketplace\NearbyOffersTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma listing past its own expiry date is not nearby[39m[90m                                                            [39m [90m0.72s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma listing with no expiry date stays nearby[39m[90m                                                                  [39m [90m0.64s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe distance bound still applies alongside the date[39m[90m                                                         [39m [90m0.68s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Marketplace\OfferLifecycleTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma draft is off the market and unreadable by another business[39m[90m                                                [39m [90m0.85s[39m  
+  [32;1m✓[39;22m[90m [39m[90monly a draft or a paused listing can be edited[39m[90m                                                              [39m [90m0.71s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe quantity of a listing already sold from cannot be rewritten[39m[90m                                             [39m [90m0.67s[39m  
+  [32;1m✓[39;22m[90m [39m[90mmoderation is a platform permission not a sellers[39m[90m                                                           [39m [90m0.71s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma returned offer goes back to the seller with the reason[39m[90m                                                    [39m [90m0.77s[39m  
+  [32;1m✓[39;22m[90m [39m[90monly a submitted offer can be moderated[39m[90m                                                                     [39m [90m0.63s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma seller controls the shelf and cancels only with the right grant[39m[90m                                           [39m [90m0.79s[39m  
+  [32;1m✓[39;22m[90m [39m[90mcancelling is terminal for the seller[39m[90m                                                                       [39m [90m0.79s[39m  
+  [32;1m✓[39;22m[90m [39m[90mrunning out of stock is the only inventory fact a status may tell[39m[90m                                           [39m [90m0.65s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe database rejects a status the product does not define[39m[90m                                                   [39m [90m0.61s[39m  
+  [32;1m✓[39;22m[90m [39m[90man offer cannot be published with nothing available[39m[90m                                                         [39m [90m0.70s[39m  
+  [32;1m✓[39;22m[90m [39m[90monly a draft can be discarded and a published one is only withdrawn[39m[90m                                         [39m [90m0.78s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe platform does not accept a market price it cannot source[39m[90m                                                [39m [90m0.82s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Marketplace\SellerIdentityVisibilityTest[39m
+  [32;1m✓[39;22m[90m [39m[90mpublishing can record a request to hide the sellers name[39m[90m                                                    [39m [90m0.89s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma stranger reading the public list gets no name no registration and no vat[39m[90m                                  [39m [90m0.79s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe detail page answers the same way as the list[39m[90m                                                            [39m [90m0.63s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe selling organization still reads its own listing in full[39m[90m                                                [39m [90m0.66s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma platform reviewer reads the name the market does not[39m[90m                                                      [39m [90m0.65s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe sellers own answer in the thread carries no name either[39m[90m                                                 [39m [90m0.70s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe switch travels with an edit and not with the lifecycle[39m[90m                                                  [39m [90m0.65s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Trading\DealFlowTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma deal remembers the terms it was made on[39m[90m                                                                   [39m [90m0.93s[39m  
+  [32;1m✓[39;22m[90m [39m[90monly the seller on this deal can approve it[39m[90m                                                                 [39m [90m0.87s[39m  
+  [32;1m✓[39;22m[90m [39m[90mmoving the goods and closing the order are two different jobs[39m[90m                                               [39m [90m0.96s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma state the product does not define moves nothing[39m[90m                                                           [39m [90m0.86s[39m  
+  [32;1m✓[39;22m[90m [39m[90mno state claims money the platform never held[39m[90m                                                               [39m [90m1.10s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe walk to completion moves the stock exactly once[39m[90m                                                         [39m [90m1.51s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma counter pickup can close without an inspection window[39m[90m                                                     [39m [90m1.26s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma cancelled deal gives the stock back once[39m[90m                                                                  [39m [90m0.96s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma dispute needs a case file and both sides can open one[39m[90m                                                     [39m [90m1.27s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma dispute can be raised by either side and closed only by the platform[39m[90m                                      [39m [90m1.44s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma ruling that calls the order off puts the quantity back[39m[90m                                                    [39m [90m1.23s[39m  
+  [32;1m✓[39;22m[90m [39m[90meach side sees its own deals and nobody elses[39m[90m                                                               [39m [90m0.99s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Trading\DealHandoverTest[39m
+  [32;1m✓[39;22m[90m [39m[90mthere is no code to scan until the seller accepts the order[39m[90m                                                 [39m [90m1.01s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma code is not spent before the goods are moving[39m[90m                                                             [39m [90m1.27s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma code proves one delivery and no more[39m[90m                                                                      [39m [90m1.37s[39m  
+  [32;1m✓[39;22m[90m [39m[90manother orders code does not close this one[39m[90m                                                                 [39m [90m1.71s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma cancelled order loses its code with the order[39m[90m                                                             [39m [90m1.08s[39m  
+  [32;1m✓[39;22m[90m [39m[90man attested handover survives a later cancellation[39m[90m                                                          [39m [90m1.51s[39m  
+  [32;1m✓[39;22m[90m [39m[90mwhat a camera returns and what a person types are the same act[39m[90m                                              [39m [90m1.40s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma code typed under a bad light still reads[39m[90m                                                                  [39m [90m1.33s[39m  
+  [32;1m✓[39;22m[90m [39m[90mreading a code is not the same as spending it[39m[90m                                                               [39m [90m1.27s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma business cannot attest a delivery it has no part in[39m[90m                                                       [39m [90m1.39s[39m  
+  [32;1m✓[39;22m[90m [39m[90mclosing an order without the scan is refused at the state machine[39m[90m                                           [39m [90m1.34s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Trading\DealNoticeTest[39m
+  [32;1m✓[39;22m[90m [39m[90mthe seller is told what is being asked and of whom[39m[90m                                                          [39m [90m0.98s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe buyer hears that their order left the handset[39m[90m                                                           [39m [90m0.94s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma move is announced to the other side and named to it[39m[90m                                                       [39m [90m1.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma platform decision is attributed to the platform and reaches both[39m[90m                                          [39m [90m1.13s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma spent delivery code is announced to the side that did not scan it[39m[90m                                         [39m [90m1.33s[39m  
+  [32;1m✓[39;22m[90m [39m[90man account that muted deal traffic hears nothing[39m[90m                                                            [39m [90m1.02s[39m  
+  [32;1m✓[39;22m[90m [39m[90man account that muted notifications entirely hears nothing[39m[90m                                                  [39m [90m1.02s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Trading\InventoryReservationTest[39m
+  [32;1m✓[39;22m[90m [39m[90man ask holds nothing until the seller answers[39m[90m                                                               [39m [90m0.85s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma hold records what it claims and remembers the price[39m[90m                                                       [39m [90m0.99s[39m  
+  [32;1m✓[39;22m[90m [39m[90mstock that is not there cannot be asked for[39m[90m                                                                 [39m [90m0.82s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma shelf that emptied after the ask is not held by the acceptance[39m[90m                                            [39m [90m1.00s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma line below the sellers minimum is not opened[39m[90m                                                              [39m [90m0.81s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma seller cannot raise an ask against their own shelf[39m[90m                                                        [39m [90m0.79s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma withdrawn listing cannot be asked for through the back door[39m[90m                                               [39m [90m0.83s[39m  
+  [32;1m✓[39;22m[90m [39m[90man ask is not honoured when the seller was stopped[39m[90m                                                          [39m [90m0.86s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe database waits for the first claim to finish[39m[90m                                                            [39m [90m1.79s[39m  
+  [32;1m✓[39;22m[90m [39m[90mcancelling returns the stock once and only once[39m[90m                                                             [39m [90m0.98s[39m  
+  [32;1m✓[39;22m[90m [39m[90man unanswered hold expires and the shelf reopens[39m[90m                                                            [39m [90m0.92s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma hold still inside its grace window is left alone[39m[90m                                                          [39m [90m0.87s[39m  
+  [32;1m✓[39;22m[90m [39m[90man expired hold cannot be turned into a deal[39m[90m                                                                [39m [90m1.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma replayed ask asks once[39m[90m                                                                                    [39m [90m0.87s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe last of a shelf goes to one buyer and can come back[39m[90m                                                     [39m [90m1.19s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma deal converts the hold instead of releasing it[39m[90m                                                            [39m [90m1.03s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Trading\PricingAndCurrencyTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma foreign amount is converted by dividing by the rate[39m[90m                                                       [39m [90m0.70s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe base currency converts to itself at one[39m[90m                                                                 [39m [90m0.65s[39m  
+  [32;1m✓[39;22m[90m [39m[90mbase amount stays the line total because a deal stores it that way[39m[90m                                          [39m [90m0.70s[39m  
+  [32;1m✓[39;22m[90m [39m[90man unavailable currency is refused instead of priced at par[39m[90m                                                 [39m [90m0.63s[39m  
+  [32;1m✓[39;22m[90m [39m[90man inactive currency is refused even though it is still listed[39m[90m                                              [39m [90m0.61s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma zero rate is refused rather than treated as a free conversion[39m[90m                                             [39m [90m0.64s[39m  
+  [32;1m✓[39;22m[90m [39m[90mpricing refuses to run without a configured base currency[39m[90m                                                   [39m [90m0.62s[39m  
+  [32;1m✓[39;22m[90m [39m[90mno tax and no commission are charged until the operator says so[39m[90m                                             [39m [90m0.76s[39m  
+  [32;1m✓[39;22m[90m [39m[90mtax and commission come from the settings and split the amount as declared[39m[90m                                  [39m [90m0.69s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma discount bigger than the line and a negative fee are both clamped[39m[90m                                         [39m [90m0.70s[39m  
+  [32;1m✓[39;22m[90m [39m[90man omitted currency is the base currency and not an error[39m[90m                                                   [39m [90m0.70s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Trading\PurchaseRequestFlowTest[39m
+  [32;1m✓[39;22m[90m [39m[90masking holds nothing and consumes the match[39m[90m                                                                 [39m [90m1.02s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe quantity is checked against what the seller will actually do[39m[90m                                            [39m [90m0.86s[39m  
+  [32;1m✓[39;22m[90m [39m[90monly the seller answers and acceptance is what holds stock[39m[90m                                                  [39m [90m1.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma seller cannot accept more than the shelf holds[39m[90m                                                            [39m [90m1.15s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma refusal needs a reason and ends the conversation[39m[90m                                                          [39m [90m0.97s[39m  
+  [32;1m✓[39;22m[90m [39m[90mnegotiation records the proposed terms without rewriting the ask[39m[90m                                            [39m [90m1.07s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma buyer withdraws only an unanswered ask[39m[90m                                                                    [39m [90m1.31s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma match is worthless once the offer leaves the market[39m[90m                                                       [39m [90m0.89s[39m  
+  [32;1m✓[39;22m[90m [39m[90man expired match and an expired offer are reported differently[39m[90m                                              [39m [90m1.02s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma finished listing cannot be asked for from its card[39m[90m                                                        [39m [90m0.81s[39m  
+
+  [90mTests:[39m    [32;1m113 passed[39;22m[90m (1092 assertions)[39m
+  [90mDuration:[39m [39m143.85s[39m
+

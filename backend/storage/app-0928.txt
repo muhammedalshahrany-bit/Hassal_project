@@ -1,0 +1,254 @@
+
+################################################################################
+2026-09-28T16:25:57.970Z  failed=false  all=false
+################################################################################
+--- OLD ---
+import { api } from './lib/api';
+import { getLocale, type Locale } from './lib/i18n';
+--- NEW ---
+import { api } from './lib/api';
+import { getLocale, type Locale } from './lib/i18n';
+import {
+  DEFAULT_VIEW,
+  pathForView,
+  resolveLocation,
+  viewForPath,
+} from './lib/navigation';
+
+################################################################################
+2026-09-28T16:27:17.408Z  failed=false  all=false
+################################################################################
+--- OLD ---
+  const [profileCompletion, setProfileCompletion] = useState<ProfileCompletion | null>(null);
+  const [activeView, setActiveView] = useState<string>('marketplace');
+--- NEW ---
+  const [profileCompletion, setProfileCompletion] = useState<ProfileCompletion | null>(null);
+  /**
+   * The screen on show, read from the address the browser was given.
+   *
+   * It used to be a plain state string that always started at the market. That
+   * made every destination unaddressable: an notice could not link to a screen,
+   * «back» could not be a browser action, and reloading a half-filied form lost
+   * the room the person was standing in. The tree in `lib/navigation.ts` is what
+   * maps an address to a view and back, so this stays a *view id* and the URL is
+   * written from the same table rather than a second list of paths.
+   */
+  const [activeView, setActiveView] = useState<string>(
+    () => viewForPath(window.location.pathname) ?? DEFAULT_VIEW
+  );
+  /**
+   * Whether the server has answered who this is.
+   *
+   * Permissions arrive with `/auth/me`, and an address typed into the bar is
+   * read before they do. Until this flips, a gated view is *not yet* refused —
+   * bouncing a person off `/deals` on the first paint is a redirect that fights
+   * the page it lands on.
+   */
+  const [sessionSettled, setSessionSettled] = useState(false);
+
+################################################################################
+2026-09-28T16:28:03.041Z  failed=false  all=false
+################################################################################
+--- OLD ---
+  const navigateToView = (view: string) => {
+    if (!canOpenView(view)) {
+      setToastMessage(REFUSAL_MESSAGES[view] ?? 'هذه الشاشة غير متاحة للحساب الحالي');
+      setTimeout(() => setToastMessage(null), 5000);
+      return;
+    }
+
+    setActiveView(view);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+--- NEW ---
+  const navigateToView = (view: string) => {
+    if (!canOpenView(view)) {
+      setToastMessage(REFUSAL_MESSAGES[view] ?? 'هذه الشاشة غير متاحة للحساب الحالي');
+      setTimeout(() => setToastMessage(null), 5000);
+      return;
+    }
+
+    showView(view);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  /**
+   * Puts a destination on screen *and* in the address bar.
+   *
+   * One function writes both, because the two drifting apart is how a person
+   * ends up looking at their business file with `/market` in the URL — and then
+   * sending that address to a colleague who lands somewhere else entirely. The
+   * query is dropped on purpose: the parameters an arrival carried (`?deal=4`)
+   * belonged to that arrival, and carrying them into the next screen would make
+   * a row a person has already left look like the one still open.
+   */
+  const showView = useCallback((view: string) => {
+    setActiveView(view);
+    const next = pathForView(view);
+    if (next !== window.location.pathname) {
+      window.history.pushState({ view }, '', next);
+    }
+  }, []);
+
+  /**
+   * Two facts about the browser, kept in step with the screen.
+   *
+   * On the way in: an address from the flat world (`/demands`) is rewritten to
+   * the branch that now holds it (`/deals/demands`) with `replaceState`, so the
+   * person's bookmark ends up correct and «back» does not return them to an
+   * address this build answered by redirecting. An address that names nothing
+   * becomes the market rather than a blank panel.
+   *
+   * Ongoing: «back» and «forward» are the browser's own, and a view that only
+   * changed in React state would leave them moving the URL under a screen that
+   * never changed.
+   */
+  useEffect(() => {
+    const { path, query } = resolveLocation(
+      window.location.pathname + window.location.search
+    );
+    const target = path === '/' ? pathForView(DEFAULT_VIEW) : path;
+    if (target !== window.location.pathname) {
+      window.history.replaceState({}, '', target + query);
+    }
+
+    const onPop = () => {
+      setActiveView(viewForPath(window.location.pathname) ?? DEFAULT_VIEW);
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
+  /**
+   * An address is a request, not a grant.
+   *
+   * Once the server has answered who this is, a view this session may not open
+   * is traded for the market and the reason is said out loud — the same sentence
+   * a blocked tab click produces. Before that answer arrives the screen is left
+   * alone: `canOpenView` is false for every business door while `/auth/me` is
+   * still in flight, and a fallback keyed on that would bounce a permitted
+   * person off their own page on every reload.
+   */
+  useEffect(() => {
+    if (!sessionRead) return;
+    if (canOpenView(activeView)) return;
+    showView(DEFAULT_VIEW);
+    setToastMessage(REFUSAL_MESSAGES[activeView] ?? 'هذه الشاشة غير متاحة للحساب الحالي');
+    const clear = setTimeout(() => setToastMessage(null), 5000);
+    return () => clearTimeout(clear);
+    // `sessionRead` is the only dependency that matters: the check re-runs when
+    // the answer arrives and whenever the address changes.
+  }, [sessionRead, activeView]);
+
+
+################################################################################
+2026-09-28T16:28:35.454Z  failed=false  all=false
+################################################################################
+--- OLD ---
+  const [sessionSettled, setSessionSettled] = useState(false);
+--- NEW ---
+  const [sessionRead, setSessionRead] = useState(false);
+
+################################################################################
+2026-09-28T16:29:40.209Z  failed=false  all=false
+################################################################################
+--- OLD ---
+  const loadSession = useCallback(async () => {
+    const response = await api.getMe();
+    if (response.success && response.data?.user) {
+      setCurrentUser(response.data.user);
+      setCurrentOrg(response.data.current_organization || null);
+      setOrganizations(response.data.organizations ?? []);
+      setProfileCompletion(response.data.profile_completion ?? null);
+      return true;
+    }
+    api.setToken(null);
+    api.setTenantId(null);
+    setCurrentUser(null);
+    setCurrentOrg(null);
+    setOrganizations([]);
+    setProfileCompletion(null);
+    return false;
+  }, []);
+--- NEW ---
+  const loadSession = useCallback(async () => {
+    const response = await api.getMe();
+    if (response.success && response.data?.user) {
+      setCurrentUser(response.data.user);
+      setCurrentOrg(response.data.current_organization || null);
+      setOrganizations(response.data.organizations ?? []);
+      setProfileCompletion(response.data.profile_completion ?? null);
+      setSessionRead(true);
+      return true;
+    }
+    api.setToken(null);
+    api.setTenantId(null);
+    setCurrentUser(null);
+    setCurrentOrg(null);
+    setOrganizations([]);
+    setProfileCompletion(null);
+    setSessionRead(true);
+    return false;
+  }, []);
+
+################################################################################
+2026-09-28T16:30:23.120Z  failed=false  all=false
+################################################################################
+--- OLD ---
+    if (!api.getToken()) return;
+    void loadSession();
+  }, [loadSession]);
+--- NEW ---
+    if (!api.getToken()) {
+      // A guest's session is already known: there is nothing to wait for, and an
+      // address that names a business door has to be answered now rather than
+      // left rendering nothing.
+      setSessionRead(true);
+      return;
+    }
+    void loadSession();
+  }, [loadSession]);
+
+################################################################################
+2026-09-28T16:31:04.508Z  failed=false  all=false
+################################################################################
+--- OLD ---
+  const handleOrderSuccess = (purchaseRequest: PurchaseRequest) => {
+    // A purchase request is an offer to buy. No stock is held and no money
+    // moves until the seller answers it, so the message says exactly that.
+    setToastMessage(`تم تسجيل طلب الشراء #${purchaseRequest?.id ?? ''} لدى البائع للمراجعة`);
+    setTimeout(() => setToastMessage(null), 5000);
+    setActiveView('deals');
+  };
+
+  const handleOpenDisputeFromDeal = (dealId: number) => {
+    setDisputeInitialDealId(dealId);
+    setActiveView('disputes');
+--- NEW ---
+  const handleOrderSuccess = (purchaseRequest: PurchaseRequest) => {
+    // A purchase request is an offer to buy. No stock is held and no money
+    // moves until the seller answers it, so the message says exactly that.
+    setToastMessage(`تم تسجيل طلب الشراء #${purchaseRequest?.id ?? ''} لدى البائع للمراجعة`);
+    setTimeout(() => setToastMessage(null), 5000);
+    showView('deals');
+  };
+
+  const handleOpenDisputeFromDeal = (dealId: number) => {
+    setDisputeInitialDealId(dealId);
+    showView('disputes');
+
+################################################################################
+2026-09-28T16:31:42.212Z  failed=false  all=false
+################################################################################
+--- OLD ---
+    setProfileCompletion(null);
+    setActiveView('marketplace');
+  };
+--- NEW ---
+    setProfileCompletion(null);
+    showView(DEFAULT_VIEW);
+  };
+
+edits: 8

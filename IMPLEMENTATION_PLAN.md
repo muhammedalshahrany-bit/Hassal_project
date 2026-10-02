@@ -65,29 +65,36 @@
     `ExpireReservationsCommand` → `InventoryReservationService::sweepExpiredReservations()` بهامش أمان
     `hassal.reservations.expiry_grace_seconds`.
   - بناء الصفقات التجارية (`Deals`) وتجميد لقطة الأسعار والشروط (`Deal Snapshot`).
-  - بناء ماكينة حالات الصفقة بـ 16 حالة في `DealStateMachineService`: `DRAFT → PENDING_SELLER_APPROVAL →
-    ACCEPTED → PENDING_PAYMENT → ESCROW_FUNDED → PROCESSING → READY_FOR_PICKUP → DISPATCHED → DELIVERED →
-    INSPECTION → COMPLETED → SETTLED`، مع `CANCELLED` و `DISPUTED` و `RESOLVED` و `REFUNDED`.
+  - بناء ماكينة حالات الصفقة بـ 12 حالة في `DealStateMachineService`: `DRAFT → PENDING_SELLER_APPROVAL →
+    ACCEPTED → PROCESSING → READY_FOR_PICKUP → DISPATCHED → DELIVERED → INSPECTION → COMPLETED`،
+    مع `CANCELLED` و`DISPUTED` و`RESOLVED`. **(صحّح هذه الفقرة 2026-10-01: كانت نسخة سابقة تضيف
+    `PENDING_PAYMENT` و`ESCROW_FUNDED` و`SETTLED` و`REFUNDED`؛ حُذفت الحالات الأربع مع نماذجها —
+    انظر «المرحلة 5» أدناه وسطر النطاق في `PROJECT_SCOPE.md`.)**
+  - بوابة إثبات التسليم (`deal_handovers`): رمز يُصدر عند `ACCEPTED` ويمُشترى بمسح مرة واحدة؛
+    لا `INSPECTION` ولا `COMPLETED` قبل النفاد.
 - **الاختبارات:**
   - **Concurrency Stress Test:** محاكاة طلب مشتريين في نفس اللحظة لنفس الكمية والتأكد من نجاح الأول ورفض الثاني قطعياً.
   - اختبارات انتقالات ماكينة الحالة لجميع الحالات ومسار الإلغاء.
 
 ---
 
-### المرحلة 5: المدفوعات، دفتر الأستاذ، والتسوية المالية (Phase 5 — Financial Engine & Ledger)
+### المرحلة 5: دفتر المنصة المحاسبي (Phase 5 — Ledger Accounting, بلا بوابات دفع)
 - **المحاور:**
-  - بناء طبقة تجريد بوابات الدفع (`PaymentProviderInterface` مع `PaymentGatewayManager` ومنفّذي
-    `BankTransferPaymentProvider` و `CashOnDeliveryPaymentProvider`). **لم يوصل أي مسار بها بعد**، ولا يوجد
-    مزوّد محفظة أو بطاقة — ربط بوابة حقيقية واختباره عملٌ متبقٍّ.
-  - دعم التحويل البنكي والدفع عند الاستلام (COD) كمسارات مسجَّلة، دون خصم إلكتروني.
+  - **لا طبقة دفع في هذا النظام** **(صحّح هذه المرحلة 2026-10-01: كانت نسخة سابقة تخطّط
+    `PaymentProviderInterface` و`PaymentGatewayManager` ومنفّذي تحويل بنكي/COD وحساب ضمان
+    `2010-ESCROW-HOLDING`؛ حُذفت كلها من الخطة والكود والقاعدة وفق §20 من برومبت المنصة —
+    راجع `PROJECT_SCOPE.md` و§5 من `ARCHITECTURE.md`).** لم تُنشأ جدولّا `payments` و`escrows`
+    في أي هجرة، ولا يوجد أي مسار يقبل معاملة دفع.
   - بناء دفتر الأستاذ المالي المزدوج: لا عدول ولا حذف عبر أي نقطة نهاية، والتصحيح يكون بقيد معكوس
     (`is_reversal` / `reversal_of_entry_id`) وتحقّق `isBalanced()`. لا يوجد قمع على مستوى قاعدة البيانات يمنع
     تعديل SQL مباشر.
+  - حسابان فقط في `DoubleEntryLedgerService`: `1010-FEE-RECEIVABLE` و`4010-COMMISSION-REVENUE`، ولا يُقيَّد
+    شيء إلا عند `COMPLETED` (رسوم المنصة)، خلف علم `double_entry_ledger` المعطّل افتراضيًا
+    (`FlagCatalog`: «يتطلب ربطًا فعليًا بحسابات مالية»).
   - احتساب وتوزيع الضرائب والعمولات وفق لقطة الصفقة بدقة عشرية (`tax_rate_snapshot` و
     `platform_fee_rate_snapshot` على جدول `deals`)، وكلاهما يبدأ صفرًا حتى يقرره المشرف.
-  - تسجيل الضمان (Escrow) كـ**قيد محاسبي وحساب `2010-ESCROW-HOLDING`**، لا كحيازة أموال: لا طرف ثالث يقبض
-    المبلغ، والانتقال `ESCROW_FUNDED` محجوب خلف علم `escrow` المعطّل افتراضيًا.
-- **الاختبارات:** مطابقة ميزان المراجعة الحسابي (Debit == Credit) ومنع التلاعب بالأرصدة على مستوى الخدمة.
+- **الاختبارات:** مطابقة ميزان المراجعة الحسابي (Debit == Credit) ومنع التلاعب بالأرصدة على مستوى الخدمة،
+  وتقييد الرسم عند `COMPLETED` فقط عند تفعيل العلم.
 
 ---
 

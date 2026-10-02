@@ -1,0 +1,185 @@
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Auth\AccountPreferencesTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma fresh account is answered the compiled defaults[39m[90m                                                          [39m [90m40.47s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma patch leaves the keys it never mentioned alone[39m[90m                                                            [39m [90m0.75s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma key the platform does not define is refused by name and never stored[39m[90m                                      [39m [90m0.71s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma value outside an enums own list is ignored rather than stored[39m[90m                                             [39m [90m0.71s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe preferences of one account are never another accounts[39m[90m                                                   [39m [90m0.80s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe session itself carries the values so the chrome needs no second fetch[39m[90m                                   [39m [90m0.75s[39m  
+  [32;1m✓[39;22m[90m [39m[90mpreferences require a session[39m[90m                                                                               [39m [90m0.62s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma written row is answered complete so no client has to supply defaults[39m[90m                                      [39m [90m0.76s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Auth\AuthTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma person can register and receive a working token[39m[90m                                                           [39m [90m0.77s[39m  
+  [32;1m✓[39;22m[90m [39m[90man issued token expires after the configured lifetime[39m[90m                                                       [39m [90m0.66s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma token stops working once its lifetime ends[39m[90m                                                                [39m [90m0.82s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma business is created after registration and not inside it[39m[90m                                                  [39m [90m1.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma weak password is rejected rather than stored[39m[90m                                                              [39m [90m0.67s[39m  
+  [32;1m✓[39;22m[90m [39m[90man application that omits its identity is told what is missing[39m[90m                                              [39m [90m0.70s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma password confirmation has to match the password[39m[90m                                                           [39m [90m0.68s[39m  
+  [32;1m✓[39;22m[90m [39m[90mpassword recovery answers the same question whether or not an email exists[39m[90m                                  [39m [90m1.35s[39m  
+  [32;1m✓[39;22m[90m [39m[90mlogin accepts either email or phone and never leaks the password[39m[90m                                            [39m [90m0.89s[39m  
+  [32;1m✓[39;22m[90m [39m[90mwrong password gets the same answer as a wrong email[39m[90m                                                        [39m [90m0.67s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma suspended person cannot sign in[39m[90m                                                                           [39m [90m0.67s[39m  
+  [32;1m✓[39;22m[90m [39m[90mlogging out invalidates the token that was used[39m[90m                                                             [39m [90m0.86s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma person cannot enter a business they do not belong to[39m[90m                                                      [39m [90m0.81s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Auth\GoogleSignInTest[39m
+  [32;1m✓[39;22m[90m [39m[90mfirst google sign in provisions an account with nothing more than the assertion proves[39m[90m                      [39m [90m1.93s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma repeat sign in is found by the subject and not by the address[39m[90m                                             [39m [90m0.70s[39m  
+  [32;1m✓[39;22m[90m [39m[90man existing password account is linked to the address google verified[39m[90m                                       [39m [90m0.75s[39m  
+  [32;1m✓[39;22m[90m [39m[90man account already bound to another google account is not rebound[39m[90m                                           [39m [90m0.69s[39m  
+  [32;1m✓[39;22m[90m [39m[90mprovisioning can be turned off and leaves unknown addresses outside[39m[90m                                         [39m [90m0.67s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma closed switch refuses before any token is read[39m[90m                                                            [39m [90m0.67s[39m  
+  [32;1m✓[39;22m[90m [39m[90man enabled switch with no client id refuses as unconfigured[39m[90m                                                 [39m [90m0.67s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma token addressed to another application is refused[39m[90m                                                         [39m [90m0.69s[39m  
+  [32;1m✓[39;22m[90m [39m[90man address google has not verified is refused[39m[90m                                                               [39m [90m0.76s[39m  
+  [32;1m✓[39;22m[90m [39m[90man expired token is refused and a fresh one from the same bytes is not[39m[90m                                      [39m [90m0.76s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma token that expired seconds ago is still honoured[39m[90m                                                          [39m [90m0.76s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma token issued from the future is refused[39m[90m                                                                   [39m [90m0.70s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma token from another issuer is refused even signed by the same key[39m[90m                                          [39m [90m0.66s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma token carried from another sign in request is refused by the nonce[39m[90m                                        [39m [90m0.73s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma payload signed by another key is refused however it is addressed[39m[90m                                          [39m [90m1.44s[39m  
+  [32;1m✓[39;22m[90m [39m[90mgoogle cannot log into an account the platform has suspended[39m[90m                                                [39m [90m0.67s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma passwordless account cannot be probed through the password form[39m[90m                                           [39m [90m0.72s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma passwordless account can set its first password and then sign in with it[39m[90m                                  [39m [90m0.80s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma suspended google account still cannot read its own profile[39m[90m                                                [39m [90m0.80s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Auth\ProfileAndWarehouseEditTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma person can correct their own details[39m[90m                                                                      [39m [90m0.69s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe login address is not a profile field[39m[90m                                                                    [39m [90m0.68s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma phone number that already verifies someone else is refused[39m[90m                                                [39m [90m0.64s[39m  
+  [32;1m✓[39;22m[90m [39m[90mchanging a password closes the sessions the old one opened[39m[90m                                                  [39m [90m0.66s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma password change needs the current one rather than mere knowledge of a token[39m[90m                               [39m [90m0.67s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe owner of a warehouse can move its pin[39m[90m                                                                   [39m [90m0.77s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma reading outside the world is refused rather than stored[39m[90m                                                   [39m [90m0.77s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma business cannot edit a depot it does not own[39m[90m                                                              [39m [90m0.71s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Auth\ProfileCompletionTest[39m
+  [32;1m✓[39;22m[90m [39m[90man account without a demanded phone cannot found a business[39m[90m                                                 [39m [90m0.67s[39m  
+  [32;1m✓[39;22m[90m [39m[90msupplying the missing field through the profile opens the door[39m[90m                                              [39m [90m0.90s[39m  
+  [32;1m✓[39;22m[90m [39m[90man incomplete account can still edit its profile[39m[90m                                                            [39m [90m0.76s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe required field list follows the settings[39m[90m                                                                [39m [90m0.77s[39m  
+  [32;1m✓[39;22m[90m [39m[90mme reports whether the account has a business and a password[39m[90m                                                [39m [90m0.76s[39m  
+  [32;1m✓[39;22m[90m [39m[90mlogin returns the same completion block as me[39m[90m                                                               [39m [90m0.75s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe ceiling counts businesses the account founded not ones it joined[39m[90m                                        [39m [90m0.98s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma zero ceiling means no ceiling[39m[90m                                                                             [39m [90m1.24s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe ceiling does not bind platform staff[39m[90m                                                                    [39m [90m1.07s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma newly founded business starts unverified[39m[90m                                                                  [39m [90m0.89s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Auth\SignInDevicesTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma signin that names its device lists it and points at the session[39m[90m                                           [39m [90m0.78s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma signin that names no device leaves the list alone[39m[90m                                                         [39m [90m0.66s[39m  
+  [32;1m✓[39;22m[90m [39m[90msigning in again from the same device repoints it instead of duplicating it[39m[90m                                 [39m [90m0.71s[39m  
+  [32;1m✓[39;22m[90m [39m[90mrevoking a device takes the session it held with it[39m[90m                                                         [39m [90m0.68s[39m  
+  [32;1m✓[39;22m[90m [39m[90mone account cannot read or revoke another accounts device[39m[90m                                                   [39m [90m0.80s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma device can report its own unlock setting after signin[39m[90m                                                     [39m [90m0.76s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma fingerprint claim never authenticates anything[39m[90m                                                            [39m [90m0.75s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma device whose token died stops claiming a live session[39m[90m                                                     [39m [90m0.82s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Platform\ApiKeyCapabilityTest[39m
+  [32;1m✓[39;22m[90m [39m[90mthe console can list keys and is told no route accepts them[39m[90m                                                 [39m [90m0.85s[39m  
+  [32;1m✓[39;22m[90m [39m[90missuing is refused while the capability is off[39m[90m                                                              [39m [90m0.64s[39m  
+  [32;1m✓[39;22m[90m [39m[90man issued key still reports that no route accepts it[39m[90m                                                        [39m [90m0.64s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Platform\ApiRateLimitTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma signed in account gets refused once it passes its configured ceiling[39m[90m                                      [39m [90m0.75s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe ceiling moves with the setting so an operator can lower it live[39m[90m                                         [39m [90m0.74s[39m  
+  [32;1m✓[39;22m[90m [39m[90manonymous traffic is bounded per address[39m[90m                                                                    [39m [90m0.59s[39m  
+  [32;1m✓[39;22m[90m [39m[90maccounts of one organization share a budget[39m[90m                                                                 [39m [90m0.65s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe public auth routes keep their own tighter limit[39m[90m                                                         [39m [90m0.68s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Platform\DatabaseNormalizationTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma listing category follows the product that owns it[39m[90m                                                         [39m [90m0.92s[39m  
+  [32;1m✓[39;22m[90m [39m[90mgoods cannot be listed under a category the product is not in[39m[90m                                               [39m [90m0.79s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma currency the platform never declared cannot hold money[39m[90m                                                    [39m [90m0.61s[39m  
+  [32;1m✓[39;22m[90m [39m[90mevery table holding money names the currency vocabulary[39m[90m                                                     [39m [90m0.65s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma deal names its currency and its rate once[39m[90m                                                                 [39m [90m0.67s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Platform\FeatureFlagSweepTest[39m
+  [32;1m✓[39;22m[90m [39m[90mno route is gated by a flag the catalog does not ship[39m[90m                                                       [39m [90m0.63s[39m  
+  [32;1m✓[39;22m[90m [39m[90mevery shipped flag gates a real path[39m[90m                                                                        [39m [90m0.82s[39m  
+  [32;1m✓[39;22m[90m [39m[90mcapabilities that reach outside the platform ship disabled[39m[90m                                                  [39m [90m0.74s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma missing flag row closes the route rather than opening it[39m[90m                                                  [39m [90m0.68s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Platform\GoldenUserJourneyTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma buyer finds an offer and reaches a deal through the seller[39m[90m                                                [39m [90m1.89s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma call off returns the held quantity and retires the code[39m[90m                                                   [39m [90m1.13s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Platform\PlatformAdminLayerTest[39m
+  [32;1m✓[39;22m[90m [39m[90mthe sellers shelf holds every status and the market only live ones[39m[90m                                          [39m [90m1.11s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe shelf is a tenants view and not a global one[39m[90m                                                            [39m [90m0.93s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe moderation queue lists other businesses and refuses the seller[39m[90m                                          [39m [90m1.00s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe organization directory is scoped to the caller and honours search[39m[90m                                       [39m [90m0.81s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma business cannot verify itself[39m[90m                                                                             [39m [90m0.86s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma platform verification is recorded as a platform review[39m[90m                                                    [39m [90m1.07s[39m  
+  [32;1m✓[39;22m[90m [39m[90man adverse decision requires a reason and a repeated one is refused[39m[90m                                         [39m [90m1.45s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma reinstatement does not redate the original verification[39m[90m                                                   [39m [90m0.93s[39m  
+  [32;1m✓[39;22m[90m [39m[90mverification honours the legal fields the platform itself required[39m[90m                                          [39m [90m1.18s[39m  
+  [32;1m✓[39;22m[90m [39m[90msuspending a business stops it trading and being used[39m[90m                                                       [39m [90m2.28s[39m  
+  [32;1m✓[39;22m[90m [39m[90man adjustment changes the offers own quantities and records the transition[39m[90m                                  [39m [90m1.47s[39m  
+  [32;1m✓[39;22m[90m [39m[90man adjustment respects committed stock and other peoples offers[39m[90m                                             [39m [90m1.56s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe marketplace closes when its flag is off and reopens immediately[39m[90m                                         [39m [90m1.13s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe audit trail filters and stays inside the callers scope[39m[90m                                                  [39m [90m1.57s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe role vocabulary the console offers is the one assignment checks[39m[90m                                         [39m [90m2.09s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Platform\ReportsAndExportTest[39m
+  [32;1m✓[39;22m[90m [39m[90mturnover counts closed orders and labels its basis[39m[90m                                                          [39m [90m1.48s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma period window moves the totals and names itself[39m[90m                                                           [39m [90m1.84s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma business sees its own volume and not the markets[39m[90m                                                          [39m [90m1.80s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma report prints the configured currency or none[39m[90m                                                             [39m [90m1.14s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe deals export honours its window and says so[39m[90m                                                             [39m [90m1.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma staff account without the reporting permission is refused[39m[90m                                                 [39m [90m0.94s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Platform\SettingsManagementTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma write changes the value and leaves the declaration alone[39m[90m                                                  [39m [90m0.82s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma value has to fit the type the key was declared with[39m[90m                                                       [39m [90m0.78s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma key marked non editable is refused and keeps its value[39m[90m                                                    [39m [90m0.71s[39m  
+  [32;1m✓[39;22m[90m [39m[90man editable key stays editable after a write[39m[90m                                                                [39m [90m0.69s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe settings surface is closed to a business administrator[39m[90m                                                  [39m [90m0.93s[39m  
+  [32;1m✓[39;22m[90m [39m[90man unrecognized key is created but flagged as unwired[39m[90m                                                       [39m [90m0.87s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma capability that gates nothing cannot be created by toggling[39m[90m                                               [39m [90m0.61s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma catalogued capability toggles and takes effect at once[39m[90m                                                    [39m [90m1.11s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Platform\TenantIsolationAndIdorTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma rival seller cannot edit another business offer[39m[90m                                                           [39m [90m1.46s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma rival seller cannot delete another business draft[39m[90m                                                         [39m [90m1.73s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma rival cannot read a deal it is not party to[39m[90m                                                               [39m [90m1.46s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma rival cannot move another partys deal through the state machine[39m[90m                                           [39m [90m1.44s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma rival cannot cancel a reservation it does not hold[39m[90m                                                        [39m [90m1.62s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma rival cannot approve a purchase request addressed to another seller[39m[90m                                       [39m [90m1.27s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma rival cannot rename another business warehouse[39m[90m                                                            [39m [90m1.18s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma business cannot read the audit trail of another business[39m[90m                                                  [39m [90m1.93s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe same user in two businesses sees only the selected tenant offers[39m[90m                                        [39m [90m1.75s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma non member cannot place a foreign organization in context[39m[90m                                                 [39m [90m0.94s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Platform\UploadQuotaAndSecurityHeadersTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma photograph over the tenant quota is refused and nothing is written[39m[90m                                        [39m [90m1.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma photograph within the quota is accepted[39m[90m                                                                   [39m [90m0.87s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma zero quota leaves storage unmetered[39m[90m                                                                       [39m [90m0.90s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe quota counts already stored bytes before adding a document[39m[90m                                              [39m [90m1.33s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma signed document stream declares nosniff[39m[90m                                                                   [39m [90m1.31s[39m  
+  [32;1m✓[39;22m[90m [39m[90mevery api response carries the security headers[39m[90m                                                             [39m [90m0.87s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Platform\WaitingHoursReportedTest[39m
+  [32;1m✓[39;22m[90m [39m[90mhours since counts elapsed time forward from the older moment[39m[90m                                               [39m [90m0.68s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma clock that runs ahead is reported as no wait rather than negative[39m[90m                                         [39m [90m0.68s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe document queue reports a non negative wait for waiting papers[39m[90m                                           [39m [90m0.80s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe offer moderation queue reports a non negative wait[39m[90m                                                      [39m [90m0.84s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Platform\WebhookDeliveryTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma registered endpoint returns its signing secret once and never again[39m[90m                                       [39m [90m0.86s[39m  
+  [32;1m✓[39;22m[90m [39m[90man endpoint inside the network is refused and nothing is stored[39m[90m                                             [39m [90m0.80s[39m  
+  [32;1m✓[39;22m[90m [39m[90man event this platform never sends cannot be subscribed to[39m[90m                                                  [39m [90m0.84s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe capability flag closes the whole surface[39m[90m                                                                [39m [90m1.15s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma role without the integration permission cannot register an endpoint[39m[90m                                       [39m [90m1.07s[39m  
+  [32;1m✓[39;22m[90m [39m[90mone business cannot reach another business webhook or its delivery log[39m[90m                                      [39m [90m0.95s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma stored internal endpoint is never posted to even when pinged[39m[90m                                              [39m [90m0.94s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma delivery is signed over the exact bytes sent and verifies[39m[90m                                                 [39m [90m1.19s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma receiver that errors is recorded as failed not delivered[39m[90m                                                  [39m [90m1.54s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma retry updates the one delivery row and stops at the attempt cap[39m[90m                                           [39m [90m1.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mredirects are not followed so an approved url cannot bounce inward[39m[90m                                          [39m [90m1.11s[39m  
+
+  [90mTests:[39m    [32;1m145 passed[39;22m[90m (860 assertions)[39m
+  [90mDuration:[39m [39m177.98s[39m
+

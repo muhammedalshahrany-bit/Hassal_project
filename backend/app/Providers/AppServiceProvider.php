@@ -2,8 +2,9 @@
 
 namespace App\Providers;
 
-use App\Services\SystemSettingsService;
+use App\Platform\Services\SystemSettingsService;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -23,7 +24,46 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->trustTheGateway();
         $this->defineRequestCeilings();
+    }
+
+    /**
+     * Tell the request layer which addresses may describe a request it did not
+     * receive directly.
+     *
+     * Every call reaches Laravel through the gateway, so with nothing trusted
+     * three things are quietly wrong at once: `throttle:10,1` on the login route
+     * counts the gateway's address and gives the whole platform ten sign-ins a
+     * minute; `$request->isSecure()` is false on a TLS deployment, so
+     * `Strict-Transport-Security` is never sent; and the audit trail names the
+     * proxy as the actor for every write.
+     *
+     * It happens here rather than in `bootstrap/app.php` because that file's
+     * middleware closure runs before the container has a config repository —
+     * reading `config()` there is a fatal on every request.
+     *
+     * `*` is right for the architecture this ships in, where the app binds to
+     * 127.0.0.1 and the gateway is the only public listener. A deployment that
+     * exposes the app directly must name its load balancer in
+     * `HASSAL_TRUSTED_PROXIES`: trusting any address lets a client forge its own
+     * IP and walk round its own rate limit.
+     */
+    protected function trustTheGateway(): void
+    {
+        $at = config('hassal.network.trusted_proxies', '*');
+
+        if ($at === null || $at === '') {
+            return;
+        }
+
+        TrustProxies::at($at);
+        TrustProxies::withHeaders(
+            Request::HEADER_X_FORWARDED_FOR
+                | Request::HEADER_X_FORWARDED_HOST
+                | Request::HEADER_X_FORWARDED_PORT
+                | Request::HEADER_X_FORWARDED_PROTO
+        );
     }
 
     /**

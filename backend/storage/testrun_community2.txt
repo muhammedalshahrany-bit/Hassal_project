@@ -1,0 +1,86 @@
+
+  [39;41;1m FAIL [39;49;22m[39m Tests\Feature\OfferCommunityTest[39m
+  [32;1m✓[39;22m[90m [39m[90minterest is one row per actor and a second press adds nothing[39m[90m                                              [39m [90m37.95s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe same person pressing from two businesses is one signal[39m[90m                                                  [39m [90m0.54s[39m  
+  [32;1m✓[39;22m[90m [39m[90mremoving interest only reaches the actors own row[39m[90m                                                           [39m [90m0.54s[39m  
+  [32;1m✓[39;22m[90m [39m[90minterest is never recorded for a company the caller does not belong to[39m[90m                                      [39m [90m0.52s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma listing nobody can buy cannot be liked[39m[90m                                                                    [39m [90m0.49s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mthe liked list is per person across every company they work for[39m[90m                                             [39m [90m0.59s[39m  
+  [31;1m⨯[39;22m[90m [39m[90ma consumer with no organization likes and is named by person only[39m[90m                                           [39m [90m0.52s[39m  
+  [31;1m⨯[39;22m[90m [39m[90ma consumer report is recorded and names no company[39m[90m                                                          [39m [90m0.51s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma suspended account holds no person capability[39m[90m                                                              [39m [90m0.42s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma question and the sellers answer are labelled by who they are[39m[90m                                              [39m [90m0.52s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma reply cannot be attached to another listings thread[39m[90m                                                       [39m [90m0.55s[39m  
+  [32;1m✓[39;22m[90m [39m[90mpre moderation holds a comment out of the public thread until a reviewer publishes it[39m[90m                       [39m [90m0.58s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe author withdrawing a comment hides it without deleting the record[39m[90m                                       [39m [90m0.57s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma stranger cannot withdraw another business comment[39m[90m                                                         [39m [90m0.56s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma report asks for a review and decides nothing itself[39m[90m                                                       [39m [90m0.56s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe moderation queues are closed to business roles and open to the platform[39m[90m                                 [39m [90m0.66s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe listing publishes counts it can prove and no opinion it cannot[39m[90m                                          [39m [90m0.54s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\RbacMatrixTest[39m
+  [32;1m✓[39;22m[90m [39m[90mevery permission the catalog declares is enforced somewhere[39m[90m                                                 [39m [90m0.27s[39m  
+  [32;1m✓[39;22m[90m [39m[90mno route checks a capability the catalog never declared[39m[90m                                                     [39m [90m0.11s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe seeded matrix matches the catalog[39m[90m                                                                       [39m [90m0.63s[39m  
+  [32;1m✓[39;22m[90m [39m[90mbusiness roles never hold a platform only capability[39m[90m                                                        [39m [90m0.10s[39m  
+  [32;1m✓[39;22m[90m [39m[90mperson capabilities are real and never platform scoped[39m[90m                                                      [39m [90m0.10s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\SellerIdentityVisibilityTest[39m
+  [32;1m✓[39;22m[90m [39m[90mpublishing can record a request to hide the sellers name[39m[90m                                                    [39m [90m0.75s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma stranger reading the public list gets no name no registration and no vat[39m[90m                                  [39m [90m0.60s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe detail page answers the same way as the list[39m[90m                                                            [39m [90m0.56s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe selling organization still reads its own listing in full[39m[90m                                                [39m [90m0.63s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma platform reviewer reads the name the market does not[39m[90m                                                      [39m [90m0.58s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe sellers own answer in the thread carries no name either[39m[90m                                                 [39m [90m0.49s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe switch travels with an edit and not with the lifecycle[39m[90m                                                  [39m [90m0.52s[39m  
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\OfferCommunityTest[22m [90m>[39m the liked list is per person across every company they work for           
+[39;1m  Expected response status code [200] but received 403.
+Failed asserting that 403 is identical to 200.[39;22m
+
+  at [32mtests\Feature\OfferCommunityTest.php[39m:[32m236[39m
+    232▕         // own name.
+    233▕         $nobody = $this->user('مستهلك');
+    234▕         Sanctum::actingAs($nobody);
+    235▕         $this->getJson('/api/v1/marketplace/liked-offers')
+  ➜ 236▕             ->assertOk()
+    237▕             ->assertJsonCount(0, 'data.offer_ids');
+    238▕     }
+    239▕ 
+    240▕     // ── The consumer's standing ─────────────────────────────────────────────
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\OfferCommunityTest[22m [90m>[39m a consumer with no organization likes and is named by…  [41;1m ErrorException [49;22m  
+[39;1m  Undefined array key "organization_id"[39;22m
+
+  at [32mtests\Feature\OfferCommunityTest.php[39m:[32m264[39m
+    260▕         // The author is present because attribution is the rule; the
+    261▕         // organization is absent because there is none to name.
+    262▕         $this->assertArrayHasKey('author_name', $comment);
+    263▕         $this->assertArrayNotHasKey('organization_name', $comment);
+  ➜ 264▕         $this->assertNull($comment['organization_id']);
+    265▕ 
+    266▕         $this->getJson("/api/v1/marketplace/offers/{$offer->id}/comments")
+    267▕             ->assertOk()
+    268▕             ->assertJsonCount(1, 'data.comments');
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\OfferCommunityTest[22m [90m>[39m a consumer report is recorded and names no company                        
+[39;1m  Expected response status code [201] but received 403.
+Failed asserting that 403 is identical to 201.[39;22m
+
+  at [32mtests\Feature\OfferCommunityTest.php[39m:[32m292[39m
+    288▕             ->json('data');
+    289▕ 
+    290▕         Sanctum::actingAs($consumer);
+    291▕         $this->postJson("/api/v1/marketplace/comments/{$comment['id']}/report", ['reason' => 'spam'])
+  ➜ 292▕             ->assertCreated()
+    293▕             ->assertJsonPath('data.recorded', true);
+    294▕ 
+    295▕         $this->assertNull(
+    296▕             OfferCommentReport::query()->where('offer_comment_id', $comment['id'])->value('organization_id')
+
+
+  [90mTests:[39m    [31;1m3 failed[39;22m[90m,[39m[39m [39m[32;1m26 passed[39;22m[90m (196 assertions)[39m
+  [90mDuration:[39m [39m52.66s[39m
+

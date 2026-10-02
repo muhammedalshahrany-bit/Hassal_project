@@ -1,0 +1,76 @@
+backend/storage/web-recovery/stage/src/App.tsx(19,21): error TS2307: Cannot find module './lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/App.tsx(36,8): error TS2307: Cannot find module './types' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/App.tsx(191,9): error TS2451: Cannot redeclare block-scoped variable 'signOut'.
+backend/storage/web-recovery/stage/src/App.tsx(208,5): error TS2304: Cannot find name 'showView'.
+backend/storage/web-recovery/stage/src/App.tsx(213,5): error TS2304: Cannot find name 'showView'.
+backend/storage/web-recovery/stage/src/App.tsx(344,9): error TS2451: Cannot redeclare block-scoped variable 'signOut'.
+backend/storage/web-recovery/stage/src/App.tsx(350,5): error TS2304: Cannot find name 'showView'.
+backend/storage/web-recovery/stage/src/components/AccountPermissionsEditor.tsx(3,49): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/AccountPermissionsEditor.tsx(5,34): error TS2307: Cannot find module './PermissionPicker' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/AccountPermissionsEditor.tsx(6,67): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/AccountSetupCard.tsx(3,33): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/AccountSetupCard.tsx(4,46): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/AdminConsoleView.tsx(28,49): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/AdminConsoleView.tsx(48,8): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/AuthModal.tsx(4,21): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/CatalogView.tsx(3,66): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/CatalogView.tsx(6,77): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/CommunityModerationPanel.tsx(13,37): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/CommunityModerationPanel.tsx(20,8): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/DealsPipelineView.tsx(15,21): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/DealsPipelineView.tsx(19,116): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/DemandsView.tsx(14,33): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/DemandsView.tsx(27,77): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/DisputesView.tsx(3,33): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/DisputesView.tsx(7,51): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/Header.tsx(28,86): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/IntegrationsPanel.tsx(2,49): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/IntegrationsPanel.tsx(15,55): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/LedgerView.tsx(10,37): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/LedgerView.tsx(13,63): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/LedgerView.tsx(438,11): error TS2304: Cannot find name 'reconciliation'.
+backend/storage/web-recovery/stage/src/components/LedgerView.tsx(447,19): error TS2304: Cannot find name 'reconciliation'.
+backend/storage/web-recovery/stage/src/components/LedgerView.tsx(452,18): error TS2304: Cannot find name 'reconciliation'.
+backend/storage/web-recovery/stage/src/components/LedgerView.tsx(454,24): error TS2304: Cannot find name 'reconciliation'.
+backend/storage/web-recovery/stage/src/components/LedgerView.tsx(456,71): error TS2304: Cannot find name 'reconciliation'.
+backend/storage/web-recovery/stage/src/components/LedgerView.tsx(460,60): error TS2304: Cannot find name 'reconciliation'.
+backend/storage/web-recovery/stage/src/components/LedgerView.tsx(461,76): error TS2304: Cannot find name 'reconciliation'.
+backend/storage/web-recovery/stage/src/components/LedgerView.tsx(462,79): error TS2304: Cannot find name 'reconciliation'.
+backend/storage/web-recovery/stage/src/components/LedgerView.tsx(465,28): error TS2304: Cannot find name 'reconciliation'.
+backend/storage/web-recovery/stage/src/components/LedgerView.tsx(465,58): error TS2304: Cannot find name 'reconciliation'.
+backend/storage/web-recovery/stage/src/components/LedgerView.tsx(467,18): error TS2304: Cannot find name 'reconciliation'.
+backend/storage/web-recovery/stage/src/components/LedgerView.tsx(472,22): error TS2304: Cannot find name 'ShieldAlert'.
+backend/storage/web-recovery/stage/src/components/MarketplaceView.tsx(23,39): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/MarketplaceView.tsx(24,38): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/MarketplaceView.tsx(25,62): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/MembersView.tsx(3,49): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/MembersView.tsx(7,59): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/NotificationBell.tsx(3,21): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/OfferCommunity.tsx(3,55): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/OfferCommunity.tsx(5,63): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/OrganizationDocumentsPanel.tsx(3,21): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/OrganizationDocumentsPanel.tsx(5,43): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/OrganizationProfileView.tsx(2,49): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/OrganizationProfileView.tsx(16,35): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/OrganizationRolesPanel.tsx(3,49): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/OrganizationRolesPanel.tsx(5,79): error TS2307: Cannot find module './PermissionPicker' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/OrganizationRolesPanel.tsx(6,87): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/PlatformConfigView.tsx(15,33): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/PlatformConfigView.tsx(29,69): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/PlatformPermissionsPanel.tsx(3,49): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/PlatformPermissionsPanel.tsx(5,34): error TS2307: Cannot find module './PermissionPicker' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/PlatformPermissionsPanel.tsx(6,43): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/ProfileView.tsx(3,33): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/ProfileView.tsx(5,27): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/PromotedStrip.tsx(3,21): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/PromotedStrip.tsx(4,28): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/SellerInventoryView.tsx(17,33): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/SellerInventoryView.tsx(18,44): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/SellerInventoryView.tsx(19,96): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/SetupWizardPanel.tsx(2,49): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/SigninDevicesPanel.tsx(3,21): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/SigninDevicesPanel.tsx(5,35): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/SupportDeskPanel.tsx(13,49): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/SupportDeskPanel.tsx(15,96): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/WarehouseMapView.tsx(3,21): error TS2307: Cannot find module '../lib/api' or its corresponding type declarations.
+backend/storage/web-recovery/stage/src/components/WarehouseMapView.tsx(4,32): error TS2307: Cannot find module '../types' or its corresponding type declarations.

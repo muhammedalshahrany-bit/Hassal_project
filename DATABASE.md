@@ -9,6 +9,19 @@
 > as `offers.market_reference_price`, `offers.discount_percentage`, a `SAR` currency default and a
 > `users.phone NOT NULL` login rule. None of those exist here, because none of them exist in the
 > database.
+>
+> **2026-09-25:** a normalization pass (§3 below) dropped three columns and added nine foreign
+> keys to `currencies`. Those rows were corrected by hand inside the generated tables above.
+>
+> **2026-10-01:** the payment-era drift was removed. `payments` and `escrows` appeared in this
+> file although no migration ever created them and the live schema has never held them — their
+> sections are deleted here, not marked retired. The same pass corrected `deals` (the `paid_at`
+> and `settled_at` rows were never built; the payment states are gone from the state machine),
+> corrected `disputes` to the columns the database actually enforces, and added the nine tables
+> that were created since the 2026-09-19 dump: `deal_handovers`, `external_identities`,
+> `user_devices`, `support_tickets`, `product_images`, `offer_comments`, `offer_comment_reports`,
+> `offer_likes` and `organization_documents` — each generated from `information_schema` on
+> 2026-10-01.
 
 - **العملة الافتراضية في المخطط:** `YER` (قابلة للتغيير من `currencies` و`system_settings`).
 - **الدقة المالية والكمّية:** العمودان `unit_price` و`total_quantity` في `offers` مثال حي على النمط
@@ -17,7 +30,7 @@
   لا يوجد أي معدل ضريبة أو عمولة ثابت في المخطط: القيمتان `0.0000` افتراضان حياديان لا قراران تجاريان.
 - **الحذف المرن (`deleted_at`):** مطبّق حيث يقرره الكود فقط؛ عمود `deleted_at` الغائب يعني أن السجل لا يُحذف مرناً.
 
-الجداول في القاعدة: **48**.
+الجداول في القاعدة: **58**.
 
 ---
 
@@ -28,6 +41,8 @@
 | الجدول | عدد الأعمدة |
 | :--- | :---: |
 | `users` | 13 |
+| `external_identities` | 10 |
+| `user_devices` | 10 |
 | `password_reset_tokens` | 3 |
 | `sessions` | 6 |
 | `cache` | 3 |
@@ -42,6 +57,10 @@
 | :--- | :---: |
 | `organizations` | 21 |
 | `organization_memberships` | 8 |
+| `organization_roles` | 8 |
+| `organization_role_permissions` | 5 |
+| `organization_membership_permissions` | 6 |
+| `organization_documents` | 16 |
 
 ### المستودعات والمواقع (Warehouses & Locations)
 
@@ -57,13 +76,17 @@
 | `brands` | 8 |
 | `products` | 19 |
 | `product_variants` | 14 |
+| `product_images` | 15 |
 
 ### العروض والطلبات والحجوزات (Offers, Requests, Reservations)
 
 | الجدول | عدد الأعمدة |
 | :--- | :---: |
-| `offers` | 32 |
+| `offers` | 31 |
 | `offer_items` | 9 |
+| `offer_comments` | 14 |
+| `offer_comment_reports` | 11 |
+| `offer_likes` | 6 |
 | `purchase_requests` | 20 |
 | `reservations` | 18 |
 
@@ -71,16 +94,15 @@
 
 | الجدول | عدد الأعمدة |
 | :--- | :---: |
-| `deals` | 45 |
+| `deals` | 41 |
 | `deal_items` | 11 |
 | `deal_status_histories` | 9 |
+| `deal_handovers` | 13 |
 
-### المدفوعات والضمان ودفتر الأستاذ (Payments, Escrow, Ledger)
+### دفتر الأستاذ (Ledger)
 
 | الجدول | عدد الأعمدة |
 | :--- | :---: |
-| `payments` | 16 |
-| `escrows` | 16 |
 | `ledger_accounts` | 11 |
 | `journal_entries` | 16 |
 | `ledger_lines` | 9 |
@@ -97,7 +119,7 @@
 
 | الجدول | عدد الأعمدة |
 | :--- | :---: |
-| `disputes` | 17 |
+| `disputes` | 15 |
 | `audit_logs` | 11 |
 
 ### منصة الإعداد والميزات (Platform Configuration)
@@ -115,6 +137,7 @@
 | `inventory_movements` | 17 |
 | `idempotency_keys` | 11 |
 | `notifications` | 14 |
+| `support_tickets` | 14 |
 
 ### التكامل B2B (API Keys & Webhooks)
 
@@ -131,7 +154,7 @@
 | `personal_access_tokens` | 10 |
 | `migrations` | 3 |
 | `role_has_permissions` | 2 |
-| `permissions` | 5 |
+| `permissions` | 6 |
 | `model_has_roles` | 3 |
 | `roles` | 5 |
 | `model_has_permissions` | 3 |
@@ -157,6 +180,36 @@
 | `password` | `varchar(255)` | لا | — | — |
 | `remember_token` | `varchar(100)` | نعم | — | — |
 | `deleted_at` | `timestamp` | نعم | — | — |
+| `created_at` | `timestamp` | نعم | — | — |
+| `updated_at` | `timestamp` | نعم | — | — |
+
+#### `external_identities`
+
+| الحقل | النوع | NULL | الافتراضي | مفتاح |
+| :--- | :--- | :---: | :--- | :---: |
+| `id` | `bigint unsigned` | لا | — | PRI |
+| `user_id` | `bigint unsigned` | لا | — | MUL |
+| `provider` | `varchar(50)` | لا | — | UNI |
+| `provider_user_id` | `varchar(191)` | لا | — | UNI |
+| `email` | `varchar(255)` | نعم | — | — |
+| `email_verified_at` | `timestamp` | نعم | — | — |
+| `linked_at` | `timestamp` | نعم | — | — |
+| `last_verified_at` | `timestamp` | نعم | — | — |
+| `created_at` | `timestamp` | نعم | — | — |
+| `updated_at` | `timestamp` | نعم | — | — |
+
+#### `user_devices`
+
+| الحقل | النوع | NULL | الافتراضي | مفتاح |
+| :--- | :--- | :---: | :--- | :---: |
+| `id` | `bigint unsigned` | لا | — | PRI |
+| `user_id` | `bigint unsigned` | لا | — | UNI |
+| `device_key` | `varchar(120)` | لا | — | UNI |
+| `name` | `varchar(120)` | لا | — | — |
+| `platform` | `varchar(20)` | لا | — | — |
+| `token_id` | `bigint unsigned` | نعم | — | — |
+| `biometric_unlock` | `tinyint(1)` | لا | 0 | — |
+| `last_seen_at` | `timestamp` | نعم | — | — |
 | `created_at` | `timestamp` | نعم | — | — |
 | `updated_at` | `timestamp` | نعم | — | — |
 
@@ -269,10 +322,90 @@
 | `id` | `bigint unsigned` | لا | — | PRI |
 | `organization_id` | `bigint unsigned` | لا | — | MUL |
 | `user_id` | `bigint unsigned` | لا | — | MUL |
-| `role` | `varchar(50)` | لا | `operator` | — |
+| `role` | `varchar(50)` | لا | `staff` | — |
 | `is_active` | `tinyint(1)` | لا | `1` | — |
 | `joined_at` | `timestamp` | لا | `CURRENT_TIMESTAMP` | — |
 | `created_at` | `timestamp` | نعم | — | — |
+| `updated_at` | `timestamp` | نعم | — | — |
+
+> **`role` لم يعد مقيّداً بخمسة أسماء.** القيد `organization_memberships_role_is_canonical` حُذف مع
+> ترحيل `2026_09_25_190000`: العمود صار يسجّل مفتاح وقوفٍ تملكه هذه المنشأة وحدها، وقد تخترع شركةٌ
+> دوراً («أمين مستودع») لا تعرفه المنصة، وقيدُ `CHECK` لا يشير إلى جدول آخر في MySQL. المكان الذي
+> يُفحص فيه الاسم الآن هو باب الكتابة (`AddMemberRequest` و`updateMember`) مقابل `organization_roles`
+> الخاصة بتلك المنشأة، والنتيجة أن المفتاح المخزّن له صفّ يقف خلفه دائمًا. بقي في المخطط: فهارس
+> `id` و`organization_id + user_id` الفريد ومفاتيح الانتماء. (الافتراضي `staff` لا `operator`: الاسم
+> الأخير لم يكن مقبولاً في أي مُحقِّق، وهُجّرت صفوفه إليه.)
+
+#### `organization_roles`
+
+وقوف كل شركة: خمسة صفوف `is_system` تُزوَّد لكل منشأة من `config('rbac.membership_roles')`، وصفوفٌ
+أخرى تسمّيها الشركة لنفسها. المفتاح فريد **داخل المنشأة** لا عالميًا، ومقارنته حساسة لحالة الأحرف
+(`utf8mb4_bin`) لأن `Admin` و`admin` وقوفان مختلفان بالنسبة للشاشة التي تعرضهما.
+
+| الحقل | النوع | NULL | الافتراضي | مفتاح |
+| :--- | :--- | :---: | :--- | :---: |
+| `id` | `bigint unsigned` | لا | — | PRI |
+| `organization_id` | `bigint unsigned` | لا | — | UNI (مع `key`)، FK → `organizations` عند حذفها CASCADE |
+| `key` | `varchar(64)` | لا | — | UNI (مع `organization_id`) · `utf8mb4_bin` |
+| `name_ar` | `varchar(255)` | لا | — | — |
+| `name_en` | `varchar(255)` | نعم | — | — |
+| `is_system` | `tinyint(1)` | لا | `0` | — |
+| `created_at` | `timestamp` | نعم | — | — |
+| `updated_at` | `timestamp` | نعم | — | — |
+
+#### `organization_role_permissions`
+
+ما يساويه كل وقف بالـ `permission_id` لا بالاسم: قرار النطاق يُقرأ من عمود `permissions.scope` عند
+الكتابة، فلا تُركَّب صلاحية منصة على وقوف شركة بمقارنة نصّ في متحكم.
+
+| الحقل | النوع | NULL | الافتراضي | مفتاح |
+| :--- | :--- | :---: | :--- | :---: |
+| `id` | `bigint unsigned` | لا | — | PRI |
+| `organization_role_id` | `bigint unsigned` | لا | — | UNI (مع `permission_id`)، FK → `organization_roles` CASCADE |
+| `permission_id` | `bigint unsigned` | لا | — | FK → `permissions` CASCADE |
+| `created_at` | `timestamp` | نعم | — | — |
+| `updated_at` | `timestamp` | نعم | — | — |
+
+#### `organization_membership_permissions`
+
+التجاوز الفردي: صفٌّ لكل (عضو، صلاحية) بـ`effect` يقول أهذه إضافة فوق الوقوف أم سحبٌ منه. الاتجاهان
+موجودان لأن جدولًا يضيف فقط لا يجيب على «أبقوا دوره، لكن امنعوه من حذف المنشورات» إلا بإنزاله درجةً
+لم يطلبها أحد.
+
+| الحقل | النوع | NULL | الافتراضي | مفتاح |
+| :--- | :--- | :---: | :--- | :---: |
+| `id` | `bigint unsigned` | لا | — | PRI |
+| `organization_membership_id` | `bigint unsigned` | لا | — | UNI (مع `permission_id`)، FK → `organization_memberships` CASCADE |
+| `permission_id` | `bigint unsigned` | لا | — | FK → `permissions` CASCADE |
+| `effect` | `varchar(8)` | لا | `grant` | `CHECK organization_membership_permissions_effect_is_canonical` (`grant`\|`deny` بمقارنة `utf8mb4_bin`) |
+| `created_at` | `timestamp` | نعم | — | — |
+| `updated_at` | `timestamp` | نعم | — | — |
+
+> الحقل الأول هنا `unsignedBigInteger` بمفتاح مسمّى يدويًا (`org_member_perms_membership_fk`) لا
+> `foreignId()->constrained()`: الاسم الذي يشتقه MySQL لجدولٍ باسم `organization_membership_permissions`
+> يتجاوز حدّ المعرّف واحدًا وستّين حرفًا فيرفض الترحيل كله. كذلك الفهارس المشتركة مُسمّاة صراحةً
+> (`org_role_perms_role_perm_unique`، `org_member_perms_member_perm_unique`،
+> `organization_roles_org_key_unique`) للسبب نفسه — حتى تستطيع ترحيلات لاحقة أن تُسمّي ما تُبدله.
+
+#### `organization_documents`
+
+| الحقل | النوع | NULL | الافتراضي | مفتاح |
+| :--- | :--- | :---: | :--- | :---: |
+| `id` | `bigint unsigned` | لا | — | PRI |
+| `organization_id` | `bigint unsigned` | لا | — | MUL |
+| `type` | `varchar(40)` | لا | — | MUL |
+| `reference_number` | `varchar(255)` | نعم | — | — |
+| `disk` | `varchar(40)` | لا | public | — |
+| `path` | `varchar(255)` | لا | — | — |
+| `original_name` | `varchar(255)` | نعم | — | — |
+| `mime_type` | `varchar(100)` | لا | — | — |
+| `size_bytes` | `bigint unsigned` | لا | — | — |
+| `status` | `varchar(20)` | لا | pending | MUL |
+| `uploaded_by` | `bigint unsigned` | نعم | — | MUL |
+| `reviewed_by` | `bigint unsigned` | نعم | — | MUL |
+| `reviewed_at` | `timestamp` | نعم | — | — |
+| `review_reason` | `text` | نعم | — | — |
+| `created_at` | `timestamp` | نعم | — | MUL |
 | `updated_at` | `timestamp` | نعم | — | — |
 
 ### المستودعات والمواقع (Warehouses & Locations)
@@ -374,6 +507,26 @@
 | `created_at` | `timestamp` | نعم | — | — |
 | `updated_at` | `timestamp` | نعم | — | — |
 
+#### `product_images`
+
+| الحقل | النوع | NULL | الافتراضي | مفتاح |
+| :--- | :--- | :---: | :--- | :---: |
+| `id` | `bigint unsigned` | لا | — | PRI |
+| `product_id` | `bigint unsigned` | لا | — | MUL |
+| `organization_id` | `bigint unsigned` | لا | — | MUL |
+| `disk` | `varchar(40)` | لا | public | — |
+| `path` | `varchar(255)` | لا | — | — |
+| `original_name` | `varchar(255)` | نعم | — | — |
+| `mime_type` | `varchar(100)` | لا | — | — |
+| `size_bytes` | `bigint unsigned` | لا | — | — |
+| `width` | `smallint unsigned` | نعم | — | — |
+| `height` | `smallint unsigned` | نعم | — | — |
+| `sort_order` | `smallint unsigned` | لا | 0 | MUL |
+| `is_cover` | `tinyint(1)` | لا | 0 | — |
+| `uploaded_by` | `bigint unsigned` | نعم | — | MUL |
+| `created_at` | `timestamp` | نعم | — | — |
+| `updated_at` | `timestamp` | نعم | — | — |
+
 ### العروض والطلبات والحجوزات (Offers, Requests, Reservations)
 
 #### `offers`
@@ -384,7 +537,6 @@
 | `seller_organization_id` | `bigint unsigned` | لا | — | MUL |
 | `warehouse_id` | `bigint unsigned` | لا | — | MUL |
 | `product_variant_id` | `bigint unsigned` | لا | — | MUL |
-| `category_id` | `bigint unsigned` | نعم | — | MUL |
 | `title_ar` | `varchar(255)` | لا | — | — |
 | `title_en` | `varchar(255)` | نعم | — | — |
 | `description_ar` | `text` | نعم | — | — |
@@ -400,7 +552,7 @@
 | `sold_quantity` | `decimal(14,2)` | لا | `0.00` | — |
 | `unit` | `varchar(50)` | لا | `carton` | — |
 | `unit_price` | `decimal(18,4)` | لا | — | — |
-| `currency_code` | `varchar(3)` | لا | `YER` | — |
+| `currency_code` | `varchar(3)` | لا | `YER` | MUL |
 | `production_date` | `date` | نعم | — | — |
 | `expiry_date` | `date` | نعم | — | — |
 | `storage_condition` | `varchar(50)` | لا | `ambient` | — |
@@ -423,8 +575,64 @@
 | `product_variant_id` | `bigint unsigned` | لا | — | MUL |
 | `quantity` | `decimal(14,2)` | لا | — | — |
 | `unit_price` | `decimal(18,4)` | لا | — | — |
-| `currency_code` | `varchar(3)` | لا | `YER` | — |
+| `currency_code` | `varchar(3)` | لا | `YER` | MUL |
 | `created_at` | `timestamp` | نعم | — | — |
+| `updated_at` | `timestamp` | نعم | — | — |
+
+#### `offer_comments`
+
+خيط الأسئلة المنشورة: كل سطر يسمّي كاتبه دائماً، ويسمّي منشأته عند وجود سياق منشأة — المستهلك
+يسأل باسمه المجرد و`organization_id` فيه `NULL` (ترقية 2026-10-01: `person attribution`).
+
+| الحقل | النوع | NULL | الافتراضي | مفتاح |
+| :--- | :--- | :---: | :--- | :---: |
+| `id` | `bigint unsigned` | لا | — | PRI |
+| `offer_id` | `bigint unsigned` | لا | — | MUL |
+| `organization_id` | `bigint unsigned` | نعم | — | MUL |
+| `user_id` | `bigint unsigned` | لا | — | MUL |
+| `parent_id` | `bigint unsigned` | نعم | — | MUL |
+| `is_seller_reply` | `tinyint(1)` | لا | 0 | — |
+| `body` | `text` | لا | — | — |
+| `status` | `varchar(20)` | لا | published | MUL |
+| `report_count` | `int unsigned` | لا | 0 | — |
+| `moderated_by` | `bigint unsigned` | نعم | — | MUL |
+| `moderated_at` | `timestamp` | نعم | — | — |
+| `moderation_reason` | `text` | نعم | — | — |
+| `created_at` | `timestamp` | نعم | — | MUL |
+| `updated_at` | `timestamp` | نعم | — | — |
+
+#### `offer_comment_reports`
+
+بلاغ للفرد: قيد التفرد `comment_reports_unique_per_person (offer_comment_id, user_id)` —
+لا يبلّغ شخص عن التعليق مرتين — و`organization_id` توثيق منشأة السياق عند وجودها، `NULL`
+لمستهلك بلا منشأة.
+
+| الحقل | النوع | NULL | الافتراضي | مفتاح |
+| :--- | :--- | :---: | :--- | :---: |
+| `id` | `bigint unsigned` | لا | — | PRI |
+| `offer_comment_id` | `bigint unsigned` | لا | — | MUL |
+| `organization_id` | `bigint unsigned` | نعم | — | MUL |
+| `user_id` | `bigint unsigned` | لا | — | MUL |
+| `reason` | `varchar(40)` | لا | — | — |
+| `note` | `text` | نعم | — | — |
+| `status` | `varchar(20)` | لا | open | — |
+| `reviewed_by` | `bigint unsigned` | نعم | — | MUL |
+| `reviewed_at` | `timestamp` | نعم | — | — |
+| `created_at` | `timestamp` | نعم | — | — |
+| `updated_at` | `timestamp` | نعم | — | — |
+
+#### `offer_likes`
+
+الاهتمام للفرد لا للشركة: قيد التفرد `offer_likes_unique_per_person (offer_id, user_id)`،
+و`organization_id` يوثّق منشأة السياق عند وجودها ويكون `NULL` لمستهلك بلا منشأة.
+
+| الحقل | النوع | NULL | الافتراضي | مفتاح |
+| :--- | :--- | :---: | :--- | :---: |
+| `id` | `bigint unsigned` | لا | — | PRI |
+| `offer_id` | `bigint unsigned` | لا | — | MUL |
+| `user_id` | `bigint unsigned` | لا | — | MUL |
+| `organization_id` | `bigint unsigned` | نعم | — | MUL |
+| `created_at` | `timestamp` | نعم | — | MUL |
 | `updated_at` | `timestamp` | نعم | — | — |
 
 #### `purchase_requests`
@@ -444,7 +652,7 @@
 | `requested_quantity` | `decimal(14,2)` | لا | — | — |
 | `unit` | `varchar(50)` | لا | `unit` | — |
 | `requested_price` | `decimal(18,4)` | لا | — | — |
-| `currency_code` | `varchar(3)` | لا | `YER` | — |
+| `currency_code` | `varchar(3)` | لا | `YER` | MUL |
 | `delivery_preference` | `varchar(30)` | لا | `PICKUP` | — |
 | `status` | `varchar(30)` | لا | `REQUESTED` | — |
 | `notes` | `text` | نعم | — | — |
@@ -463,7 +671,7 @@
 | `buyer_user_id` | `bigint unsigned` | لا | — | MUL |
 | `quantity` | `decimal(14,2)` | لا | — | — |
 | `unit_price` | `decimal(18,4)` | لا | — | — |
-| `currency_code` | `varchar(3)` | لا | `YER` | — |
+| `currency_code` | `varchar(3)` | لا | `YER` | MUL |
 | `total_amount` | `decimal(18,4)` | لا | — | — |
 | `delivery_preference` | `varchar(50)` | لا | `PICKUP` | — |
 | `status` | `varchar(30)` | لا | `ACTIVE` | MUL |
@@ -493,10 +701,8 @@
 | `warehouse_id` | `bigint unsigned` | نعم | — | MUL |
 | `quantity` | `decimal(14,2)` | لا | — | — |
 | `unit_price` | `decimal(18,4)` | لا | — | — |
-| `currency_code` | `varchar(3)` | لا | `YER` | — |
-| `transaction_currency` | `varchar(3)` | لا | `YER` | — |
+| `currency_code` | `varchar(3)` | لا | `YER` | MUL |
 | `base_currency` | `varchar(3)` | لا | `YER` | — |
-| `exchange_rate` | `decimal(18,6)` | لا | `1.000000` | — |
 | `exchange_rate_snapshot` | `decimal(18,6)` | لا | `1.000000` | — |
 | `rate_source` | `varchar(50)` | لا | `MANUAL_ADMIN_RATE` | — |
 | `rate_timestamp` | `timestamp` | نعم | — | — |
@@ -515,11 +721,9 @@
 | `inspection_window_hours` | `int unsigned` | لا | `48` | — |
 | `inspection_deadline_at` | `timestamp` | نعم | — | — |
 | `accepted_at` | `timestamp` | نعم | — | — |
-| `paid_at` | `timestamp` | نعم | — | — |
 | `dispatched_at` | `timestamp` | نعم | — | — |
 | `delivered_at` | `timestamp` | نعم | — | — |
 | `completed_at` | `timestamp` | نعم | — | — |
-| `settled_at` | `timestamp` | نعم | — | — |
 | `cancelled_at` | `timestamp` | نعم | — | — |
 | `cancellation_reason` | `text` | نعم | — | — |
 | `metadata` | `json` | نعم | — | — |
@@ -557,49 +761,28 @@
 | `created_at` | `timestamp` | نعم | — | — |
 | `updated_at` | `timestamp` | نعم | — | — |
 
-### المدفوعات والضمان ودفتر الأستاذ (Payments, Escrow, Ledger)
-
-#### `payments`
+#### `deal_handovers`
 
 | الحقل | النوع | NULL | الافتراضي | مفتاح |
 | :--- | :--- | :---: | :--- | :---: |
 | `id` | `bigint unsigned` | لا | — | PRI |
-| `payment_number` | `varchar(50)` | لا | — | UNI |
-| `deal_id` | `bigint unsigned` | لا | — | MUL |
-| `organization_id` | `bigint unsigned` | لا | — | MUL |
-| `amount` | `decimal(18,4)` | لا | — | — |
-| `currency_code` | `varchar(3)` | لا | `YER` | — |
-| `exchange_rate_snapshot` | `decimal(18,6)` | لا | `1.000000` | — |
-| `provider` | `varchar(50)` | لا | — | — |
-| `status` | `varchar(30)` | لا | `PENDING` | — |
-| `transaction_reference` | `varchar(100)` | نعم | — | MUL |
-| `bank_receipt_url` | `varchar(255)` | نعم | — | — |
-| `payment_details` | `json` | نعم | — | — |
-| `verified_by_user_id` | `bigint unsigned` | نعم | — | MUL |
-| `verified_at` | `timestamp` | نعم | — | — |
-| `created_at` | `timestamp` | نعم | — | — |
-| `updated_at` | `timestamp` | نعم | — | — |
-
-#### `escrows`
-
-| الحقل | النوع | NULL | الافتراضي | مفتاح |
-| :--- | :--- | :---: | :--- | :---: |
-| `id` | `bigint unsigned` | لا | — | PRI |
-| `escrow_number` | `varchar(50)` | لا | — | UNI |
 | `deal_id` | `bigint unsigned` | لا | — | UNI |
-| `buyer_organization_id` | `bigint unsigned` | لا | — | MUL |
-| `seller_organization_id` | `bigint unsigned` | لا | — | MUL |
-| `gross_amount` | `decimal(18,4)` | لا | — | — |
-| `platform_fee_amount` | `decimal(18,4)` | لا | `0.0000` | — |
-| `seller_net_amount` | `decimal(18,4)` | لا | — | — |
-| `currency_code` | `varchar(3)` | لا | `YER` | — |
-| `status` | `varchar(30)` | لا | `HELD` | — |
-| `funded_at` | `timestamp` | نعم | — | — |
-| `released_at` | `timestamp` | نعم | — | — |
-| `refunded_at` | `timestamp` | نعم | — | — |
-| `release_notes` | `text` | نعم | — | — |
+| `code` | `varchar(24)` | لا | — | UNI |
+| `status` | `varchar(20)` | لا | ACTIVE | MUL |
+| `issued_by_user_id` | `bigint unsigned` | نعم | — | MUL |
+| `verified_by_user_id` | `bigint unsigned` | نعم | — | MUL |
+| `verified_by_organization_id` | `bigint unsigned` | نعم | — | MUL |
+| `issued_at` | `timestamp` | لا | — | MUL |
+| `verified_at` | `timestamp` | نعم | — | — |
+| `invalidated_at` | `timestamp` | نعم | — | — |
+| `verification_notes` | `text` | نعم | — | — |
 | `created_at` | `timestamp` | نعم | — | — |
 | `updated_at` | `timestamp` | نعم | — | — |
+
+### دفتر الأستاذ (Ledger)
+
+> لا وجود لجدولي `payments` و`escrows` في هذه القاعدة ولا في أي هجرة: وُصفا في نسخة قديمة من هذا
+> الملف وصفاً لم يُبنَ قطّ، وحُذفا من الوثيقة لا من القاعدة. المنصّة لا تحتفظ بأموال — راجع `DOMAIN_MODEL.md` §3.4.
 
 #### `ledger_accounts`
 
@@ -611,7 +794,7 @@
 | `name_en` | `varchar(255)` | لا | — | — |
 | `type` | `varchar(30)` | لا | — | — |
 | `organization_id` | `bigint unsigned` | نعم | — | MUL |
-| `currency_code` | `varchar(3)` | لا | `YER` | — |
+| `currency_code` | `varchar(3)` | لا | `YER` | MUL |
 | `balance` | `decimal(18,4)` | لا | `0.0000` | — |
 | `is_active` | `tinyint(1)` | لا | `1` | MUL |
 | `created_at` | `timestamp` | نعم | — | — |
@@ -624,7 +807,7 @@
 | `id` | `bigint unsigned` | لا | — | PRI |
 | `entry_number` | `varchar(50)` | لا | — | UNI |
 | `transaction_reference` | `varchar(100)` | نعم | — | MUL |
-| `currency_code` | `varchar(3)` | لا | `YER` | — |
+| `currency_code` | `varchar(3)` | لا | `YER` | MUL |
 | `exchange_rate_to_base` | `decimal(18,6)` | لا | `1.000000` | — |
 | `description` | `text` | لا | — | — |
 | `entity_type` | `varchar(100)` | نعم | — | MUL |
@@ -669,7 +852,7 @@
 | `target_quantity` | `decimal(14,2)` | لا | — | — |
 | `unit` | `varchar(50)` | لا | `carton` | — |
 | `target_unit_price` | `decimal(18,4)` | نعم | — | — |
-| `currency_code` | `varchar(3)` | لا | `YER` | — |
+| `currency_code` | `varchar(3)` | لا | `YER` | MUL |
 | `target_delivery_date` | `date` | نعم | — | — |
 | `delivery_city` | `varchar(100)` | لا | — | MUL |
 | `delivery_latitude` | `decimal(10,7)` | نعم | — | — |
@@ -691,7 +874,7 @@
 | `seller_user_id` | `bigint unsigned` | لا | — | MUL |
 | `quoted_quantity` | `decimal(14,2)` | لا | — | — |
 | `unit_price` | `decimal(18,4)` | لا | — | — |
-| `currency_code` | `varchar(3)` | لا | `YER` | — |
+| `currency_code` | `varchar(3)` | لا | `YER` | MUL |
 | `total_amount` | `decimal(18,4)` | لا | — | — |
 | `validity_days` | `int unsigned` | لا | `7` | — |
 | `notes` | `text` | نعم | — | — |
@@ -736,8 +919,6 @@
 | `claimed_amount` | `decimal(18,4)` | لا | — | — |
 | `evidence_urls` | `json` | نعم | — | — |
 | `status` | `varchar(30)` | لا | `OPEN` | — |
-| `resolution_decision` | `varchar(255)` | نعم | — | — |
-| `refunded_amount` | `decimal(18,4)` | لا | `0.0000` | — |
 | `resolution_notes` | `text` | نعم | — | — |
 | `resolved_by_user_id` | `bigint unsigned` | نعم | — | MUL |
 | `resolved_at` | `timestamp` | نعم | — | — |
@@ -874,6 +1055,25 @@
 | `created_at` | `timestamp` | نعم | — | — |
 | `updated_at` | `timestamp` | نعم | — | — |
 
+#### `support_tickets`
+
+| الحقل | النوع | NULL | الافتراضي | مفتاح |
+| :--- | :--- | :---: | :--- | :---: |
+| `id` | `bigint unsigned` | لا | — | PRI |
+| `reference` | `varchar(20)` | نعم | — | UNI |
+| `user_id` | `bigint unsigned` | لا | — | MUL |
+| `organization_id` | `bigint unsigned` | نعم | — | MUL |
+| `category` | `varchar(40)` | لا | — | — |
+| `message` | `text` | لا | — | — |
+| `screen` | `varchar(80)` | نعم | — | — |
+| `context` | `json` | نعم | — | — |
+| `status` | `varchar(20)` | لا | open | MUL |
+| `reply` | `text` | نعم | — | — |
+| `answered_by` | `bigint unsigned` | نعم | — | MUL |
+| `answered_at` | `timestamp` | نعم | — | — |
+| `created_at` | `timestamp` | نعم | — | MUL |
+| `updated_at` | `timestamp` | نعم | — | — |
+
 ### التكامل B2B (API Keys & Webhooks)
 
 #### `api_keys`
@@ -963,10 +1163,16 @@
 | الحقل | النوع | NULL | الافتراضي | مفتاح |
 | :--- | :--- | :---: | :--- | :---: |
 | `id` | `bigint unsigned` | لا | — | PRI |
-| `name` | `varchar(255)` | لا | — | MUL |
+| `name` | `varchar(255)` | لا | — | MUL (`permissions_name_guard_name_unique` مع `guard_name`) |
 | `guard_name` | `varchar(255)` | لا | — | — |
+| `scope` | `varchar(16)` | لا | `business` | MUL (`permissions_scope_index`) |
 | `created_at` | `timestamp` | نعم | — | — |
 | `updated_at` | `timestamp` | نعم | — | — |
+
+> `scope` عمود هذا المشروع لا حقول Spatie، ومصدره `config('rbac.permission_scopes')` الذي يغطّي
+> الكتالوج تغطية كاملة بلا تكرار (`platform` ١٠ و`business` ٢٥ و`both` ١٠ من ٤٥ اسمًا). لا يُقرأ عند
+> القرار — الدالة `RbacScope` هي التي تحكم — لكنه يبقى في القاعدة حتى يُسأل «أي صفوف المنصّة علقت
+> بحساب؟» بجملة واحدة بدل قائمة أسماء مكتوبة في نصّ.
 
 #### `model_has_roles`
 
@@ -994,3 +1200,68 @@
 | `model_type` | `varchar(255)` | لا | — | PRI |
 | `model_id` | `bigint unsigned` | لا | — | PRI |
 
+
+---
+
+## 3. تمرير التطبيع (3NF) — 2026-09-25
+
+> **Why this section exists and the tables above do not carry it.** Section 2 is a dump of what the
+> database enforces. What follows is why three columns were *removed* from that enforcement and
+> nine keys were added, and — just as important — which duplications were left exactly where they
+> are. A reader who wants the schema reads §2; a reader who wants to know whether a redundant column
+> is a bug or a decision reads this.
+
+### ما أُزيل
+
+| العمود | سبب الإزالة |
+| :--- | :--- |
+| `deals.transaction_currency` | نسخة طبق الأصل من `deals.currency_code`: كان `PricingAndCurrencyService` يكتب الحقيقةَ نفسها في عمودين، فلا حالةً في الكود يُجيب فيها أحدهما بغير ما أجاب الآخر. الاسم الباقي هو `currency_code` — وهو الاسم الذي تستعمله كل جدولٍ آخر في القاعدة. |
+| `deals.exchange_rate` | نسخة من `deals.exchange_rate_snapshot`، والاسم الثاني هو ما تصفّه بقية الجداول (`tax_rate_snapshot`, `exchange_rate_snapshot`). عمودان لسعرٍ واحد يعنيان أن تصحيحاً لاحقاً يجب أن يكتب مرتين أو يُخطئ. |
+| `offers.category_id` | **مشتَقّ لا مكرَّر**: تُحدّده `offers.product_variant_id ← product_variants.product_id ← products.category_id`. الحقيقة المشتقة المخزَّنة لا تُخلِّف تكراراً بل خلافاً، وقد وُجدت عروضٌ كتبت صنفاً غير صنف منتَجها. |
+
+الهجرة الوسيطة `2026_09_25_100100_drop_derived_category_from_offers.php` لا تحذف على عمى: تعدّ
+الاتفاقات والاختلافات بين `offers.category_id` وصنف المنتج أولاً، وترمي `RuntimeException` إن
+اختلفت صُفرةٌ واحدة، فتُترك للمسؤول قرارُ أي الرقمين كان صحيحاً. وبعد الحذف بقي العقد كما عرفه
+العملاء: `category_id` يُجاب في الاستجابة نفسها (`OfferResource`، و`$appends` على النموذج للقراءات
+التي تُرجع النموذج الخام مباشرة)، والمرشّح `?category_id=` يعمل بـ
+`whereHas('variant.product')`، و`store()` ما زال يرفض `CATEGORY_PRODUCT_MISMATCH` بدل أن ينسخ صنف
+المنتج سرّاً — الرفض هو الجواب الأمين لأن البائع سمّى صنفاً والمنتَج في غيره.
+
+### ما تُرِك عامداً، وهو ليس إهمالاً
+
+- **`deals.currency_code` + `deals.base_currency` + `deals.exchange_rate_snapshot` +
+  `rate_source`/`rate_timestamp`/`base_amount`: لقطةٌ تجاريّة، لا تطبيعٌ ناقص.** سعر الصرف يومَ
+  أُبرم الصفقة ليس دالةً على رمز العملة؛ هو ما قالته المنصّة في تلك اللحظة، وإعادة اشتقاقه من
+  `currencies.rate` اليومَ تُعيد تقييم صفقاتٍ موقَّعة. هذا العمود — وعمودا `rate_source` و
+  `rate_timestamp` معه — هما الغاية من الجدول لا عيبٌ فيه.
+- **`deal_items.snapshot_*` و`reservations.unit_price`:** لقطةٌ للسلعة نفسها (اسمها وسعرها يومَ
+  بيعت)، بنفس العلة.
+- **`offers.unit`** نصٌّ حرٌّ يقوله البائع («طن»، «قيراط»، «حزمة»): لا مفردات على المنصّة تحمل هذه
+  الأسماء حتى يُشار إليها بمفتاح، و`currencies` عملةٌ لا عيار.
+- **`offer_items.product_id`:** منسوخٌ من صنف العرض عمداً، وموثَّقٌ في هجرة إنشائه.
+
+### ما أُضيف: تسعة مفاتيح إلى `currencies`
+
+`2026_09_25_100200_constrain_currency_codes_to_currencies.php` يربط `currency_code` بـ
+`currencies.iso_code` في `deals` و`demands` و`journal_entries` و`ledger_accounts` و
+`offer_items` و`offers` و`purchase_requests` و`quotations` و`reservations`.
+
+- **قبل الربط** يعدّ السطور التي تسمّي عملةً لم تُعلَن قطّ، ويرفض إن وُجدت واحدة: المفتاح الذي
+  يُضاف فوق بيانات مكسورة يحوّل كسراً قديماً إلى عطلٍ في الترقية.
+- **`restrictOnDelete`**: العملة التي استعملها أحد الدفاتر لا تُحذف، بل تُوقَف. التاريخ يبقى.
+- **`cascadeOnUpdate`**: تصحيح رمزٍ إداريٍّ نادرٌ ويجب أن يمشي معه كل سجلّ.
+- ما لم يكن يوماً عموداً في `currencies` بقي هناك وحده: الرمز، عدد الخانات العشرية، السعر — لا
+  تكرار لشيءٍ منها في أي جدولٍ آخر.
+
+### الاختبار
+
+`backend/tests/Feature/DatabaseNormalizationTest.php` (٥ اختبارات): صنفُ العرض يتبع منتَجَه عند
+الكتابة والقائمة والتفصيل والمرشّح، وعدمُ التطابق يُرفض بـ 422، وعملةٌ لم تُعلَن لا تحمل مالاً
+(`QueryException`)، ومجموعةُ الجداول الحاملة للعملة تساوي مجموعةَ المحروسة بالأداة نفسها، وصفقةٌ
+تسمّي عملتَها وسعرَها مرةً واحدة. Suite كامل (2026-10-01): **392 اختباراً / 3162 تأكيداً**.
+
+> بيتُ الكتابة في هذا المشروع أن تُصحَّح هجرةُ الإنشاء نفسها مع الهجرة اللاحقة؛ لذلك حُذف
+> `offers.category_id` من `2026_09_15_130011_create_offers_and_items_tables.php` و
+> `transaction_currency`/`exchange_rate` من
+> `2026_09_15_130013_create_deals_and_items_and_histories_tables.php` في مصدرهما، حتى يكون قاعدةٌ
+> تُبنى من الصفر مطابقةً لقاعدةٍ مُرقَّاة إلى اليوم.

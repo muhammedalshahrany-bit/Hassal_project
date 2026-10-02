@@ -1,0 +1,724 @@
+
+====================================================================================================
+01160dd6-f8b1-4ee2-a4e2-fcbc55a6730c.jsonl:24627  type=assistant  ts=2026-09-25T16:27:09.857Z
+====================================================================================================
+[tool_use Write {"content":"import React, { useMemo, useState } from 'react';\nimport type { ScopedPermission } from '../types';\n\n/**\n * A checkbox list of capabilities the caller is allowed to offer.\n *\n * It exists because two doors — the platform's matrix and one company's standings —\n * select from the same catalog under different rules, and the rule that matters is\n * *which names appear at all*. Every screen passes the list the server's own read\n * endpoint returned (`grantable_permissions` inside a company, `permissions` minus\n * `account_forbidden` on the platform console), so a box the route would refuse is\n * never rendered. A picker that filtered by a hardcoded list of names would be a\n * second copy of the boundary, and copies of boundaries drift.\n *\n * Two modes because the two write shapes differ: `dual` shows three states per name\n * (منح / لا شيء / سحب) for a member's individual override, where the write takes a\n * grants list and a denials list, and `single` shows a tick for the role editors,\n * where the write takes one replacement list.\n */\n\nexport type OverrideState = 'grant' | 'none' | 'deny';\n\nconst SCOPE_LABELS: Record<ScopedPermission['scope'], string> = {\n  platform: 'صلاحية منصة',\n  business: 'صلاحية منشأة',\n  both: 'مشتركة',\n};\n\nconst STATE_LABELS: Record<OverrideState, string> = {\n  grant: 'منح',\n  none: 'كالدور',\n  deny: 'سحب',\n};\n\n/** Stable ordering: the platform's own names first, then alphabetically. */\nfunction byScopeThenName(a: ScopedPermission, b: ScopedPermission): number {\n  const rank = (scope: ScopedPermission['scope']) => (scope === 'platform' ? 0 : scope === 'both' ? 1 : 2);\n  return rank(a.scope) - rank(b.scope) || a.name.localeCompare(b.name);\n}\n\ninterface PickerProps {\n  /** What the server offered this screen. Anything outside it cannot be picked. */\n  available: ScopedPermission[];\n  /** The names the stored row currently carries, so the editor opens honest. */\n  selected: string[];\n  onSelect?: (names: string[]) => void;\n  states?: Record<string, OverrideState>;\n  onStatesChange?: (states: Record<string, OverrideState>) => void;\n  /** A name the account already holds through its role: labelled, not clickable-off. */\n  inherited?: string[];\n  disabled?: boolean;\n}\n\nexport const PermissionPicker: React.FC<PickerProps> = ({\n  available,\n  selected,\n  onSelect,\n  states,\n  onStatesChange,\n  inherited = [],\n  disabled,\n}) => {\n  const [query, setQuery] = useState('');\n\n  const isDual = states !== undefined && onStatesChange !== undefined;\n\n  const chosen = useMemo(() => new Set(selected), [selected]);\n  const passedDown = useMemo(() => new Set(inherited), [inherited]);\n\n  const visible = useMemo(() => {\n    const needle = query.trim().toLowerCase();\n    return [...available]\n      .filter((entry) => !needle || entry.name.toLowerCase().includes(needle))\n      .sort(byScopeThenName);\n  }, [available, query]);\n\n  const toggleSingle = (name: string) => {\n    if (!onSelect) return;\n    onSelect(chosen.has(name) ? selected.filter((entry) => entry !== name) : [...selected, name]);\n  };\n\n  const cycle = (name: string) => {\n    if (!states || !onStatesChange) return;\n    const current = states[name] ?? 'none';\n    const next: OverrideState = current === 'none' ? 'grant' : current === 'grant' ? 'deny' : 'none';\n    onStatesChange({ ...states, [name]: next });\n  };\n\n  return (\n    <div className=\"space-y-2\">\n      <div className=\"flex flex-wrap items-center justify-between gap-2\">\n        <input\n          value={query}\n          onChange={(event) => setQuery(event.target.value)}\n          placeholder=\"ابحث عن صلاحية…\"\n          disabled={disabled}\n          className=\"w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs focus:bg-white focus:outline-none disabled:opacity-50 sm:w-56 dark:border-hassal-line dark:bg-hassal-raised dark:text-slate-100\"\n        />\n        <span className=\"t]
+
+====================================================================================================
+01160dd6-f8b1-4ee2-a4e2-fcbc55a6730c.jsonl:24683  type=assistant  ts=2026-09-25T16:30:03.653Z
+====================================================================================================
+[tool_use Write {"content":"import React, { useCallback, useEffect, useMemo, useState } from 'react';\nimport { Plus, RefreshCw, Trash2, UserCheck } from 'lucide-react';\nimport { api, fieldError, type ApiResult } from '../lib/api';\nimport { BannerView, DecisionButton, ErrorNote, LabeledSelect, PanelShell, TextInput, type Banner } from './panel';\nimport { PermissionPicker, splitStates, statesFrom, type OverrideState } from './PermissionPicker';\nimport type { MemberPermissionsView, OrganizationRolesSnapshot, UserMembership } from '../types';\n\n/**\n * What a company's own standings are worth, and what one person inside it is worth.\n *\n * This is the organization door of the permissions system, and the component is\n * built around the three boundaries the server enforces behind it:\n *\n *   * The names on offer come from `grantable_permissions` in the same response as\n *     the roles, which is the list the route accepts — platform capabilities are\n *     absent from it. Nothing here filters by a list of names written in the\n *     client, so a rename in `config/rbac.php` cannot leave a stale checkbox that\n *     only fails at submit time.\n *   * Authority is per company and per page: the routes take the organization id,\n *     and the caller's membership in *that* company is asked for `members.manage`.\n *     The tenant header is set by the session, not chosen here.\n *   * The owner standing and the owner's own rows resist being edited into\n *     helplessness, which the server answers with `OWNER_STANDING_PROTECTED`. That\n *     refusal is shown rather than pre-empted: hiding the save on the owner row\n *     would be this screen inventing its own rule about ownership.\n *\n * Two editors, because the two decisions are different in kind. A standing says\n * what a *kind* of job in this company can do; an override says what *this person*\n * can do beyond or beneath the standing they hold. The override editor shows both\n * the standing's grants and the resulting effective set, because a manager who\n * cannot see the difference between the two will keep \"fixing\" a role that was\n * already narrowed by a denial nobody remembers writing.\n */\n\nfunction refusalOf(result: ApiResult<unknown>): string {\n  return result.error?.message || result.message || 'تعذّر تنفيذ الأمر على المنشأة';\n}\n\n/** The key the column stores; anything the server would reject is caught here first. */\nconst KEY_PATTERN = /^[a-z][a-z0-9_]{1,62}$/;\n\ninterface OrganizationRolesPanelProps {\n  organizationId: number;\n  organizationName: string | null;\n  members: UserMembership[];\n  /** `members.manage`, resolved by the caller the way every other screen does. */\n  canManage: boolean;\n  /** Set when the roster asks to edit one person's overrides; null opens the list. */\n  focusMemberId: number | null;\n  onFocusMemberHandled: () => void;\n  onNotify?: (message: string) => void;\n}\n\nexport const OrganizationRolesPanel: React.FC<OrganizationRolesPanelProps> = ({\n  organizationId,\n  organizationName,\n  members,\n  canManage,\n  focusMemberId,\n  onFocusMemberHandled,\n  onNotify,\n}) => {\n  const [snapshot, setSnapshot] = useState<OrganizationRolesSnapshot | null>(null);\n  const [loading, setLoading] = useState(false);\n  const [busy, setBusy] = useState(false);\n  const [banner, setBanner] = useState<Banner>(null);\n  const [denied, setDenied] = useState<string | null>(null);\n\n  const [editingKey, setEditingKey] = useState<string | null>(null);\n  const [draftPermissions, setDraftPermissions] = useState<string[]>([]);\n  const [roleReason, setRoleReason] = useState('');\n  const [roleErrors, setRoleErrors] = useState<Record<string, string | null>>({});\n\n  const [newKey, setNewKey] = useState('');\n  const [newNameAr, setNewNameAr] = useState('');\n  const [copyFrom, setCopyFrom] = useState('');\n  const [newPermissions, setNewPermissions] = useState<string[]>([]);\n  const [newReason, setNewReason] = useState('');\n  const [newErrors, ]
+
+====================================================================================================
+01160dd6-f8b1-4ee2-a4e2-fcbc55a6730c.jsonl:26125  type=user  ts=2026-09-25T17:33:45.056Z
+====================================================================================================
+[tool_result call_3be57a8f775843eb89a598a3 isError=false len=8549]
+1	import React, { useMemo, useState } from 'react';
+2	import type { ScopedPermission } from '../types';
+3	
+4	/**
+5	 * A checkbox list of capabilities the caller is allowed to offer.
+6	 *
+7	 * It exists because two doors — the platform's matrix and one company's standings —
+8	 * select from the same catalog under different rules, and the rule that matters is
+9	 * *which names appear at all*. Every screen passes the list the server's own read
+10	 * endpoint returned (`grantable_permissions` inside a company, `permissions` minus
+11	 * `account_forbidden` on the platform console), so a box the route would refuse is
+12	 * never rendered. A picker that filtered by a hardcoded list of names would be a
+13	 * second copy of the boundary, and copies of boundaries drift.
+14	 *
+15	 * Two modes because the two write shapes differ: `dual` shows three states per name
+16	 * (منح / لا شيء / سحب) for a member's individual override, where the write takes a
+17	 * grants list and a denials list, and `single` shows a tick for the role editors,
+18	 * where the write takes one replacement list.
+19	 */
+20	
+21	export type OverrideState = 'grant' | 'none' | 'deny';
+22	
+23	const SCOPE_LABELS: Record<ScopedPermission['scope'], string> = {
+24	  platform: 'صلاحية منصة',
+25	  business: 'صلاحية منشأة',
+26	  both: 'مشتركة',
+27	};
+28	
+29	const STATE_LABELS: Record<OverrideState, string> = {
+30	  grant: 'منح',
+31	  none: 'كالدور',
+32	  deny: 'سحب',
+33	};
+34	
+35	/** Stable ordering: the platform's own names first, then alphabetically. */
+36	function byScopeThenName(a: ScopedPermission, b: ScopedPermission): number {
+37	  const rank = (scope: ScopedPermission['scope']) => (scope === 'platform' ? 0 : scope === 'both' ? 1 : 2);
+38	  return rank(a.scope) - rank(b.scope) || a.name.localeCompare(b.name);
+39	}
+40	
+41	interface PickerProps {
+42	  /** What the server offered this screen. Anything outside it cannot be picked. */
+43	  available: ScopedPermission[];
+44	  /** The names the stored row currently carries, so the editor opens honest. */
+45	  selected: string[];
+46	  onSelect?: (names: string[]) => void;
+47	  states?: Record<string, OverrideState>;
+48	  onStatesChange?: (states: Record<string, OverrideState>) => void;
+49	  /** A name the account already holds through its role: labelled, not clickable-off. */
+50	  inherited?: string[];
+51	  disabled?: boolean;
+52	}
+53	
+54	export const PermissionPicker: React.FC<PickerProps> = ({
+55	  available,
+56	  selected,
+57	  onSelect,
+58	  states,
+59	  onStatesChange,
+60	  inherited = [],
+61	  disabled,
+62	}) => {
+63	  const [query, setQuery] = useState('');
+64	
+65	  const isDual = states !== undefined && onStatesChange !== undefined;
+66	
+67	  const chosen = useMemo(() => new Set(selected), [selected]);
+68	  const passedDown = useMemo(() => new Set(inherited), [inherited]);
+69	
+70	  const visible = useMemo(() => {
+71	    const needle = query.trim().toLowerCase();
+72	    return [...available]
+73	      .filter((entry) => !needle || entry.name.toLowerCase().includes(needle))
+74	      .sort(byScopeThenName);
+75	  }, [available, query]);
+76	
+77	  const toggleSingle = (name: string) => {
+78	    if (!onSelect) return;
+79	    onSelect(chosen.has(name) ? selected.filter((entry) => entry !== name) : [...selected, name]);
+80	  };
+81	
+82	  const cycle = (name: string) => {
+83	    if (!states || !onStatesChange) return;
+84	    const current = states[name] ?? 'none';
+85	    const next: OverrideState = current === 'none' ? 'grant' : current === 'grant' ? 'deny' : 'none';
+86	    onStatesChange({ ...states, [name]: next });
+87	  };
+88	
+89	  return (
+90	    <div className="space-y-2">
+91	      <div className="flex flex-wrap items-center justify-between gap-2">
+92	        <input
+93	          value={query}
+94	          onChange={(event) => setQuery(event.target.value)}
+95	          placeholder="ابحث عن صلاحية…"
+96	          disabled={disabled}
+97	          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs focus:bg-white focus:outline-none disabled:opacity-50 sm:w-56 dark:border-hassal-line dark:bg-hassal-raised dark:text-slate-100"
+98	        />
+99	        <span className="text-[10px] text-slate-500 dark:text-slate-400">
+100	          {isDual
+101	            ? `${Object.values(states ?? {}).filter((state) => state === 'grant').length} مُضافة · ${
+102	                Object.values(states ?? {}).filter((state) => state === 'deny').length
+103	              } مسحوبة`
+104	            : `${selected.length} من ${available.length}`}
+105	        </span>
+106	      </div>
+107	
+108	      {isDual ? (
+109	        <p className="text-[10px] leading-relaxed text-slate-500 dark:text-slate-400">
+110	          الاسم يُنقر بالدوران: منح يضيف فوق الدور، سحب يمنعه حتى لو كان الدور يحمله، ولا شيء يتركه كما هو.
+111	        </p>
+112	      ) : null}
+113	
+114	      <div className="max-h-72 min-w-0 overflow-y-auto rounded-lg border border-slate-200 dark:border-hassal-line">
+115	        {visible.length === 0 ? (
+116	          <p className="p-3 text-[11px] text-slate-500 dark:text-slate-400">
+117	            {available.length ? 'لا اسم يطابق البحث.' : 'لم تصل قائمة الصلاحيات من الخادم.'}
+118	          </p>
+119	        ) : (
+120	          <ul className="divide-y divide-slate-100 dark:divide-hassal-line">
+121	            {visible.map((entry) => {
+122	              const state = isDual ? states?.[entry.name] ?? 'none' : chosen.has(entry.name) ? 'grant' : 'none';
+123	              const carries = passedDown.has(entry.name);
+124	
+125	              return (
+126	                <li key={entry.name} className="flex items-center justify-between gap-2 px-2.5 py-1.5">
+127	                  <div className="min-w-0">
+128	                    <div className="truncate text-[11px] font-bold text-slate-800 dark:text-slate-100" dir="ltr" title={entry.name}>
+129	                      {entry.name}
+130	                    </div>
+131	                    <div className="flex flex-wrap items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400">
+132	                      <span>{SCOPE_LABELS[entry.scope]}</span>
+133	                      {/* Said out loud because the alternative is a ticked box that
+134	                          does nothing, which reads as a bug in the save. */}
+135	                      {carries && !isDual ? <span className="text-emerald-700 dark:text-emerald-400">موروثة من الدور</span> : null}
+136	                    </div>
+137	                  </div>
+138	                  <button
+139	                    type="button"
+140	                    disabled={disabled}
+141	                    onClick={() => (isDual ? cycle(entry.name) : toggleSingle(entry.name))}
+142	                    className={`shrink-0 rounded-lg border px-2 py-1 text-[10px] font-bold transition-colors disabled:opacity-40 ${
+143	                      state === 'grant'
+144	                        ? 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
+145	                        : state === 'deny'
+146	                          ? 'border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
+147	                          : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 dark:border-hassal-line dark:bg-hassal-raised dark:text-slate-300'
+148	                    }`}
+149	                  >
+150	                    {isDual ? STATE_LABELS[state] : state === 'grant' ? 'مشمولة' : 'غير مشمولة'}
+151	                  </button>
+152	                </li>
+153	              );
+154	            })}
+155	          </ul>
+156	        )}
+157	      </div>
+158	    </div>
+159	  );
+160	};
+161	
+162	/** The two lists a dual picker holds, split the way the route expects them. */
+163	export function splitStates(states: Record<string, OverrideState>): { grants: string[]; denials: string[] } {
+164	  const entries = Object.entries(states);
+165	  return {
+166	    grants: entries.filter(([, state]) => state === 'grant').map(([name]) => name).sort(),
+167	    denials: entries.filter(([, state]) => state === 'deny').map(([name]) => name).sort(),
+168	  };
+169	}
+170	
+171	/** A stored pair rebuilt as picker state, so an editor opens on what the row says. */
+172	export function statesFrom(grants: string[], denials: string[]): Record<string, OverrideState> {
+173	  const states: Record<string, OverrideState> = {};
+174	  for (const name of grants) states[name] = 'grant';
+175	  for (const name of denials) states[name] = 'deny';
+176	  return states;
+177	}
+178	
+
+====================================================================================================
+01160dd6-f8b1-4ee2-a4e2-fcbc55a6730c.jsonl:26132  type=user  ts=2026-09-25T17:33:53.001Z
+====================================================================================================
+[tool_result call_8f603a67b365438a817ab50b isError=false len=2265]
+..\hassal\src\components\OrganizationRolesPanel.tsx:5:import { PermissionPicker, splitStates, statesFrom, type OverrideState } from './PermissionPicker';
+..\hassal\src\components\OrganizationRolesPanel.tsx:241:        setStates(statesFrom(result.data.grants, result.data.denials));
+..\hassal\src\components\OrganizationRolesPanel.tsx:267:    const { grants, denials } = splitStates(states);
+..\hassal\src\components\OrganizationRolesPanel.tsx:283:          ? await api.updateMemberPermissions(organizationId, selectedMembers[0], { grants, denials, reason })
+..\hassal\src\components\OrganizationRolesPanel.tsx:284:          : await api.bulkMemberPermissions(organizationId, { user_ids: selectedMembers, grants, denials, reason });
+..\hassal\src\components\OrganizationRolesPanel.tsx:300:            setStates(statesFrom(refreshed.data.grants, refreshed.data.denials));
+..\hassal\src\components\OrganizationRolesPanel.tsx:417:            <PermissionPicker available={available} selected={draftPermissions} onSelect={setDraftPermissions} disabled={busy} />
+..\hassal\src\components\OrganizationRolesPanel.tsx:441:            <PermissionPicker available={available} selected={newPermissions} onSelect={setNewPermissions} disabled={busy} />
+..\hassal\src\components\OrganizationRolesPanel.tsx:522:            <PermissionPicker available={available} selected={[]} states={states} onStatesChange={setStates} inherited={memberView?.role_permissions} disabled={busy} />
+..\hassal\src\components\PermissionPicker.tsx:54:export const PermissionPicker: React.FC<PickerProps> = ({
+..\hassal\src\components\PermissionPicker.tsx:163:export function splitStates(states: Record<string, OverrideState>): { grants: string[]; denials: string[] } {
+..\hassal\src\components\PermissionPicker.tsx:172:export function statesFrom(grants: string[], denials: string[]): Record<string, OverrideState> {
+..\hassal\src\components\PlatformPermissionsPanel.tsx:5:import { PermissionPicker } from './PermissionPicker';
+..\hassal\src\components\PlatformPermissionsPanel.tsx:249:            <PermissionPicker available={offerable} selected={draft} onSelect={setDraft} inherited={role?.declared} disabled={busy} />
+..\hassal\src\components\PlatformPermissionsPanel.tsx:325:          <PermissionPicker
+
+====================================================================================================
+91058cfd-f9a7-4637-a5bb-275d9ccd9efd.jsonl:8206  type=user  ts=2026-10-02T08:26:46.683Z
+====================================================================================================
+[tool_result call_9857d03300b9412183c685f0 isError=false len=5903]
+src/App.tsx:5:import { Header } from './components/Header';
+src/App.tsx:6:import { AuthModal } from './components/AuthModal';
+src/App.tsx:7:import { MarketplaceView } from './components/MarketplaceView';
+src/App.tsx:8:import { DealsPipelineView } from './components/DealsPipelineView';
+src/App.tsx:9:import { SellerInventoryView } from './components/SellerInventoryView';
+src/App.tsx:10:import { DemandsView } from './components/DemandsView';
+src/App.tsx:11:import { LedgerView } from './components/LedgerView';
+src/App.tsx:12:import { DisputesView } from './components/DisputesView';
+src/App.tsx:13:import { AdminConsoleView } from './components/AdminConsoleView';
+src/App.tsx:14:import { MembersView } from './components/MembersView';
+src/App.tsx:15:import { CatalogView } from './components/CatalogView';
+src/App.tsx:16:import { PlatformConfigView } from './components/PlatformConfigView';
+src/App.tsx:17:import { WarehouseMapView } from './components/WarehouseMapView';
+src/App.tsx:18:import { OrganizationProfileView } from './components/OrganizationProfileView';
+src/App.tsx:19:import { ProfileView } from './components/ProfileView';
+src/App.tsx:21:import { getLocale, type Locale } from './lib/i18n';
+src/App.tsx:27:} from './lib/navigation';
+src/App.tsx:28:import { applyBootstrapPayload, isFeatureEnabled, usePlatformConfig } from './lib/config';
+src/App.tsx:29:import { AccountSetupCard } from './components/AccountSetupCard';
+src/App.tsx:30:import BrandMark from './components/BrandMark';
+src/main.tsx:3:import App from './App.tsx';
+src/main.tsx:4:import { applyStoredTheme } from './lib/theme';
+src/components/AccountPermissionsEditor.tsx:7:import { DecisionButton, ErrorNote, LabeledSelect, TextInput } from './panel';
+src/components/AccountPermissionsEditor.tsx:8:import { PermissionPicker } from './PermissionPicker';
+src/components/AdminConsoleView.tsx:33:} from './panel';
+src/components/AdminConsoleView.tsx:34:import { AccountPermissionsEditor } from './AccountPermissionsEditor';
+src/components/AdminConsoleView.tsx:35:import { CommunityModerationPanel } from './CommunityModerationPanel';
+src/components/AdminConsoleView.tsx:36:import { PlatformPermissionsPanel } from './PlatformPermissionsPanel';
+src/components/AdminConsoleView.tsx:37:import { SupportQueuePanel } from './SupportDeskPanel';
+src/components/AdminConsoleView.tsx:38:import { StaffDocumentReview, TYPE_LABELS } from './OrganizationDocumentsPanel';
+src/components/AuthModal.tsx:5:import BrandMark, { BrandWorking } from './BrandMark';
+src/components/CatalogView.tsx:8:import { BannerView, DecisionButton, ErrorNote, LabeledSelect, PanelShell, TextInput, type Banner } from './panel';
+src/components/CommunityModerationPanel.tsx:15:} from './panel';
+src/components/DealsPipelineView.tsx:19:import { CameraCapture } from './CameraCapture';
+src/components/DemandsView.tsx:31:} from './panel';
+src/components/DisputesView.tsx:8:import { BannerView, DecisionButton, ErrorNote, LabeledSelect, PanelShell, TextInput, type Banner } from './panel';
+src/components/Header.tsx:16:import BrandMark from './BrandMark';
+src/components/Header.tsx:30:import { recorded } from './panel';
+src/components/Header.tsx:31:import { NotificationBell } from './NotificationBell';
+src/components/IntegrationsPanel.tsx:17:} from './panel';
+src/components/LedgerView.tsx:16:import { BannerView, ErrorNote, Fact, PanelShell, type Banner } from './panel';
+src/components/MarketplaceView.tsx:36:import BrandMark from './BrandMark';
+src/components/MarketplaceView.tsx:37:import PromotedStrip from './PromotedStrip';
+src/components/MarketplaceView.tsx:38:import { OfferLikeButton, OfferThread, useOfferCommunity } from './OfferCommunity';
+src/components/MembersView.tsx:8:import { BannerView, DecisionButton, ErrorNote, LabeledSelect, PanelShell, TextInput, type Banner } from './panel';
+src/components/MembersView.tsx:9:import { OrganizationRolesPanel } from './OrganizationRolesPanel';
+src/components/OrganizationDocumentsPanel.tsx:7:import { CameraCapture } from './CameraCapture';
+src/components/OrganizationDocumentsPanel.tsx:8:import { BannerView, DecisionButton, ErrorNote, PanelShell, TextInput, recorded, type Banner } from './panel';
+src/components/OrganizationProfileView.tsx:16:} from './panel';
+src/components/OrganizationProfileView.tsx:17:import { IntegrationsPanel } from './IntegrationsPanel';
+src/components/OrganizationProfileView.tsx:18:import { OrganizationDocumentsPanel } from './OrganizationDocumentsPanel';
+src/components/OrganizationRolesPanel.tsx:7:import { BannerView, DecisionButton, ErrorNote, LabeledSelect, PanelShell, TextInput, type Banner } from './panel';
+src/components/OrganizationRolesPanel.tsx:8:import { PermissionPicker, splitStates, statesFrom, type OverrideState } from './PermissionPicker';
+src/components/PlatformConfigView.tsx:17:import { SetupWizardPanel } from './SetupWizardPanel';
+src/components/PlatformConfigView.tsx:30:} from './panel';
+src/components/PlatformPermissionsPanel.tsx:7:import { BannerView, DecisionButton, ErrorNote, LabeledSelect, PanelShell, TextInput, type Banner } from './panel';
+src/components/PlatformPermissionsPanel.tsx:8:import { PermissionPicker } from './PermissionPicker';
+src/components/ProfileView.tsx:8:import { BannerView, DecisionButton, ErrorNote, PanelShell, TextInput, type Banner } from './panel';
+src/components/ProfileView.tsx:9:import { SigninDevicesPanel } from './SigninDevicesPanel';
+src/components/ProfileView.tsx:10:import SupportDeskView from './SupportDeskPanel';
+src/components/SetupWizardPanel.tsx:7:import { BannerView, DecisionButton, ErrorNote, LabeledSelect, PanelShell, TextInput, type Banner } from './panel';
+src/components/SigninDevicesPanel.tsx:7:import { BannerView, DecisionButton, ErrorNote, PanelShell, type Banner } from './panel';
+src/components/SupportDeskPanel.tsx:16:} from './panel';
+
+Shell cwd was reset to D:\hassal_app_flutter
+
+====================================================================================================
+91058cfd-f9a7-4637-a5bb-275d9ccd9efd.jsonl:8208  type=user  ts=2026-10-02T08:26:46.788Z
+====================================================================================================
+[tool_result call_c6598dea368b49c0aebe5a4f isError=false len=13418]
+=== src/components/AccountPermissionsEditor.tsx
+1:import { fieldError } from '@/core/api/http';
+2:import type { ApiResult } from '@/core/api/http';
+3:import { getAccountPermissions, updateAccountPermissions } from '@/features/identity/api';
+5:import React, { useCallback, useEffect, useMemo, useState } from 'react';
+6:import { X } from 'lucide-react';
+7:import { DecisionButton, ErrorNote, LabeledSelect, TextInput } from './panel';
+8:import { PermissionPicker } from './PermissionPicker';
+9:import type { AccountPermissionsView, PlatformRbacSnapshot } from '@/features/identity/types';
+=== src/components/AccountSetupCard.tsx
+1:import { fieldError } from '@/core/api/http';
+2:import { updateProfile } from '@/features/auth/api';
+4:import React, { useState } from 'react';
+5:import { Building2, Check, Loader2, Sparkles, X } from 'lucide-react';
+6:import type { ProfileCompletion } from '@/features/auth/types';
+7:import type { User } from '@/features/identity/types';
+8:import type { Locale } from '../lib/i18n';
+=== src/components/AdminConsoleView.tsx
+1:import { fieldError } from '@/core/api/http';
+2:import type { ApiResult } from '@/core/api/http';
+3:import { assignUserRole, getPlatformRbac, getUserRoles, getUsers, revokeUserRole, updateUserStatus } from '@/features/identity/api';
+4:import { getFeaturedOffers, getModerationQueue, getOffers, reviewOffer, setOfferFeatured } from '@/features/marketplace/api';
+5:import { decideOrganizationVerification, getDocumentReviewQueue, getDocumentReviewSummary, getMembershipRoles, getOrganizations, reviewOrganizationDocument, updateOrganizationMember } from '@/features/organizations/api';
+7:import React, { useCallback, useEffect, useMemo, useState } from 'react';
+8:import {
+22:} from 'lucide-react';
+23:import {
+=== src/components/AuthModal.tsx
+1:import { forgotPassword, googleSignIn, login, register, resetPassword } from '@/features/auth/api';
+3:import React, { useEffect, useRef, useState } from 'react';
+4:import { KeyRound, LogIn, UserPlus, X } from 'lucide-react';
+5:import BrandMark, { BrandWorking } from './BrandMark';
+7:import { googleSignInSettings, usePlatformConfig } from '../lib/config';
+8:import { clearSignInNonce, renderGoogleSignInButton, rotateSignInNonce, signInNonce } from '../lib/googleIdentity';
+9:import { translations, type Locale } from '../lib/i18n';
+=== src/components/BrandMark.tsx
+1:import React from 'react';
+=== src/components/CameraCapture.tsx
+1:import React, { useCallback, useEffect, useRef, useState } from 'react';
+=== src/components/CatalogView.tsx
+1:import { fieldError } from '@/core/api/http';
+2:import type { ApiResult, Pagination } from '@/core/api/http';
+3:import { createProduct, deleteProductImage, getBrands, getCategories, getProductImages, getProductVariants, getProducts, updateProduct, updateProductImage, uploadProductImages } from '@/features/catalog/api';
+5:import React, { useCallback, useEffect, useRef, useState } from 'react';
+6:import { AlertCircle, Camera, ImagePlus, Package, Plus, RefreshCw, ChevronDown, ChevronUp, Star, Trash2, Upload, X } from 'lucide-react';
+7:import { getLocale } from '../lib/i18n';
+8:import { BannerView, DecisionButton, ErrorNote, LabeledSelect, PanelShell, TextInput, type Banner } from './panel';
+9:import type { Brand, Category, Product, ProductImage, ProductVariant } from '@/features/catalog/types';
+=== src/components/CommunityModerationPanel.tsx
+1:import type { ApiResult } from '@/core/api/http';
+2:import { getCommunityComments, getCommunityReports, getCommunitySummary, moderateComment, reviewCommunityReport } from '@/features/community/api';
+4:import React, { useCallback, useEffect, useState } from 'react';
+5:import { MessageSquareWarning, RefreshCw, ShieldCheck, Flag } from 'lucide-react';
+6:import {
+15:} from './panel';
+16:import { formatDateTime, getLocale } from '../lib/i18n';
+17:import type { CommentReportReason, CommunityReport, CommunitySummary, ModeratedComment } from '@/features/community/types';
+=== src/components/DealsPipelineView.tsx
+1:import { getTenantId } from '@/core/api/http';
+2:import { acceptProposal, acceptPurchaseRequest, cancelPurchaseRequest, cancelReservation, createDealFromReservation, getDeal, getDeals, getHandover, getPurchaseRequests, getReservations, handoverLabelUrl, proposePurchaseRequest, rejectPurchaseRequest, transitionDeal, verifyHandover } from '@/features/trading/api';
+4:import React, { useState, useEffect, useCallback } from 'react';
+5:import {
+17:} from 'lucide-react';
+19:import { CameraCapture } from './CameraCapture';
+20:import { formatMoney, usePlatformConfig } from '../lib/config';
+21:import { formatDateTime, getLocale } from '../lib/i18n';
+22:import type { Deal, DealStatus, HandoverView, PurchaseRequest, PurchaseRequestStatus, QrSymbol, Reservation } from '@/features/trading/types';
+=== src/components/DemandsView.tsx
+1:import { fieldError } from '@/core/api/http';
+2:import { getCategories } from '@/features/catalog/api';
+3:import { createDemand, getDemandMatches, getDemands, submitQuotation } from '@/features/marketplace/api';
+4:import { createPurchaseRequestFromMatch } from '@/features/trading/api';
+6:import React, { useCallback, useEffect, useMemo, useState } from 'react';
+7:import {
+18:} from 'lucide-react';
+20:import { activeCurrencies, baseCurrency, configuredCity, formatMoney, isFeatureEnabled, usePlatformConfig } from '../lib/config';
+21:import { formatDate, getLocale } from '../lib/i18n';
+22:import {
+=== src/components/DisputesView.tsx
+1:import { fieldError } from '@/core/api/http';
+2:import { getDeals, getDisputes, openDispute, resolveDispute } from '@/features/trading/api';
+4:import React, { useCallback, useEffect, useState } from 'react';
+5:import { Scale, AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react';
+6:import { formatMoney, usePlatformConfig } from '../lib/config';
+7:import { formatDateTime, getLocale } from '../lib/i18n';
+8:import { BannerView, DecisionButton, ErrorNote, LabeledSelect, PanelShell, TextInput, type Banner } from './panel';
+9:import type { Deal, Dispute, DisputeStatus } from '@/features/trading/types';
+=== src/components/Header.tsx
+1:import React, { useEffect, useRef, useState } from 'react';
+2:import {
+14:} from 'lucide-react';
+15:import { translations, type Locale } from '../lib/i18n';
+16:import BrandMark from './BrandMark';
+17:import { useTheme } from '../lib/theme';
+18:import { baseCurrency, isFeatureEnabled, taxSummary, usePlatformConfig } from '../lib/config';
+19:import {
+27:} from '../lib/navigation';
+28:import type { User } from '@/features/identity/types';
+29:import type { ActiveOrganization, OrganizationSummary, OrganizationType } from '@/features/organizations/types';
+30:import { recorded } from './panel';
+=== src/components/IntegrationsPanel.tsx
+1:import { fieldError } from '@/core/api/http';
+2:import type { ApiResult } from '@/core/api/http';
+3:import { createApiKey, createWebhook, getApiKeys, getWebhookDeliveries, getWebhooks, pingWebhook, revokeApiKey } from '@/features/platform/api';
+5:import React, { useEffect, useState } from 'react';
+6:import { isFeatureEnabled } from '../lib/config';
+7:import { formatDateTime, getLocale } from '../lib/i18n';
+8:import {
+17:} from './panel';
+18:import type { ApiKey, Webhook, WebhookDelivery } from '@/features/platform/types';
+=== src/components/LedgerView.tsx
+1:import type { ApiResult } from '@/core/api/http';
+2:import { getJournalEntries, getLedgerAccounts, getTrialBalance } from '@/features/trading/api';
+4:import React, { useState, useEffect, useCallback } from 'react';
+5:import {
+12:} from 'lucide-react';
+13:import { formatMoney, getPlatformConfig } from '../lib/config';
+14:import { formatDateTime, getLocale } from '../lib/i18n';
+15:import type { LedgerAccount, LedgerEntry, TrialBalance } from '@/features/trading/types';
+16:import { BannerView, ErrorNote, Fact, PanelShell, type Banner } from './panel';
+=== src/components/MarketplaceView.tsx
+1:import { getToken } from '@/core/api/http';
+2:import { getBrands, getCategories } from '@/features/catalog/api';
+3:import { getNearbyOffers, getOffers } from '@/features/marketplace/api';
+4:import type { OfferSortIntent } from '@/features/marketplace/types';
+5:import { verificationGate } from '@/features/organizations/api';
+6:import { createPurchaseRequestFromOffer } from '@/features/trading/api';
+8:import React, { useState, useEffect, useMemo } from 'react';
+9:import { 
+29:} from 'lucide-react';
+=== src/components/MembersView.tsx
+1:import { fieldError } from '@/core/api/http';
+2:import type { ApiResult } from '@/core/api/http';
+3:import { addOrganizationMember, getMembershipRoles, getOrganizationMembers, removeOrganizationMember, updateOrganizationMember } from '@/features/organizations/api';
+5:import React, { useCallback, useEffect, useState } from 'react';
+6:import { Users, UserPlus, Trash2, RefreshCw, Info } from 'lucide-react';
+7:import { formatDate, getLocale } from '../lib/i18n';
+8:import { BannerView, DecisionButton, ErrorNote, LabeledSelect, PanelShell, TextInput, type Banner } from './panel';
+9:import { OrganizationRolesPanel } from './OrganizationRolesPanel';
+10:import type { MembershipRoleOption, UserMembership } from '@/features/organizations/types';
+=== src/components/NotificationBell.tsx
+1:import { getNotifications, getUnreadNotificationCount, markAllNotificationsRead, markNotificationRead } from '@/features/notifications/api';
+3:import React, { useEffect, useState } from 'react';
+4:import { Bell, CheckCheck } from 'lucide-react';
+6:import { formatDateTime, translations, type Locale } from '../lib/i18n';
+=== src/components/OfferCommunity.tsx
+1:import type { ApiResult } from '@/core/api/http';
+2:import { commentOnOffer, deleteOfferComment, getLikedOfferIds, getOfferComments, likeOffer, reportOfferComment, unlikeOffer } from '@/features/community/api';
+3:import { verificationGate } from '@/features/organizations/api';
+5:import React, { useCallback, useEffect, useState } from 'react';
+6:import { Heart, MessageCircle, Send } from 'lucide-react';
+7:import { formatDateTime, getLocale } from '../lib/i18n';
+8:import type { CommentReportReason, OfferComment } from '@/features/community/types';
+9:import type { Offer } from '@/features/marketplace/types';
+=== src/components/OrganizationDocumentsPanel.tsx
+1:import { deleteOrganizationDocument, getOrganizationDocuments, reviewOrganizationDocument, uploadOrganizationDocument } from '@/features/organizations/api';
+3:import React, { useCallback, useEffect, useRef, useState } from 'react';
+4:import { Camera } from 'lucide-react';
+5:import { formatDateTime, getLocale } from '../lib/i18n';
+6:import type { OrganizationDocument } from '@/features/organizations/types';
+7:import { CameraCapture } from './CameraCapture';
+8:import { BannerView, DecisionButton, ErrorNote, PanelShell, TextInput, recorded, type Banner } from './panel';
+=== src/components/OrganizationProfileView.tsx
+1:import { fieldError } from '@/core/api/http';
+2:import type { ApiResult } from '@/core/api/http';
+3:import { createOrganization, getOrganization, updateOrganization } from '@/features/organizations/api';
+5:import React, { useCallback, useEffect, useState } from 'react';
+6:import { getLocale, formatDateTime, formatDate } from '../lib/i18n';
+7:import {
+16:} from './panel';
+17:import { IntegrationsPanel } from './IntegrationsPanel';
+18:import { OrganizationDocumentsPanel } from './OrganizationDocumentsPanel';
+19:import type { Organization } from '@/features/organizations/types';
+=== src/components/OrganizationRolesPanel.tsx
+1:import { fieldError } from '@/core/api/http';
+2:import type { ApiResult } from '@/core/api/http';
+3:import { bulkMemberPermissions, createOrganizationRole, deleteOrganizationRole, getMemberPermissions, getOrganizationRoles, updateMemberPermissions, updateOrganizationRole } from '@/features/organizations/api';
+5:import React, { useCallback, useEffect, useMemo, useState } from 'react';
+6:import { Plus, RefreshCw, Trash2, UserCheck } from 'lucide-react';
+7:import { BannerView, DecisionButton, ErrorNote, LabeledSelect, PanelShell, TextInput, type Banner } from './panel';
+8:import { PermissionPicker, splitStates, statesFrom, type OverrideState } from './PermissionPicker';
+9:import type { MemberPermissionsView, OrganizationRolesSnapshot, UserMembership } from '@/features/organizations/types';
+=== src/components/PermissionPicker.tsx
+1:import React, { useMemo, useState } from 'react';
+2:import type { ScopedPermission } from '@/features/identity/types';
+=== src/components/PlatformConfigView.tsx
+1:import { fieldError } from '@/core/api/http';
+2:import { createCurrency, downloadDealsCsv, getAuditLogs, getCurrencies, getFeatureFlags, getSalesSummary, getSettings, setDefaultCurrency, toggleFeatureFlag, updateCurrency, updateSetting } from '@/features/platform/api';
+4:import React, { useCallback, useEffect, useMemo, useState } from 'react';
+5:import {
+16:} from 'lucide-react';
+17:import { SetupWizardPanel } from './SetupWizardPanel';
+18:import { formatMoney, usePlatformConfig } from '../lib/config';
+19:import { formatDateTime, getLocale } from '../lib/i18n';
+20:import {
+30:} from './panel';
+=== src/components/PlatformPermissionsPanel.tsx
+1:import { fieldError } from '@/core/api/http';
+2:import type { ApiResult } from '@/core/api/http';
+3:import { getPlatformRbac, updatePlatformRolePermissions } from '@/features/identity/api';
+
+Shell cwd was reset to D:\hassal_app_flutter
+
+====================================================================================================
+91058cfd-f9a7-4637-a5bb-275d9ccd9efd.jsonl:8229  type=user  ts=2026-10-02T08:27:49.427Z
+====================================================================================================
+[tool_result call_c564acf3e5e2440f94810d0e isError=false len=3286]
+src/components/AccountPermissionsEditor.tsx:8:import { PermissionPicker } from './PermissionPicker';
+src/components/AccountPermissionsEditor.tsx:288:            <PermissionPicker
+src/components/AdminConsoleView.tsx:37:import { SupportQueuePanel } from './SupportDeskPanel';
+src/components/AuthModal.tsx:8:import { clearSignInNonce, renderGoogleSignInButton, rotateSignInNonce, signInNonce } from '../lib/googleIdentity';
+src/components/Header.tsx:31:import { NotificationBell } from './NotificationBell';
+src/components/Header.tsx:462:                <NotificationBell locale={locale} />
+src/components/Header.tsx:525:            <NotificationBell locale={locale} />
+src/components/MarketplaceView.tsx:37:import PromotedStrip from './PromotedStrip';
+src/components/MarketplaceView.tsx:38:import { OfferLikeButton, OfferThread, useOfferCommunity } from './OfferCommunity';
+src/components/MarketplaceView.tsx:154:  const { likedIds, busyId, notice: communityNotice, toggleLike, clearNotice } = useOfferCommunity(signedIn && communityOn, currentPersonaId);
+src/components/MarketplaceView.tsx:473:      <PromotedStrip locale={locale} onOrder={handleOpenOrderModal} />
+src/components/NotificationBell.tsx:17:export const NotificationBell: React.FC<{ locale?: Locale }> = ({ locale = 'ar' }) => {
+src/components/OfferCommunity.tsx:20: *      that endpoint answers identically signed in or not. `useOfferCommunity`
+src/components/OfferCommunity.tsx:57:export function useOfferCommunity(signedIn: boolean, personaKey: string) {
+src/components/OrganizationRolesPanel.tsx:8:import { PermissionPicker, splitStates, statesFrom, type OverrideState } from './PermissionPicker';
+src/components/OrganizationRolesPanel.tsx:420:            <PermissionPicker available={available} selected={draftPermissions} onSelect={setDraftPermissions} disabled={busy} />
+src/components/OrganizationRolesPanel.tsx:444:            <PermissionPicker available={available} selected={newPermissions} onSelect={setNewPermissions} disabled={busy} />
+src/components/OrganizationRolesPanel.tsx:525:            <PermissionPicker available={available} selected={[]} states={states} onStatesChange={setStates} inherited={memberView?.role_permissions} disabled={busy} />
+src/components/PermissionPicker.tsx:54:export const PermissionPicker: React.FC<PickerProps> = ({
+src/components/PlatformPermissionsPanel.tsx:8:import { PermissionPicker } from './PermissionPicker';
+src/components/PlatformPermissionsPanel.tsx:173:          <PermissionPicker available={offerable} selected={draft} onSelect={setDraft} inherited={role?.declared} disabled={busy} />
+src/components/ProfileView.tsx:9:import { SigninDevicesPanel } from './SigninDevicesPanel';
+src/components/ProfileView.tsx:10:import SupportDeskView from './SupportDeskPanel';
+src/components/ProfileView.tsx:249:      <SigninDevicesPanel locale={locale} onSelfRevoked={onSignOut} onNotify={onNotify} />
+src/components/PromotedStrip.tsx:9:interface PromotedStripProps {
+src/components/PromotedStrip.tsx:94:const PromotedStrip: React.FC<PromotedStripProps> = ({ locale, onOrder }) => {
+src/components/PromotedStrip.tsx:289:export default PromotedStrip;
+src/components/SigninDevicesPanel.tsx:26:export const SigninDevicesPanel: React.FC<{
+
+Shell cwd was reset to D:\hassal_app_flutter
+
+====================================================================================================
+91058cfd-f9a7-4637-a5bb-275d9ccd9efd.jsonl:8259  type=assistant  ts=2026-10-02T08:29:07.867Z
+====================================================================================================
+[thinking]
+
+====================================================================================================
+91058cfd-f9a7-4637-a5bb-275d9ccd9efd.jsonl:8263  type=user  ts=2026-10-02T08:29:08.297Z
+====================================================================================================
+[tool_result call_ef67790c69ed4467b1e5bd2e isError=false len=8007]
+import React, { useMemo, useState } from 'react';
+import type { ScopedPermission } from '@/features/identity/types';
+
+/**
+ * A checkbox list of capabilities the caller is allowed to offer.
+ *
+ * It exists because two doors — the platform's matrix and one company's standings —
+ * select from the same catalog under different rules, and the rule that matters is
+ * *which names appear at all*. Every screen passes the list the server's own read
+ * endpoint returned (`grantable_permissions` inside a company, `permissions` minus
+ * `account_forbidden` on the platform console), so a box the route would refuse is
+ * never rendered. A picker that filtered by a hardcoded list of names would be a
+ * second copy of the boundary, and copies of boundaries drift.
+ *
+ * Two modes because the two write shapes differ: `dual` shows three states per name
+ * (منح / لا شيء / سحب) for a member's individual override, where the write takes a
+ * grants list and a denials list, and `single` shows a tick for the role editors,
+ * where the write takes one replacement list.
+ */
+
+export type OverrideState = 'grant' | 'none' | 'deny';
+
+const SCOPE_LABELS: Record<ScopedPermission['scope'], string> = {
+  platform: 'صلاحية منصة',
+  business: 'صلاحية منشأة',
+  both: 'مشتركة',
+};
+
+const STATE_LABELS: Record<OverrideState, string> = {
+  grant: 'منح',
+  none: 'كالدور',
+  deny: 'سحب',
+};
+
+/** Stable ordering: the platform's own names first, then alphabetically. */
+function byScopeThenName(a: ScopedPermission, b: ScopedPermission): number {
+  const rank = (scope: ScopedPermission['scope']) => (scope === 'platform' ? 0 : scope === 'both' ? 1 : 2);
+  return rank(a.scope) - rank(b.scope) || a.name.localeCompare(b.name);
+}
+
+interface PickerProps {
+  /** What the server offered this screen. Anything outside it cannot be picked. */
+  available: ScopedPermission[];
+  /** The names the stored row currently carries, so the editor opens honest. */
+  selected: string[];
+  onSelect?: (names: string[]) => void;
+  states?: Record<string, OverrideState>;
+  onStatesChange?: (states: Record<string, OverrideState>) => void;
+  /** A name the account already holds through its role: labelled, not clickable-off. */
+  inherited?: string[];
+  disabled?: boolean;
+}
+
+export const PermissionPicker: React.FC<PickerProps> = ({
+  available,
+  selected,
+  onSelect,
+  states,
+  onStatesChange,
+  inherited = [],
+  disabled,
+}) => {
+  const [query, setQuery] = useState('');
+
+  const isDual = states !== undefined && onStatesChange !== undefined;
+
+  const chosen = useMemo(() => new Set(selected), [selected]);
+  const passedDown = useMemo(() => new Set(inherited), [inherited]);
+
+  const visible = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return [...available]
+      .filter((entry) => !needle || entry.name.toLowerCase().includes(needle))
+      .sort(byScopeThenName);
+  }, [available, query]);
+
+  const toggleSingle = (name: string) => {
+    if (!onSelect) return;
+    onSelect(chosen.has(name) ? selected.filter((entry) => entry !== name) : [...selected, name]);
+  };
+
+  const cycle = (name: string) => {
+    if (!states || !onStatesChange) return;
+    const current = states[name] ?? 'none';
+    const next: OverrideState = current === 'none' ? 'grant' : current === 'grant' ? 'deny' : 'none';
+    onStatesChange({ ...states, [name]: next });
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="ابحث عن صلاحية…"
+          disabled={disabled}
+          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs focus:bg-white focus:outline-none disabled:opacity-50 sm:w-56 dark:border-hassal-line dark:bg-hassal-raised dark:text-slate-100"
+        />
+        <span className="text-[10px] text-slate-500 dark:text-slate-400">
+          {isDual
+            ? `${Object.values(states ?? {}).filter((state) => state === 'grant').length} مُضافة · ${
+                Object.values(states ?? {}).filter((state) => state === 'deny').length
+              } مسحوبة`
+            : `${selected.length} من ${available.length}`}
+        </span>
+      </div>
+
+      {isDual ? (
+        <p className="text-[10px] leading-relaxed text-slate-500 dark:text-slate-400">
+          الاسم يُنقر بالدوران: منح يضيف فوق الدور، سحب يمنعه حتى لو كان الدور يحمله، ولا شيء يتركه كما هو.
+        </p>
+      ) : null}
+
+      <div className="max-h-72 min-w-0 overflow-y-auto rounded-lg border border-slate-200 dark:border-hassal-line">
+        {visible.length === 0 ? (
+          <p className="p-3 text-[11px] text-slate-500 dark:text-slate-400">
+            {available.length ? 'لا اسم يطابق البحث.' : 'لم تصل قائمة الصلاحيات من الخادم.'}
+          </p>
+        ) : (
+          <ul className="divide-y divide-slate-100 dark:divide-hassal-line">
+            {visible.map((entry) => {
+              const state = isDual ? states?.[entry.name] ?? 'none' : chosen.has(entry.name) ? 'grant' : 'none';
+              const carries = passedDown.has(entry.name);
+
+              return (
+                <li key={entry.name} className="flex items-center justify-between gap-2 px-2.5 py-1.5">
+                  <div className="min-w-0">
+                    <div className="truncate text-[11px] font-bold text-slate-800 dark:text-slate-100" dir="ltr" title={entry.name}>
+                      {entry.name}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400">
+                      <span>{SCOPE_LABELS[entry.scope]}</span>
+                      {/* Said out loud because the alternative is a ticked box that
+                          does nothing, which reads as a bug in the save. */}
+                      {carries && !isDual ? <span className="text-emerald-700 dark:text-emerald-400">موروثة من الدور</span> : null}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => (isDual ? cycle(entry.name) : toggleSingle(entry.name))}
+                    className={`shrink-0 rounded-lg border px-2 py-1 text-[10px] font-bold transition-colors disabled:opacity-40 ${
+                      state === 'grant'
+                        ? 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
+                        : state === 'deny'
+                          ? 'border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
+                          : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 dark:border-hassal-line dark:bg-hassal-raised dark:text-slate-300'
+                    }`}
+                  >
+                    {isDual ? STATE_LABELS[state] : state === 'grant' ? 'مشمولة' : 'غير مشمولة'}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+};
+
+/** The two lists a dual picker holds, split the way the route expects them. */
+export function splitStates(states: Record<string, OverrideState>): { grants: string[]; denials: string[] } {
+  const entries = Object.entries(states);
+  return {
+    grants: entries.filter(([, state]) => state === 'grant').map(([name]) => name).sort(),
+    denials: entries.filter(([, state]) => state === 'deny').map(([name]) => name).sort(),
+  };
+}
+
+/** A stored pair rebuilt as picker state, so an editor opens on what the row says. */
+export function statesFrom(grants: string[], denials: string[]): Record<string, OverrideState> {
+  const states: Record<string, OverrideState> = {};
+  for (const name of grants) states[name] = 'grant';
+  for (const name of denials) states[name] = 'deny';
+  return states;
+}
+
+Shell cwd was reset to D:\hassal_app_flutter
+
+====================================================================================================
+91058cfd-f9a7-4637-a5bb-275d9ccd9efd.jsonl:8268  type=assistant  ts=2026-10-02T08:30:13.596Z
+====================================================================================================
+[thinking]
+
+====================================================================================================
+91058cfd-f9a7-4637-a5bb-275d9ccd9efd.jsonl:8625  type=assistant  ts=2026-10-02T08:54:35.462Z
+====================================================================================================
+[tool_use Write {"content":"/**\n * Pull the PermissionPicker source back out of the transcripts.\n *\n * The file was never committed and never written through the editor, so the only\n * copy that exists is the terminal output that printed it before it was deleted.\n * Find every tool result that contains its export signature and dump them.\n */\nimport { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';\nimport { join } from 'node:path';\n\nconst projects = 'C:/Users/alshh/.qoder/projects';\nconst found = [];\n\nfunction transcripts(dir) {\n  const out = [];\n  for (const entry of readdirSync(dir)) {\n    const path = join(dir, entry);\n    const st = statSync(path);\n    if (st.isDirectory()) out.push(...transcripts(path));\n    else if (entry.endsWith('.jsonl') && st.size > 200_000) out.push(path);\n  }\n  return out;\n}\n\nfor (const file of transcripts(projects)) {\n  const lines = readFileSync(file, 'utf8').split('\\n');\n  for (let i = 0; i < lines.length; i += 1) {\n    if (!lines[i].trim()) continue;\n    let event;\n    try {\n      event = JSON.parse(lines[i]);\n    } catch {\n      continue;\n    }\n    const text = JSON.stringify(event);\n    if (!text.includes('PermissionPicker')) continue;\n    if (!text.includes('OverrideState')) continue;\n    found.push({ file, line: i + 1, size: text.length, sample: text.slice(0, 160) });\n  }\n}\n\nconsole.log(`candidates: ${found.length}`);\nfor (const c of found) console.log(`${c.file}:${c.line} len=${c.size}\\n    ${c.sample}`);\nwriteFileSync('backend/storage/permissionpicker-candidates.json', JSON.stringify(found, null, 2), 'utf8');\n","file_path":"D:\\hassal\\scripts\\tmp-find-pp.mjs"}]

@@ -71,7 +71,7 @@ return new class extends Migration
                 'organization_id' => $organization->id,
                 'user_id' => null,
                 'action' => 'ORG_MEMBERSHIP_OWNER_REPAIRED',
-                'auditable_type' => 'App\Models\OrganizationMembership',
+                'auditable_type' => 'App\Organizations\Models\OrganizationMembership',
                 'auditable_id' => $candidate->id,
                 'old_values' => json_encode(['role' => $candidate->role]),
                 'new_values' => json_encode([

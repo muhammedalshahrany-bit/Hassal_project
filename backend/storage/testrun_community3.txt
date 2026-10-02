@@ -1,0 +1,23 @@
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\OfferCommunityTest[39m
+  [32;1m✓[39;22m[90m [39m[90minterest is one row per actor and a second press adds nothing[39m[90m                                              [39m [90m29.88s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe same person pressing from two businesses is one signal[39m[90m                                                  [39m [90m0.52s[39m  
+  [32;1m✓[39;22m[90m [39m[90mremoving interest only reaches the actors own row[39m[90m                                                           [39m [90m0.52s[39m  
+  [32;1m✓[39;22m[90m [39m[90minterest is never recorded for a company the caller does not belong to[39m[90m                                      [39m [90m0.48s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma listing nobody can buy cannot be liked[39m[90m                                                                    [39m [90m0.46s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe liked list is per person across every company they work for[39m[90m                                             [39m [90m0.55s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma consumer with no organization likes and is named by person only[39m[90m                                           [39m [90m0.58s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma consumer report is recorded and names no company[39m[90m                                                          [39m [90m0.63s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma suspended account holds no person capability[39m[90m                                                              [39m [90m0.41s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma question and the sellers answer are labelled by who they are[39m[90m                                              [39m [90m0.53s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma reply cannot be attached to another listings thread[39m[90m                                                       [39m [90m0.59s[39m  
+  [32;1m✓[39;22m[90m [39m[90mpre moderation holds a comment out of the public thread until a reviewer publishes it[39m[90m                       [39m [90m0.56s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe author withdrawing a comment hides it without deleting the record[39m[90m                                       [39m [90m0.50s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma stranger cannot withdraw another business comment[39m[90m                                                         [39m [90m0.50s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma report asks for a review and decides nothing itself[39m[90m                                                       [39m [90m0.54s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe moderation queues are closed to business roles and open to the platform[39m[90m                                 [39m [90m0.63s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe listing publishes counts it can prove and no opinion it cannot[39m[90m                                          [39m [90m0.55s[39m  
+
+  [90mTests:[39m    [32;1m17 passed[39;22m[90m (122 assertions)[39m
+  [90mDuration:[39m [39m39.02s[39m
+

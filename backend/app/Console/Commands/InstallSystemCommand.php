@@ -2,20 +2,20 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Category;
-use App\Models\Currency;
-use App\Models\FeatureFlag;
-use App\Models\Organization;
-use App\Models\OrganizationMembership;
-use App\Models\Product;
-use App\Models\ProductVariant;
-use App\Models\SystemSetting;
-use App\Models\User;
-use App\Models\Warehouse;
-use App\Services\DoubleEntryLedgerService;
-use App\Support\CategoryCatalog;
-use App\Support\FlagCatalog;
-use App\Support\SettingCatalog;
+use App\Catalog\Models\Category;
+use App\Platform\Models\Currency;
+use App\Platform\Models\FeatureFlag;
+use App\Organizations\Models\Organization;
+use App\Organizations\Models\OrganizationMembership;
+use App\Catalog\Models\Product;
+use App\Catalog\Models\ProductVariant;
+use App\Platform\Models\SystemSetting;
+use App\Identity\Models\User;
+use App\Inventory\Models\Warehouse;
+use App\Trading\Services\DoubleEntryLedgerService;
+use App\Catalog\Support\CategoryCatalog;
+use App\Platform\Support\FlagCatalog;
+use App\Platform\Support\SettingCatalog;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
@@ -185,7 +185,15 @@ class InstallSystemCommand extends Command
      */
     protected function seedRolesAndPermissions(): void
     {
-        $this->call('db:seed', ['--class' => \Database\Seeders\RolesAndPermissionsSeeder::class]);
+        // `--force` because this command's whole purpose is to be run against a
+        // production database, and `db:seed` asks an interactive question there.
+        // The installer already runs `migrate --force` for the same reason; a
+        // container with no terminal used to stop on this prompt with no RBAC
+        // matrix written and nothing to say why.
+        $this->call('db:seed', [
+            '--class' => \Database\Seeders\RolesAndPermissionsSeeder::class,
+            '--force' => true,
+        ]);
     }
 
     /**
@@ -194,13 +202,25 @@ class InstallSystemCommand extends Command
      * and the setup wizard itself is behind auth:sanctum. Creating the first
      * operator here is what breaks that loop.
      *
-     * No password is ever echoed, logged, or written to disk, and no default
-     * password exists in this repository.
+     * There is exactly one way in, and it is this command. No seeder creates an
+     * operator, no demo account is a SuperAdmin, and nothing here echoes, logs
+     * or stores the password as anything but the hash the `User` model makes on
+     * assignment.
      */
     protected function createFirstAdmin(): void
     {
-        $name  = (string) ($this->option('admin-name') ?: $this->ask('Name of the platform operator', 'Platform Operator'));
-        $email = strtolower((string) ($this->option('admin-email') ?: $this->ask('Email of the platform operator')));
+        // Command-line option, then `HASSAL_ADMIN_*`, then the prompt — in that
+        // order, so an unattended install works and an interactive one still
+        // asks instead of silently accepting an environment left behind.
+        $configured = (array) config('hassal.install', []);
+
+        $name = (string) ($this->option('admin-name')
+            ?: $configured['admin_name']
+            ?: $this->ask('Name of the platform operator', 'Platform Operator'));
+
+        $email = strtolower((string) ($this->option('admin-email')
+            ?: $configured['admin_email']
+            ?: $this->ask('Email of the platform operator')));
 
         if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $this->error("'{$email}' is not a valid email address.");
@@ -208,11 +228,11 @@ class InstallSystemCommand extends Command
             return;
         }
 
-        $password = $this->option('admin-password');
+        $password = $this->option('admin-password') ?: ($configured['admin_password'] ?? '');
 
         if (! is_string($password) || $password === '') {
             if (! $this->getOutput()->isInteractive()) {
-                $this->error('No admin password supplied and the terminal is not interactive. Pass --admin-password or run interactively.');
+                $this->error('No admin password supplied and the terminal is not interactive. Pass --admin-password, set HASSAL_ADMIN_PASSWORD, or run interactively.');
 
                 return;
             }
@@ -234,10 +254,21 @@ class InstallSystemCommand extends Command
         $user->password = $password;
         $user->save();
 
-        $user->syncRoles(['SuperAdmin']);
+        $user->syncRoles([User::PLATFORM_OPERATOR_ROLE]);
 
         $this->info("✔ Platform operator ready: {$email} (role: SuperAdmin).");
         $this->warn('  Store the password in your own password manager. It is not recoverable from the database or from this console.');
+
+        // `*` makes SuperAdmin the whole platform, so a second holder is a
+        // second owner of the installation. This command will not delete one —
+        // it did not create it, and an installer that removes accounts it finds
+        // is a worse accident than a warning — but it has to say that the
+        // single-admin rule §4 asks for is not what the database holds.
+        $others = User::role(User::PLATFORM_OPERATOR_ROLE)->whereKeyNot($user->id)->count();
+
+        if ($others > 0) {
+            $this->warn("  {$others} other account(s) also hold SuperAdmin. HASSAL is designed to run with one; revoke the rest from the platform console.");
+        }
     }
 
     protected function seedCurrencies(): void
@@ -272,7 +303,7 @@ class InstallSystemCommand extends Command
 
     protected function seedSystemSettings(): void
     {
-        // Seeded from App\Support\SettingCatalog — the same list the reference
+        // Seeded from App\Platform\Support\SettingCatalog — the same list the reference
         // seeder uses and the list the runtime code reads by these exact keys.
         // Declaring settings here as well is what produced two vocabularies,
         // and an operator's edit in the admin console then changed a row that
@@ -294,7 +325,7 @@ class InstallSystemCommand extends Command
 
     protected function seedCatalog(): void
     {
-        // App\Support\CategoryCatalog is the single source; brands are created
+        // App\Catalog\Support\CategoryCatalog is the single source; brands are created
         // by the businesses that supply them, never invented by the platform.
         foreach (CategoryCatalog::defaults() as $category) {
             Category::updateOrCreate(['code' => $category['code']], $category);

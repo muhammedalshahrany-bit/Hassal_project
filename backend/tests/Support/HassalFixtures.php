@@ -2,30 +2,32 @@
 
 namespace Tests\Support;
 
-use App\Models\Category;
-use App\Models\Currency;
-use App\Models\Deal;
-use App\Models\Demand;
-use App\Models\FeatureFlag;
-use App\Models\Offer;
-use App\Models\OfferItem;
-use App\Models\Organization;
-use App\Models\OrganizationMembership;
-use App\Models\Product;
-use App\Models\ProductVariant;
-use App\Models\PurchaseRequest;
-use App\Models\Reservation;
-use App\Models\SystemSetting;
-use App\Models\User;
-use App\Models\Warehouse;
-use App\Services\FeatureFlagService;
-use App\Services\InventoryReservationService;
-use App\Services\SystemSettingsService;
-use App\Support\FlagCatalog;
-use App\Support\SettingCatalog;
+use App\Catalog\Models\Category;
+use App\Platform\Models\Currency;
+use App\Trading\Models\Deal;
+use App\Marketplace\Models\Demand;
+use App\Platform\Models\FeatureFlag;
+use App\Marketplace\Models\Offer;
+use App\Marketplace\Models\OfferItem;
+use App\Organizations\Models\Organization;
+use App\Organizations\Models\OrganizationMembership;
+use App\Catalog\Models\Product;
+use App\Catalog\Models\ProductVariant;
+use App\Trading\Models\PurchaseRequest;
+use App\Trading\Models\Reservation;
+use App\Platform\Models\SystemSetting;
+use App\Identity\Models\User;
+use App\Inventory\Models\Warehouse;
+use App\Platform\Services\FeatureFlagService;
+use App\Trading\Services\InventoryReservationService;
+use App\Platform\Services\SystemSettingsService;
+use App\Platform\Support\FlagCatalog;
+use App\Platform\Support\SettingCatalog;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use Illuminate\Testing\TestResponse;
+use Laravel\Sanctum\Sanctum;
 
 /**
  * Builds the smallest real world a test can act in.
@@ -102,6 +104,54 @@ trait HassalFixtures
     protected function passwordFor(User $user): string
     {
         return $this->fixturePasswords[$user->id] ?? '';
+    }
+
+    /**
+     * Make the next request resolve its own caller.
+     *
+     * One test method is one PHP process, and Laravel does not rebuild the
+     * container between the HTTP calls inside it — so the request guard keeps the
+     * user it resolved for the first bearer token it saw. A second account's
+     * token would then read back as the first account's session, and an isolation
+     * test written that way would be comparing one account with itself while
+     * believing it had caught a leak.
+     *
+     * This is a property of the harness, not of the endpoint. A real request gets
+     * a fresh guard, and so does a long-running one: Octane flushes the auth
+     * guards between ticks for exactly this reason.
+     */
+    protected function asFresh(): void
+    {
+        $this->app['auth']->forgetGuards();
+    }
+
+    /**
+     * Sign in over the real route and hand back the token that works.
+     *
+     * Through the endpoint rather than `Sanctum::actingAs`, because the payload
+     * a client reads is built by the login path — `data.token` in particular. A
+     * test that wants to know what a signed-in caller is answered has to have
+     * been signed in; acting as a user fakes the caller while leaving the
+     * credential out, which is the difference between testing the request and
+     * testing the intent to make one.
+     *
+     * `$device` is the optional third thing a sign-in carries (see
+     * `SignInDevicesTest`): the handset or browser named in the request body.
+     *
+     * @param  array{key?: string, name?: string, platform?: string, biometric_unlock?: bool}  $device
+     */
+    protected function tokenFor(User $user, array $device = []): string
+    {
+        $this->asFresh();
+
+        $response = $this->postJson('/api/v1/auth/login', array_merge([
+            'login' => $user->email,
+            'password' => $this->passwordFor($user),
+        ], $device));
+
+        $response->assertOk();
+
+        return (string) $response->json('data.token');
     }
 
     /**
@@ -185,13 +235,22 @@ trait HassalFixtures
         ], $attributes));
     }
 
-    protected function membership(Organization $organization, User $user, string $role = 'admin'): OrganizationMembership
+    /**
+     * A seat in a business.
+     *
+     * `$active` is the whole point of the last argument: a closed seat is a row
+     * that still exists and still says which company this person was once at, so
+     * the questions a suite asks about it — what does a payload speak for, what
+     * may this account act on — are decided by the flag rather than by deleting
+     * evidence.
+     */
+    protected function membership(Organization $organization, User $user, string $role = 'admin', bool $active = true): OrganizationMembership
     {
         return OrganizationMembership::create([
             'organization_id' => $organization->id,
             'user_id' => $user->id,
             'role' => $role,
-            'is_active' => true,
+            'is_active' => $active,
             'joined_at' => now(),
         ]);
     }
@@ -262,11 +321,17 @@ trait HassalFixtures
 
         $quantity = (float) ($attributes['total_quantity'] ?? 100.0);
 
-        $offer = Offer::create(array_merge([
+        // Unguarded, for the same reason `Illuminate\Database\Eloquent\Factory`
+        // is: this helper states what the row *is*, including the four columns
+        // the model refuses to take from a request — `status` and the three
+        // quantities. Guarded mass assignment there is a protection against a
+        // caller; a test fixture is not a caller, and a guard applied to it
+        // turns every one of those keys into a silently dropped column, which
+        // MySQL then reports as "field has no default value".
+        $offer = Offer::unguarded(fn () => Offer::create(array_merge([
             'seller_organization_id' => $seller->id,
             'warehouse_id' => ($warehouse ?? $this->warehouse($seller))->id,
             'product_variant_id' => $variant->id,
-            'category_id' => $variant->product->category_id,
             'title_ar' => 'عرض تجريبي ' . Str::random(5),
             'opportunity_reason' => Offer::REASON_SURPLUS_STOCK,
             'status' => Offer::STATUS_ACTIVE,
@@ -280,7 +345,7 @@ trait HassalFixtures
             'currency_code' => 'YER',
             'published_at' => now()->subMinute(),
             'expires_at' => now()->addDays(7),
-        ], $attributes));
+        ], $attributes)));
 
         // A published offer always carries its line item; store() and the
         // seeder both write one, so a fixture that skipped it would describe a
@@ -349,9 +414,15 @@ trait HassalFixtures
     /**
      * A deal closed against a real offer.
      *
-     * Reports and money tests need rows in settled states; writing them by hand
-     * produced totals that no service could compute, so the amounts here are
-     * derived from the offer and stay consistent unless a test overrides them.
+     * Reports and pricing tests need rows in a finished state; writing them by
+     * hand produced totals that no service could compute, so the amounts here
+     * are derived from the offer and stay consistent unless a test overrides
+     * them. The row is placed directly in `COMPLETED` rather than walked there:
+     * a test of the walk uses the API, and a test of a total needs one number.
+     *
+     * Note what this means: a fixture deal has no handover row, because the code
+     * is issued by acceptance and spent by a scan — two events this shortcut
+     * skips. A test that needs them goes through the endpoints.
      *
      * @param array<string, mixed> $attributes
      */
@@ -384,7 +455,8 @@ trait HassalFixtures
             'platform_fee_amount' => $fee,
             'buyer_total_amount' => $baseAmount,
             'seller_net_amount' => $baseAmount - $fee,
-            'status' => Deal::STATUS_SETTLED,
+            'status' => Deal::STATUS_COMPLETED,
+            'completed_at' => now(),
         ], $merged));
     }
 
@@ -396,6 +468,109 @@ trait HassalFixtures
     protected function withTenant(Organization $organization): array
     {
         return ['X-Organization-Id' => (string) $organization->id];
+    }
+
+    /**
+     * The one step a deal screen performs: move an order to a state.
+     *
+     * The tenant header is part of the call, not decoration — a transition is
+     * decided *as* a business, and the same account sitting in another one is
+     * refused. It lived twice, identically, in the two suites that walk a deal;
+     * a third suite asking the same question would have written it a third time
+     * and then tested a helper rather than the endpoint.
+     *
+     * @param array<string, mixed> $payload
+     */
+    protected function move(
+        int $dealId,
+        string $status,
+        User $user,
+        Organization $organization,
+        array $payload = []
+    ): TestResponse {
+        Sanctum::actingAs($user);
+
+        return $this->postJson('/api/v1/deals/'.$dealId.'/transition', array_merge([
+            'status' => $status,
+        ], $payload), $this->withTenant($organization));
+    }
+
+    /**
+     * The same step a phone at the loading bay takes.
+     *
+     * @param array<string, mixed> $payload
+     */
+    protected function scan(
+        int $dealId,
+        string $code,
+        User $user,
+        Organization $organization,
+        array $payload = []
+    ): TestResponse {
+        Sanctum::actingAs($user);
+
+        return $this->postJson('/api/v1/deals/'.$dealId.'/handover/verify', array_merge([
+            'code' => $code,
+        ], $payload), $this->withTenant($organization));
+    }
+
+    /**
+     * A deal already formed against held stock, which is the only way a deal
+     * comes into existence.
+     *
+     * Written here rather than in the suite that first needed it because three
+     * suites now walk an order, and a fixture copied twice drifts: one copy
+     * keeps asserting the created status while the other quietly stops, and the
+     * two then disagree about what "a deal in flight" is.
+     *
+     * @return array{0: User, 1: Organization, 2: User, 3: Organization, 4: Offer, 5: Deal}
+     */
+    protected function dealInFlight(float $quantity = 40.0): array
+    {
+        [$buyerUser, $buyer] = $this->accountWithOrganization('BuyerAdmin', 'buyer', 'محل');
+        [$sellerUser, $seller] = $this->accountWithOrganization('SellerAdmin', 'seller', 'مورد');
+
+        $offer = $this->offer($seller);
+        $reservation = $this->reserveDirectly($offer, $buyerUser, $buyer, $quantity);
+
+        Sanctum::actingAs($buyerUser);
+        $deal = $this->postJson('/api/v1/deals', [
+            'reservation_id' => $reservation->id,
+            'delivery_method' => 'PICKUP',
+        ], $this->withTenant($buyer))
+            ->assertCreated()
+            ->assertJsonPath('data.status', Deal::STATUS_PENDING_SELLER_APPROVAL);
+
+        return [
+            $buyerUser,
+            $buyer,
+            $sellerUser,
+            $seller,
+            $offer->fresh(),
+            Deal::find($deal->json('data.id')),
+        ];
+    }
+
+    /**
+     * The account that owns an organization built by the fixture helpers.
+     */
+    protected function ownerOf(Organization $organization): User
+    {
+        return User::findOrFail(
+            OrganizationMembership::where('organization_id', $organization->id)->value('user_id')
+        );
+    }
+
+    /**
+     * An account whose only authority is the platform's own: no organization of
+     * its own, the SuperAdmin role that lets it rule on somebody else's order.
+     */
+    protected function platformUser(): User
+    {
+        $user = $this->user('مشرف المنصة');
+        $user->assignRole('SuperAdmin');
+
+        return $user;
     }
 
     /**

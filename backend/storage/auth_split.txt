@@ -1,0 +1,82 @@
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Auth\AccountPreferencesTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma fresh account is answered the compiled defaults[39m[90m                                                          [39m [90m27.40s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma patch leaves the keys it never mentioned alone[39m[90m                                                            [39m [90m0.44s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma key the platform does not define is refused by name and never stored[39m[90m                                      [39m [90m0.39s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma value outside an enums own list is ignored rather than stored[39m[90m                                             [39m [90m0.38s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe preferences of one account are never another accounts[39m[90m                                                   [39m [90m0.42s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe session itself carries the values so the chrome needs no second fetch[39m[90m                                   [39m [90m0.41s[39m  
+  [32;1m✓[39;22m[90m [39m[90mpreferences require a session[39m[90m                                                                               [39m [90m0.34s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma written row is answered complete so no client has to supply defaults[39m[90m                                      [39m [90m0.41s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Auth\AuthTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma person can register and receive a working token[39m[90m                                                           [39m [90m0.46s[39m  
+  [32;1m✓[39;22m[90m [39m[90man issued token expires after the configured lifetime[39m[90m                                                       [39m [90m0.37s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma token stops working once its lifetime ends[39m[90m                                                                [39m [90m0.40s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma business is created after registration and not inside it[39m[90m                                                  [39m [90m0.53s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma weak password is rejected rather than stored[39m[90m                                                              [39m [90m0.33s[39m  
+  [32;1m✓[39;22m[90m [39m[90man application that omits its identity is told what is missing[39m[90m                                              [39m [90m0.42s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma password confirmation has to match the password[39m[90m                                                           [39m [90m0.35s[39m  
+  [32;1m✓[39;22m[90m [39m[90mpassword recovery answers the same question whether or not an email exists[39m[90m                                  [39m [90m0.83s[39m  
+  [32;1m✓[39;22m[90m [39m[90mlogin accepts either email or phone and never leaks the password[39m[90m                                            [39m [90m0.49s[39m  
+  [32;1m✓[39;22m[90m [39m[90mwrong password gets the same answer as a wrong email[39m[90m                                                        [39m [90m0.36s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma suspended person cannot sign in[39m[90m                                                                           [39m [90m0.37s[39m  
+  [32;1m✓[39;22m[90m [39m[90mlogging out invalidates the token that was used[39m[90m                                                             [39m [90m0.41s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma person cannot enter a business they do not belong to[39m[90m                                                      [39m [90m0.37s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Auth\GoogleSignInTest[39m
+  [32;1m✓[39;22m[90m [39m[90mfirst google sign in provisions an account with nothing more than the assertion proves[39m[90m                      [39m [90m0.65s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma repeat sign in is found by the subject and not by the address[39m[90m                                             [39m [90m0.40s[39m  
+  [32;1m✓[39;22m[90m [39m[90man existing password account is linked to the address google verified[39m[90m                                       [39m [90m0.41s[39m  
+  [32;1m✓[39;22m[90m [39m[90man account already bound to another google account is not rebound[39m[90m                                           [39m [90m0.44s[39m  
+  [32;1m✓[39;22m[90m [39m[90mprovisioning can be turned off and leaves unknown addresses outside[39m[90m                                         [39m [90m0.36s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma closed switch refuses before any token is read[39m[90m                                                            [39m [90m0.35s[39m  
+  [32;1m✓[39;22m[90m [39m[90man enabled switch with no client id refuses as unconfigured[39m[90m                                                 [39m [90m0.36s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma token addressed to another application is refused[39m[90m                                                         [39m [90m0.32s[39m  
+  [32;1m✓[39;22m[90m [39m[90man address google has not verified is refused[39m[90m                                                               [39m [90m0.36s[39m  
+  [32;1m✓[39;22m[90m [39m[90man expired token is refused and a fresh one from the same bytes is not[39m[90m                                      [39m [90m0.39s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma token that expired seconds ago is still honoured[39m[90m                                                          [39m [90m0.46s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma token issued from the future is refused[39m[90m                                                                   [39m [90m0.37s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma token from another issuer is refused even signed by the same key[39m[90m                                          [39m [90m0.37s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma token carried from another sign in request is refused by the nonce[39m[90m                                        [39m [90m0.35s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma payload signed by another key is refused however it is addressed[39m[90m                                          [39m [90m0.73s[39m  
+  [32;1m✓[39;22m[90m [39m[90mgoogle cannot log into an account the platform has suspended[39m[90m                                                [39m [90m0.41s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma passwordless account cannot be probed through the password form[39m[90m                                           [39m [90m0.39s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma passwordless account can set its first password and then sign in with it[39m[90m                                  [39m [90m0.43s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma suspended google account still cannot read its own profile[39m[90m                                                [39m [90m0.39s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Auth\ProfileAndWarehouseEditTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma person can correct their own details[39m[90m                                                                      [39m [90m0.37s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe login address is not a profile field[39m[90m                                                                    [39m [90m0.38s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma phone number that already verifies someone else is refused[39m[90m                                                [39m [90m0.35s[39m  
+  [32;1m✓[39;22m[90m [39m[90mchanging a password closes the sessions the old one opened[39m[90m                                                  [39m [90m0.42s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma password change needs the current one rather than mere knowledge of a token[39m[90m                               [39m [90m0.38s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe owner of a warehouse can move its pin[39m[90m                                                                   [39m [90m0.41s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma reading outside the world is refused rather than stored[39m[90m                                                   [39m [90m0.40s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma business cannot edit a depot it does not own[39m[90m                                                              [39m [90m0.41s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Auth\ProfileCompletionTest[39m
+  [32;1m✓[39;22m[90m [39m[90man account without a demanded phone cannot found a business[39m[90m                                                 [39m [90m0.37s[39m  
+  [32;1m✓[39;22m[90m [39m[90msupplying the missing field through the profile opens the door[39m[90m                                              [39m [90m0.47s[39m  
+  [32;1m✓[39;22m[90m [39m[90man incomplete account can still edit its profile[39m[90m                                                            [39m [90m0.41s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe required field list follows the settings[39m[90m                                                                [39m [90m0.41s[39m  
+  [32;1m✓[39;22m[90m [39m[90mme reports whether the account has a business and a password[39m[90m                                                [39m [90m0.39s[39m  
+  [32;1m✓[39;22m[90m [39m[90mlogin returns the same completion block as me[39m[90m                                                               [39m [90m0.37s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe ceiling counts businesses the account founded not ones it joined[39m[90m                                        [39m [90m0.46s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma zero ceiling means no ceiling[39m[90m                                                                             [39m [90m0.66s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe ceiling does not bind platform staff[39m[90m                                                                    [39m [90m0.54s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma newly founded business starts unverified[39m[90m                                                                  [39m [90m0.45s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Auth\SignInDevicesTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma signin that names its device lists it and points at the session[39m[90m                                           [39m [90m0.39s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma signin that names no device leaves the list alone[39m[90m                                                         [39m [90m0.38s[39m  
+  [32;1m✓[39;22m[90m [39m[90msigning in again from the same device repoints it instead of duplicating it[39m[90m                                 [39m [90m0.39s[39m  
+  [32;1m✓[39;22m[90m [39m[90mrevoking a device takes the session it held with it[39m[90m                                                         [39m [90m0.36s[39m  
+  [32;1m✓[39;22m[90m [39m[90mone account cannot read or revoke another accounts device[39m[90m                                                   [39m [90m0.43s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma device can report its own unlock setting after signin[39m[90m                                                     [39m [90m0.43s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma fingerprint claim never authenticates anything[39m[90m                                                            [39m [90m0.38s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma device whose token died stops claiming a live session[39m[90m                                                     [39m [90m0.44s[39m  
+
+  [90mTests:[39m    [32;1m66 passed[39;22m[90m (319 assertions)[39m
+  [90mDuration:[39m [39m55.11s[39m
+

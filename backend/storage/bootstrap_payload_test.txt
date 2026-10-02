@@ -1,0 +1,29 @@
+
+  [39;41;1m FAIL [39;49;22m[39m Tests\Feature\Auth\BootstrapPayloadTest[39m
+  [31;1m⨯[39;22m[90m [39m[90ma signed out cold start gets the reference data and names no one[39m[90m                                           [39m [90m45.49s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe reasons a form offers are exactly the ones the vocabulary names[39m[90m                                         [39m [90m0.78s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe account a client reads is the one the profile answers[39m[90m                                                   [39m [90m0.99s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe business named is the one the request is acting as[39m[90m                                                      [39m [90m0.94s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma business the caller does not belong to is refused rather than described[39m[90m                                   [39m [90m0.77s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma seat that was closed is not the business a payload speaks for[39m[90m                                             [39m [90m0.90s[39m  
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\Auth\BootstrapPayloadTest[22m [90m>[39m a signed out cold start gets the reference data and names no on…   
+[39;1m  Failed asserting that an array is not empty.[39;22m
+
+  at [32mtests\Feature\Auth\BootstrapPayloadTest.php[39m:[32m62[39m
+     58▕         $this->assertSame('عدن', $data['platform_settings']['default_city']);
+     59▕         $this->assertSame('OPERATIONAL', $data['system_status'], 'The database answered, so the client is not told the platform is down.');
+     60▕ 
+     61▕         $this->assertNotEmpty($data['currencies']);
+  ➜  62▕         $this->assertNotEmpty($data['categories']);
+     63▕         $this->assertNotEmpty($data['feature_flags'], 'A cold start with no flags would show every gated control to everyone.');
+     64▕     }
+     65▕ 
+     66▕     public function test_the_reasons_a_form_offers_are_exactly_the_ones_the_vocabulary_names(): void
+
+  [33m1   [39m[39;1mtests\Feature\Auth\BootstrapPayloadTest.php[39;22m:[39;1m62[39;22m
+
+
+  [90mTests:[39m    [31;1m1 failed[39;22m[90m,[39m[39m [39m[32;1m5 passed[39;22m[90m (64 assertions)[39m
+  [90mDuration:[39m [39m50.41s[39m
+

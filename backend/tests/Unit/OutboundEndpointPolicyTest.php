@@ -2,7 +2,7 @@
 
 namespace Tests\Unit;
 
-use App\Support\OutboundEndpointPolicy;
+use App\Platform\Support\OutboundEndpointPolicy;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 

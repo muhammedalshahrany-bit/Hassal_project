@@ -1,0 +1,6 @@
+offer_likes organization_id NULLABLE=YES
+offer_comments organization_id NULLABLE=YES
+offer_comment_reports organization_id NULLABLE=YES
+offer_likes indexes: PRIMARY, offer_likes_unique_per_person, offer_likes_user_id_foreign, offer_likes_organization_id_foreign, offer_likes_offer_id_created_at_index
+offer_comment_reports indexes: PRIMARY, comment_reports_unique_per_person, offer_comment_reports_organization_id_foreign, offer_comment_reports_user_id_foreign, offer_comment_reports_reviewed_by_foreign
+likes rows: 3

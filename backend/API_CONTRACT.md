@@ -1,15 +1,15 @@
 # HASSAL API Contract & Integration Specification
 
-This document details the exact JSON contract specifications for client applications. The contract is client-agnostic: anything that speaks `/api/v1` can use it. Today the only client in this repository is the web application at the repository root — **no mobile client has been built**, so no section here has been verified against one.
+This document details the exact JSON contract specifications for client applications. The contract is client-agnostic: anything that speaks `/api/v1` can use it. Two clients do today: the web application at the repository root, and the Flutter mobile client in the sibling checkout `hassal_app_flutter`, which reads this endpoint at cold start and caches the payload on disk (`lib/data/hassal_repository.dart` → `bootstrap()`). Section 1 and section 2 are the two surfaces no web screen depends on, so they are documented here rather than in the root `API_CONTRACT.md`; the root document remains the endpoint catalogue, and where its prose and the PHP source disagree the source wins.
 
 ---
 
 ## 1. Bootstrap Endpoint Contract (`GET /api/v1/bootstrap`)
 
-Used by client apps at cold start to load all runtime requirements without hardcoding. The payload below is the shape produced by `App\Services\BootstrapService::getBootstrapPayload()` and wrapped by the standard `ApiResponse` envelope. **Every identity field is data-driven** — country, currency, locale, tax and commission come from `system_settings` / `currencies`, and the installer leaves them for an operator to set:
+Used by client apps at cold start to load all runtime requirements without hardcoding. The payload below is the shape produced by `App\Auth\Services\BootstrapService::getBootstrapPayload()` and wrapped by the standard `ApiResponse` envelope. **Every identity field is data-driven** — country, currency, locale, tax and commission come from `system_settings` / `currencies`:
 
 - `base_currency` is `YER` because the installer creates the Yemeni Rial as the active default currency (`currencies.iso_code = 'YER'`, and `offers.currency_code` defaults to `YER` in the schema).
-- `country`, `default_locale` and `default_city` are `null` until the setup wizard writes them (`platform.country`, `platform.default_locale`, `platform.default_city`) — the example values below are what a configured Yemen installation returns, not a code constant.
+- `country`, `default_locale`, `default_city` and `base_currency` arrive from the `platform.*` rows the settings catalog ships (`YE`, `ar`, `عدن`, `YER` — see `App\Platform\Support\SettingCatalog`) and are operator-editable from that point on. They are `null` only on a deployment whose catalog was never synced, which is why the example values below are what a configured Yemen installation returns rather than a code constant.
 
 ```json
 {
@@ -56,7 +56,7 @@ Used by client apps at cold start to load all runtime requirements without hardc
       "commission_rate": 0.0,
       "reservation_timeout_minutes": 30,
       "inspection_window_hours": 48,
-      "default_city": null,
+      "default_city": "عدن",
       "public_configs": []
     },
     "user": null,
@@ -76,7 +76,8 @@ Notes for client implementers:
 - `system_status` is measured per request — `OPERATIONAL` when the database answered moments before the payload was built, `DEGRADED` when it did not (`BootstrapService::databaseIsReachable()`). It is not a constant, so a client must render `DEGRADED` rather than assume the field always says the platform is fine. It reports database reachability only: no queue, storage volume or exchange feed is observed, so `OPERATIONAL` is not a guarantee that the platform is healthy.
 - `currencies` contains **only active** rows. After a fresh install, `YER` (`is_default: true`, base) is the only active currency; secondary currencies (`USD`, `AED`, `SAR`) ship `is_active: false` and are therefore **absent** from this array until an administrator activates them and records an approved `exchange_rate_to_base`. Never hardcode a currency, symbol, country or tax rate — read them from this payload at runtime.
 - `feature_flags` is an object keyed by flag `key` (not a flat boolean map), and each value is the flag row: `rules_json` is `null` unless the flag carries targeting rules.
-- `user` and `tenant` are `null` for unauthenticated cold starts; when a Sanctum token is presented they are populated with roles, permissions, and the active organization (`role_in_organization`, `commercial_registration_number`, `vat_number`).
+- `user` is `null` for an unauthenticated cold start. With a Sanctum token it is **the same block `POST /auth/login` and `GET /auth/me` answer with** — `App\Auth\Services\SessionService::account()` — carrying `id`, `name`, `email`, `phone`, `national_id`, `status`, `roles`, `permissions` and `preferences`. A client that reads bootstrap first and the profile second must not find a field the first call never carried; `tests/Feature/Auth/BootstrapPayloadTest` compares the two payloads rather than trusting it.
+- `tenant` is the business the request is acting as, as the `tenant` middleware resolved it: the company named by `X-Organization-Id`, or the caller's first **active** membership when no header is sent. It therefore always names the company `GET /auth/me` reports as `current_organization`, and the `permissions` above it are the ones that standing is worth. Keys: `id`, `name_ar`, `name_en`, `type`, `status`, `commercial_registration_number`, `vat_number`, `rating`, `role_in_organization` — `null` for a platform role looking in on a company it holds no seat in. A header naming a business the token does not belong to is answered `ORGANIZATION_ACCESS_DENIED`, not a payload with a quiet `tenant: null`.
 - `platform_settings.tax.rate`, `commission_rate`, `reservation_timeout_minutes`, `inspection_window_hours` and `default_city` are read from `system_settings` per request. A fresh install has **no** tax and **no** commission row, so both arrive as `0.0`; `30` and `48` are the code-level fallbacks used only while the `reservation.timeout` / `inspection.window` rows are absent. A client must treat them as data, never as constants — the earlier 2.5% commission and 15% VAT figures were removed from the schema because they were assumptions, not settings.
 
 ---
@@ -98,8 +99,8 @@ ISO string:
   "data": {
     "deal_id": 142,
     "deal_number": "DEAL-260915-ABCD",
-    "from_status": "PENDING_PAYMENT",
-    "to_status": "ESCROW_FUNDED",
+    "from_status": "ACCEPTED",
+    "to_status": "PROCESSING",
     "updated_at": "2026-09-15T12:00:00+00:00"
   }
 }

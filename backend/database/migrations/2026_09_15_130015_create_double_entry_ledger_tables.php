@@ -31,7 +31,7 @@ return new class extends Migration
             $table->string('currency_code', 3)->default('YER');
             $table->decimal('exchange_rate_to_base', 18, 6)->default(1.000000);
             $table->text('description');
-            $table->string('entity_type', 100)->nullable(); // Deal, Payment, Escrow, Dispute
+            $table->string('entity_type', 100)->nullable(); // the kind of row the entry is about: Deal today, and only that
             $table->unsignedBigInteger('entity_id')->nullable();
             $table->foreignId('created_by_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->decimal('total_debit', 18, 4);

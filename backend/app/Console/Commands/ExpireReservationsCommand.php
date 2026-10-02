@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\InventoryReservationService;
+use App\Trading\Services\InventoryReservationService;
 use Illuminate\Console\Command;
 
 class ExpireReservationsCommand extends Command

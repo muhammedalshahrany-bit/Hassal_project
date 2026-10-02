@@ -1,0 +1,39 @@
+PHP Fatal error:  Access level to App\Console\Commands\VerifySandboxDataCommand::fail() must be public (as in class Illuminate\Console\Command) in D:\hassal\backend\app\Console\Commands\VerifySandboxDataCommand.php on line 331
+
+  [41;1m Symfony\Component\ErrorHandler\Error\FatalError [49;22m
+
+[39;1m  Access level to App\Console\Commands\VerifySandboxDataCommand::fail() must be public (as in class Illuminate\Console\Command)[39;22m
+
+  at [32mapp\Console\Commands\VerifySandboxDataCommand.php[39m:[32m331[39m
+    327▕ 
+    328▕         $this->line('   demo accounts: ' . User::where('email', 'like', '%@hassal.test')->count());
+    329▕     }
+    330▕ 
+  ➜ 331▕     protected function fail(string $message): void
+    332▕     {
+    333▕         $this->problems++;
+    334▕         $this->error('   [FAIL] ' . $message);
+    335▕     }
+
+
+  [41;1m Whoops\Exception\ErrorException [49;22m
+
+[39;1m  Access level to App\Console\Commands\VerifySandboxDataCommand::fail() must be public (as in class Illuminate\Console\Command)[39;22m
+
+  at [32mapp\Console\Commands\VerifySandboxDataCommand.php[39m:[32m331[39m
+    327▕ 
+    328▕         $this->line('   demo accounts: ' . User::where('email', 'like', '%@hassal.test')->count());
+    329▕     }
+    330▕ 
+  ➜ 331▕     protected function fail(string $message): void
+    332▕     {
+    333▕         $this->problems++;
+    334▕         $this->error('   [FAIL] ' . $message);
+    335▕     }
+
+  [33m1   [39m[39;1mvendor\filp\whoops\src\Whoops\Run.php[39;22m:[39;1m520[39;22m
+  [90m    Whoops\Run::handleError("Access level to App\Console\Commands\VerifySandboxDataCommand::fail() must be public (as in class Illuminate\Console\Command)", "D:\hassal\backend\app\Console\Commands\VerifySandboxDataCommand.php")[39m
+
+  [33m2   [39m[39;1m[internal][39;22m:[39;1m0[39;22m
+  [90m    Whoops\Run::handleShutdown()[39m
+

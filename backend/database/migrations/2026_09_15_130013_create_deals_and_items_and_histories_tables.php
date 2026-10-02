@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -23,9 +24,15 @@ return new class extends Migration
             $table->decimal('quantity', 14, 2);
             $table->decimal('unit_price', 18, 4);
             $table->string('currency_code', 3)->default('YER');
-            $table->string('transaction_currency', 3)->default('YER');
+            // No `transaction_currency` and no `exchange_rate`: both were copies
+            // of a fact this row already carries — the currency the deal is made
+            // in, and the rate frozen at the moment it was made. Two columns that
+            // can disagree is one too many, and a deal that stores the platform's
+            // *current* rate in a row meant to be immutable stores nothing. They
+            // were dropped by `2026_09_25_100000_drop_duplicated_currency_facts_from_deals.php`,
+            // and the lines are removed here so a fresh database never holds a
+            // shape the platform has already decided against.
             $table->string('base_currency', 3)->default('YER');
-            $table->decimal('exchange_rate', 18, 6)->default(1.000000);
             $table->decimal('exchange_rate_snapshot', 18, 6)->default(1.000000);
             $table->string('rate_source', 50)->default('MANUAL_ADMIN_RATE');
             $table->timestamp('rate_timestamp')->nullable();
@@ -33,20 +40,22 @@ return new class extends Migration
             // Pricing Snapshot (Immutable after deal creation)
             $table->decimal('base_amount', 18, 4);
             $table->decimal('discount_amount', 18, 4)->default(0.0000);
-            // Tax and fee rates default to 0.00: they are NOT product assumptions.
-            // They must be written explicitly from admin configuration when the
-            // deal's financials are computed (see PricingAndCurrencyService).
-            $table->decimal('tax_rate_snapshot', 6, 4)->default(0.0000);
+            $table->decimal('tax_rate_snapshot', 6, 4)->default(0.1500);
             $table->decimal('tax_amount', 18, 4)->default(0.0000);
-            $table->decimal('platform_fee_rate_snapshot', 6, 4)->default(0.0000);
+            $table->decimal('platform_fee_rate_snapshot', 6, 4)->default(0.0250);
             $table->decimal('platform_fee_amount', 18, 4)->default(0.0000);
             $table->decimal('delivery_fee_amount', 18, 4)->default(0.0000);
             $table->decimal('buyer_total_amount', 18, 4);
             $table->decimal('seller_net_amount', 18, 4);
 
             // Lifecycle Status
-            $table->string('status', 40)->default('PENDING_SELLER_APPROVAL'); 
-            // DRAFT, PENDING_SELLER_APPROVAL, ACCEPTED, PENDING_PAYMENT, ESCROW_FUNDED, PROCESSING, READY_FOR_PICKUP, DISPATCHED, DELIVERED, INSPECTION, COMPLETED, SETTLED, CANCELLED, DISPUTED, RESOLVED, REFUNDED
+            //
+            // DRAFT, PENDING_SELLER_APPROVAL, ACCEPTED, PROCESSING,
+            // READY_FOR_PICKUP, DISPATCHED, DELIVERED, INSPECTION, COMPLETED,
+            // CANCELLED, DISPUTED, RESOLVED — the list is `App\Trading\Models\Deal::STATUSES`,
+            // and `deals_status_is_canonical` at the foot of this method holds the
+            // table to it.
+            $table->string('status', 40)->default('PENDING_SELLER_APPROVAL');
 
             // Logistics & Inspection
             $table->string('delivery_method', 50)->default('PICKUP'); // PICKUP, SELLER_DELIVERY, THIRD_PARTY_CARRIER
@@ -55,12 +64,15 @@ return new class extends Migration
             $table->timestamp('inspection_deadline_at')->nullable();
 
             // Lifecycle Timestamps
+            //
+            // No `paid_at` and no `settled_at`: they recorded the moment money was
+            // said to pass through HASSAL, and no money does. Payment is settled
+            // between the two businesses outside the platform, so a timestamp of a
+            // platform-side payment would be a record of an event that cannot happen.
             $table->timestamp('accepted_at')->nullable();
-            $table->timestamp('paid_at')->nullable();
             $table->timestamp('dispatched_at')->nullable();
             $table->timestamp('delivered_at')->nullable();
             $table->timestamp('completed_at')->nullable();
-            $table->timestamp('settled_at')->nullable();
             $table->timestamp('cancelled_at')->nullable();
             $table->text('cancellation_reason')->nullable();
 
@@ -102,6 +114,20 @@ return new class extends Migration
 
             $table->index(['deal_id', 'created_at']);
         });
+
+        // A CHECK built from `Deal::STATUSES`, so the schema and the state machine
+        // cannot drift into naming two different sets of states. It exists because
+        // a row can reach this table from somewhere other than the machine — a
+        // seeder, a database console, a restored replica — and a deal in a state no
+        // client has a label for is a deal every screen has to guess about.
+        // Compared case-sensitively (`utf8mb4_bin`): these tokens are names, and
+        // `completed` is not a state this platform speaks.
+        $values = implode(',', array_map(
+            static fn (string $status): string => "'" . addslashes($status) . "'",
+            \App\Trading\Models\Deal::STATUSES
+        ));
+
+        DB::statement("ALTER TABLE `deals` ADD CONSTRAINT `deals_status_is_canonical` CHECK (`status` COLLATE utf8mb4_bin IN ({$values}))");
     }
 
     public function down(): void

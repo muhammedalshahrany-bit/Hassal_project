@@ -2,14 +2,14 @@
 
 namespace App\Console\Commands;
 
-use App\Models\SystemSetting;
-use App\Support\CatalogSync;
-use App\Support\SettingCatalog;
+use App\Platform\Models\SystemSetting;
+use App\Platform\Support\CatalogSync;
+use App\Platform\Support\SettingCatalog;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Reconcile the `system_settings` table with App\Support\SettingCatalog.
+ * Reconcile the `system_settings` table with App\Platform\Support\SettingCatalog.
  *
  * Why this exists as its own command: the installer seeds the catalog once, on
  * a fresh database. A platform that was installed before the catalog existed —

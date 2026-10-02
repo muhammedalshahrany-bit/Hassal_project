@@ -1,0 +1,44 @@
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\ApiKeyCapabilityTest[39m
+  [32;1m✓[39;22m[90m [39m[90man issued key still reports that no route accepts it[39m[90m                                                       [39m [90m26.36s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\CatalogDriftTest[39m
+  [32;1m✓[39;22m[90m [39m[90mboth reconcile commands report the same state and are idempotent[39m[90m                                            [39m [90m0.38s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\MembershipPermissionsTest[39m
+  [32;1m✓[39;22m[90m [39m[90mthe profile endpoint reports the effective set and no more[39m[90m                                                  [39m [90m0.42s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\OfferCommunityTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma report asks for a review and decides nothing itself[39m[90m                                                       [39m [90m0.48s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\ProfileCompletionTest[39m
+  [32;1m✓[39;22m[90m [39m[90mme reports whether the account has a business and a password[39m[90m                                                [39m [90m0.39s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\PurchaseRequestFlowTest[39m
+  [32;1m✓[39;22m[90m [39m[90man expired match and an expired offer are reported differently[39m[90m                                              [39m [90m0.55s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\ReportsAndExportTest[39m
+  [32;1m✓[39;22m[90m [39m[90mturnover counts closed orders and labels its basis[39m[90m                                                          [39m [90m0.38s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma period window moves the totals and names itself[39m[90m                                                           [39m [90m0.44s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma business sees its own volume and not the markets[39m[90m                                                          [39m [90m0.48s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma report prints the configured currency or none[39m[90m                                                             [39m [90m0.41s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe deals export honours its window and says so[39m[90m                                                             [39m [90m0.45s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma staff account without the reporting permission is refused[39m[90m                                                 [39m [90m0.44s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\SignInDevicesTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma device can report its own unlock setting after signin[39m[90m                                                     [39m [90m0.41s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\SupportDeskTest[39m
+  [32;1m✓[39;22m[90m [39m[90many signed in person can file and read their own report[39m[90m                                                     [39m [90m0.37s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe same report twice is one report with a number[39m[90m                                                           [39m [90m0.38s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe queue is the platforms and reading another report is not[39m[90m                                                [39m [90m0.39s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\WaitingHoursReportedTest[39m
+  [32;1m✓[39;22m[90m [39m[90mhours since counts elapsed time forward from the older moment[39m[90m                                               [39m [90m0.36s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma clock that runs ahead is reported as no wait rather than negative[39m[90m                                         [39m [90m0.38s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe document queue reports a non negative wait for waiting papers[39m[90m                                           [39m [90m0.44s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe offer moderation queue reports a non negative wait[39m[90m                                                      [39m [90m0.42s[39m  
+
+  [90mTests:[39m    [32;1m20 passed[39;22m[90m (159 assertions)[39m
+  [90mDuration:[39m [39m34.95s[39m
+

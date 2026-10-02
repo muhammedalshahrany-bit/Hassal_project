@@ -1,0 +1,105 @@
+sessions: seller org 1, buyer org 4
+
+  ok  01. a business cannot buy from itself
+         expected SELF_PURCHASE_FORBIDDEN, got SELF_PURCHASE_FORBIDDEN
+  ok  02. an ask bigger than the shelf is refused at the door
+         expected QUANTITY_EXCEEEDS_AVAILABLE, got QUANTITY_EXCEEEDS_AVAILABLE
+  ok  03. the buyer raises an ask on a live offer
+         expected 201, got 201 — Purchase request created. No stock is held until the seller reviews it.
+  ok  04. the ask arrives as REQUESTED
+         expected REQUESTED, got REQUESTED
+  ok  05. asking itself holds nothing
+         the hold appears with the seller’s answer
+  ok  06. only the seller organization may accept
+         expected SELLER_ACCEPT_DENIED, got SELLER_ACCEPT_DENIED
+  ok  07. the seller accepts, and the quantity is held
+         expected 200, got 200 — Purchase request accepted and the requested quantity is held for the buyer.
+  ok  08. the acceptance produced a hold
+         reservation 31
+  ok  09. the ask reads as ACCEPTED afterwards
+         expected ACCEPTED, got ACCEPTED
+  ok  10. the buyer sees the hold as ACTIVE
+         expected ACTIVE, got ACTIVE
+  ok  11. the shelf moved by exactly the held quantity
+         expected 310, got 310 — 315.00 → 310.00
+  ok  12. no expired hold belongs to this buyer — RESERVATION_EXPIRED left untested live
+  ok  13. the buyer converts the hold into an order
+         expected 201, got 201 — Deal created successfully. Waiting for seller confirmation.
+  ok  14. the order opens awaiting the seller
+         expected PENDING_SELLER_APPROVAL, got PENDING_SELLER_APPROVAL
+  ok  15. one hold opens one order
+         404 NOT_FOUND
+  ok  16. there is nothing to scan until the order is accepted
+         expected HANDOVER_NOT_ISSUED, got HANDOVER_NOT_ISSUED
+  ok  17. an order cannot skip to closed
+         422 STATE_TRANSITION_FAILED
+  ok  18. a made-up state is refused as a made-up state
+         expected DEAL_STATE_UNKNOWN, got DEAL_STATE_UNKNOWN
+  ok  19. the seller confirms the order
+         expected ACCEPTED, got ACCEPTED — Deal state successfully transitioned to ACCEPTED
+  ok  20. acceptance issued the delivery code
+         the read returned no object
+  ok  21. the code is 16 characters from the unambiguous alphabet
+         WF4FTP5D39WVRMUP
+  ok  22. the QR payload carries the order number and the code
+         expected HASSAL:HANDOVER:DEAL-260926-ZPMA:WF4FTP5D39WVRMUP, got HASSAL:HANDOVER:DEAL-260926-ZPMA:WF4FTP5D39WVRMUP
+  ok  23. the code is ACTIVE
+         expected ACTIVE, got ACTIVE
+  ok  24. it cannot be spent yet — the goods have not arrived
+         expected false, got false
+  ok  25. scanning before delivery is refused as such
+         expected HANDOVER_NOT_AT_DELIVERY, got HANDOVER_NOT_AT_DELIVERY
+  ok  26. the seller records PROCESSING
+         expected PROCESSING, got PROCESSING — Deal state successfully transitioned to PROCESSING
+  ok  27. the seller records READY_FOR_PICKUP
+         expected READY_FOR_PICKUP, got READY_FOR_PICKUP — Deal state successfully transitioned to READY_FOR_PICKUP
+  ok  28. the seller records DELIVERED
+         expected DELIVERED, got DELIVERED — Deal state successfully transitioned to DELIVERED
+  ok  29. a second order opens against a second hold
+  ok  30. a third order opens against a third hold
+  ok  31. order B reaches ACCEPTED
+         expected ACCEPTED, got ACCEPTED — Deal state successfully transitioned to ACCEPTED
+  ok  32. order B reaches PROCESSING
+         expected PROCESSING, got PROCESSING — Deal state successfully transitioned to PROCESSING
+  ok  33. order B reaches READY_FOR_PICKUP
+         expected READY_FOR_PICKUP, got READY_FOR_PICKUP — Deal state successfully transitioned to READY_FOR_PICKUP
+  ok  34. order C reaches ACCEPTED
+         expected ACCEPTED, got ACCEPTED — Deal state successfully transitioned to ACCEPTED
+  ok  35. order C reaches PROCESSING
+         expected PROCESSING, got PROCESSING — Deal state successfully transitioned to PROCESSING
+  ok  36. order C reaches READY_FOR_PICKUP
+         expected READY_FOR_PICKUP, got READY_FOR_PICKUP — Deal state successfully transitioned to READY_FOR_PICKUP
+  ok  37. order C reaches DELIVERED
+         expected DELIVERED, got DELIVERED — Deal state successfully transitioned to DELIVERED
+  ok  38. the second order holds its own delivery code
+         XYNE8XY8G4XGJMXZ
+  ok  39. the third order’s code is issued, live, and untouched
+         expected ACTIVE, got ACTIVE
+  ok  40. a code that is not this order’s is refused
+         expected HANDOVER_CODE_INVALID, got HANDOVER_CODE_INVALID
+  ok  41. another order's live code does not open this one
+         expected HANDOVER_CODE_INVALID, got HANDOVER_CODE_INVALID — refused as a bad code, deliberately: telling the two apart would hand a scanner a way to probe other orders
+  ok  42. no scan, no inspection step
+         expected HANDOVER_NOT_VERIFIED, got HANDOVER_NOT_VERIFIED — A deal cannot be closed as received until its handover code has been scanned for this order.
+  ok  43. no scan, no closed order — receipt cannot be confirmed for what was never attested
+         expected HANDOVER_NOT_VERIFIED, got HANDOVER_NOT_VERIFIED — A deal cannot be closed as received until its handover code has been scanned for this order.
+  ok  44. and the order is still sitting at DELIVERED
+         expected DELIVERED, got DELIVERED
+  ok  45. a staffer without deals.confirm cannot close a deal
+         expected DEAL_TRANSITION_FORBIDDEN, got DEAL_TRANSITION_FORBIDDEN
+  ok  46. a business that is not a party cannot touch the order
+         expected DEAL_ACCESS_DENIED, got DEAL_ACCESS_DENIED
+  ok  47. at DELIVERED the code is spendable
+         expected true, got true
+  ok  48. a third party cannot spend someone else's delivery code
+         expected DEAL_ACCESS_DENIED, got DEAL_ACCESS_DENIED
+  ok  49. the seller spends the buyer's code, printed QR payload and all
+         expected 201, got 201 — Handover verified. The buyer can now confirm receipt.
+  ok  50. the scan records arrival; it does not close the order
+         expected DELIVERED, got DELIVERED
+  ok  51. and it says whose move is next
+         expected buyer_confirms_receipt, got buyer_confirms_receipt
+  ok  52. the code is spent
+         expected USED, got USED
+  ok  53. and the record names the seller organization as the one that scanned
+         expected 1, got 1

@@ -1,0 +1,11 @@
+Server API routes: 123
+Client paths called from api.ts: 120
+
+OK — every path in src/lib/api.ts is a route on the server.
+(3 server routes are not called from the web — checked, not assumed:)
+  /api/v1/auth/preferences
+  /api/v1/auth/preferences/catalog
+  /api/v1/organizations/{}/documents/{}/file
+  · auth/preferences* is the mobile client's surface; the web keeps its own settings.
+  · documents/{id}/file is `signed` middleware: it is reached through the `url` the
+    payload already carries, which an `<a>` opens and a bearer-token client cannot.

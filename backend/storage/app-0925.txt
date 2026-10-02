@@ -1,0 +1,73 @@
+
+################################################################################
+2026-09-25T14:52:33.222Z  failed=false  all=false
+################################################################################
+--- OLD ---
+    setActiveView(view);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+--- NEW ---
+    setActiveView(view);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  /**
+   * Ending this session, from either door that offers it.
+   *
+   * The header's «خروج» and the row a person deletes on their own device list
+   * have to end the same way: `POST /auth/logout` revokes the token in use, so
+   * after either path there is no session left to draw a business screen from —
+   * which is why the view goes back to the market rather than staying on a tab
+   * that would render a blank page under a header that says "sign in".
+   */
+  const signOut = async () => {
+    await api.logout();
+    setCurrentUser(null);
+    setCurrentOrg(null);
+    setOrganizations([]);
+    setProfileCompletion(null);
+    setActiveView('marketplace');
+  };
+
+
+################################################################################
+2026-09-25T14:52:41.922Z  failed=false  all=false
+################################################################################
+--- OLD ---
+          onLogout={async () => {
+            await api.logout();
+            setCurrentUser(null);
+            setCurrentOrg(null);
+            setOrganizations([]);
+            setProfileCompletion(null);
+            // Sign out takes the screen with it: every business view is gated on
+            // a session, so leaving the tab on one would render a blank page
+            // under a header that says "sign in".
+            setActiveView('marketplace');
+          }}
+--- NEW ---
+          onLogout={() => { void signOut(); }}
+
+################################################################################
+2026-09-25T14:52:49.581Z  failed=false  all=false
+################################################################################
+--- OLD ---
+              onSessionChanged={() => { void loadSession(); }}
+              onNotify={setToastMessage}
+            />
+          )}
+
+          {activeView === 'admin' && canOpenView('admin') && (
+--- NEW ---
+              onSessionChanged={() => { void loadSession(); }}
+              // Revoking the row this page was read from ends the session, so the
+              // devices panel hands it back here rather than guessing locally.
+              onSignOut={() => { void signOut(); }}
+              onNotify={setToastMessage}
+            />
+          )}
+
+          {activeView === 'admin' && canOpenView('admin') && (
+
+edits: 3

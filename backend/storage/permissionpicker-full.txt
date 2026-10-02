@@ -1,0 +1,1291 @@
+
+##########################################################################################
+write 01160dd6-f8b1-4ee2-a4e2-fcbc55a6730c.jsonl 2026-09-25T16:27:09.857Z D:\hassal\src\components\permissionPicker.tsx len=7945
+##########################################################################################
+import React, { useMemo, useState } from 'react';
+import type { ScopedPermission } from '../types';
+
+/**
+ * A checkbox list of capabilities the caller is allowed to offer.
+ *
+ * It exists because two doors — the platform's matrix and one company's standings —
+ * select from the same catalog under different rules, and the rule that matters is
+ * *which names appear at all*. Every screen passes the list the server's own read
+ * endpoint returned (`grantable_permissions` inside a company, `permissions` minus
+ * `account_forbidden` on the platform console), so a box the route would refuse is
+ * never rendered. A picker that filtered by a hardcoded list of names would be a
+ * second copy of the boundary, and copies of boundaries drift.
+ *
+ * Two modes because the two write shapes differ: `dual` shows three states per name
+ * (منح / لا شيء / سحب) for a member's individual override, where the write takes a
+ * grants list and a denials list, and `single` shows a tick for the role editors,
+ * where the write takes one replacement list.
+ */
+
+export type OverrideState = 'grant' | 'none' | 'deny';
+
+const SCOPE_LABELS: Record<ScopedPermission['scope'], string> = {
+  platform: 'صلاحية منصة',
+  business: 'صلاحية منشأة',
+  both: 'مشتركة',
+};
+
+const STATE_LABELS: Record<OverrideState, string> = {
+  grant: 'منح',
+  none: 'كالدور',
+  deny: 'سحب',
+};
+
+/** Stable ordering: the platform's own names first, then alphabetically. */
+function byScopeThenName(a: ScopedPermission, b: ScopedPermission): number {
+  const rank = (scope: ScopedPermission['scope']) => (scope === 'platform' ? 0 : scope === 'both' ? 1 : 2);
+  return rank(a.scope) - rank(b.scope) || a.name.localeCompare(b.name);
+}
+
+interface PickerProps {
+  /** What the server offered this screen. Anything outside it cannot be picked. */
+  available: ScopedPermission[];
+  /** The names the stored row currently carries, so the editor opens honest. */
+  selected: string[];
+  onSelect?: (names: string[]) => void;
+  states?: Record<string, OverrideState>;
+  onStatesChange?: (states: Record<string, OverrideState>) => void;
+  /** A name the account already holds through its role: labelled, not clickable-off. */
+  inherited?: string[];
+  disabled?: boolean;
+}
+
+export const PermissionPicker: React.FC<PickerProps> = ({
+  available,
+  selected,
+  onSelect,
+  states,
+  onStatesChange,
+  inherited = [],
+  disabled,
+}) => {
+  const [query, setQuery] = useState('');
+
+  const isDual = states !== undefined && onStatesChange !== undefined;
+
+  const chosen = useMemo(() => new Set(selected), [selected]);
+  const passedDown = useMemo(() => new Set(inherited), [inherited]);
+
+  const visible = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return [...available]
+      .filter((entry) => !needle || entry.name.toLowerCase().includes(needle))
+      .sort(byScopeThenName);
+  }, [available, query]);
+
+  const toggleSingle = (name: string) => {
+    if (!onSelect) return;
+    onSelect(chosen.has(name) ? selected.filter((entry) => entry !== name) : [...selected, name]);
+  };
+
+  const cycle = (name: string) => {
+    if (!states || !onStatesChange) return;
+    const current = states[name] ?? 'none';
+    const next: OverrideState = current === 'none' ? 'grant' : current === 'grant' ? 'deny' : 'none';
+    onStatesChange({ ...states, [name]: next });
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="ابحث عن صلاحية…"
+          disabled={disabled}
+          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs focus:bg-white focus:outline-none disabled:opacity-50 sm:w-56 dark:border-hassal-line dark:bg-hassal-raised dark:text-slate-100"
+        />
+        <span className="text-[10px] text-slate-500 dark:text-slate-400">
+          {isDual
+            ? `${Object.values(states ?? {}).filter((state) => state === 'grant').length} مُضافة · ${
+                Object.values(states ?? {}).filter((state) => state === 'deny').length
+              } مسحوبة`
+            : `${selected.length} من ${available.length}`}
+        </span>
+      </div>
+
+      {isDual ? (
+        <p className="text-[10px] leading-relaxed text-slate-500 dark:text-slate-400">
+          الاسم يُنقر بالدوران: منح يضيف فوق الدور، سحب يمنعه حتى لو كان الدور يحمله، ولا شيء يتركه كما هو.
+        </p>
+      ) : null}
+
+      <div className="max-h-72 min-w-0 overflow-y-auto rounded-lg border border-slate-200 dark:border-hassal-line">
+        {visible.length === 0 ? (
+          <p className="p-3 text-[11px] text-slate-500 dark:text-slate-400">
+            {available.length ? 'لا اسم يطابق البحث.' : 'لم تصل قائمة الصلاحيات من الخادم.'}
+          </p>
+        ) : (
+          <ul className="divide-y divide-slate-100 dark:divide-hassal-line">
+            {visible.map((entry) => {
+              const state = isDual ? states?.[entry.name] ?? 'none' : chosen.has(entry.name) ? 'grant' : 'none';
+              const carries = passedDown.has(entry.name);
+
+              return (
+                <li key={entry.name} className="flex items-center justify-between gap-2 px-2.5 py-1.5">
+                  <div className="min-w-0">
+                    <div className="truncate text-[11px] font-bold text-slate-800 dark:text-slate-100" dir="ltr" title={entry.name}>
+                      {entry.name}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400">
+                      <span>{SCOPE_LABELS[entry.scope]}</span>
+                      {/* Said out loud because the alternative is a ticked box that
+                          does nothing, which reads as a bug in the save. */}
+                      {carries && !isDual ? <span className="text-emerald-700 dark:text-emerald-400">موروثة من الدور</span> : null}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => (isDual ? cycle(entry.name) : toggleSingle(entry.name))}
+                    className={`shrink-0 rounded-lg border px-2 py-1 text-[10px] font-bold transition-colors disabled:opacity-40 ${
+                      state === 'grant'
+                        ? 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
+                        : state === 'deny'
+                          ? 'border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
+                          : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 dark:border-hassal-line dark:bg-hassal-raised dark:text-slate-300'
+                    }`}
+                  >
+                    {isDual ? STATE_LABELS[state] : state === 'grant' ? 'مشمولة' : 'غير مشمولة'}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+};
+
+/** The two lists a dual picker holds, split the way the route expects them. */
+export function splitStates(states: Record<string, OverrideState>): { grants: string[]; denials: string[] } {
+  const entries = Object.entries(states);
+  return {
+    grants: entries.filter(([, state]) => state === 'grant').map(([name]) => name).sort(),
+    denials: entries.filter(([, state]) => state === 'deny').map(([name]) => name).sort(),
+  };
+}
+
+/** A stored pair rebuilt as picker state, so an editor opens on what the row says. */
+export function statesFrom(grants: string[], denials: string[]): Record<string, OverrideState> {
+  const states: Record<string, OverrideState> = {};
+  for (const name of grants) states[name] = 'grant';
+  for (const name of denials) states[name] = 'deny';
+  return states;
+}
+
+
+##########################################################################################
+write 01160dd6-f8b1-4ee2-a4e2-fcbc55a6730c.jsonl 2026-09-25T16:30:03.653Z D:\hassal\src\components\OrganizationRolesPanel.tsx len=25344
+##########################################################################################
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Plus, RefreshCw, Trash2, UserCheck } from 'lucide-react';
+import { api, fieldError, type ApiResult } from '../lib/api';
+import { BannerView, DecisionButton, ErrorNote, LabeledSelect, PanelShell, TextInput, type Banner } from './panel';
+import { PermissionPicker, splitStates, statesFrom, type OverrideState } from './PermissionPicker';
+import type { MemberPermissionsView, OrganizationRolesSnapshot, UserMembership } from '../types';
+
+/**
+ * What a company's own standings are worth, and what one person inside it is worth.
+ *
+ * This is the organization door of the permissions system, and the component is
+ * built around the three boundaries the server enforces behind it:
+ *
+ *   * The names on offer come from `grantable_permissions` in the same response as
+ *     the roles, which is the list the route accepts — platform capabilities are
+ *     absent from it. Nothing here filters by a list of names written in the
+ *     client, so a rename in `config/rbac.php` cannot leave a stale checkbox that
+ *     only fails at submit time.
+ *   * Authority is per company and per page: the routes take the organization id,
+ *     and the caller's membership in *that* company is asked for `members.manage`.
+ *     The tenant header is set by the session, not chosen here.
+ *   * The owner standing and the owner's own rows resist being edited into
+ *     helplessness, which the server answers with `OWNER_STANDING_PROTECTED`. That
+ *     refusal is shown rather than pre-empted: hiding the save on the owner row
+ *     would be this screen inventing its own rule about ownership.
+ *
+ * Two editors, because the two decisions are different in kind. A standing says
+ * what a *kind* of job in this company can do; an override says what *this person*
+ * can do beyond or beneath the standing they hold. The override editor shows both
+ * the standing's grants and the resulting effective set, because a manager who
+ * cannot see the difference between the two will keep "fixing" a role that was
+ * already narrowed by a denial nobody remembers writing.
+ */
+
+function refusalOf(result: ApiResult<unknown>): string {
+  return result.error?.message || result.message || 'تعذّر تنفيذ الأمر على المنشأة';
+}
+
+/** The key the column stores; anything the server would reject is caught here first. */
+const KEY_PATTERN = /^[a-z][a-z0-9_]{1,62}$/;
+
+interface OrganizationRolesPanelProps {
+  organizationId: number;
+  organizationName: string | null;
+  members: UserMembership[];
+  /** `members.manage`, resolved by the caller the way every other screen does. */
+  canManage: boolean;
+  /** Set when the roster asks to edit one person's overrides; null opens the list. */
+  focusMemberId: number | null;
+  onFocusMemberHandled: () => void;
+  onNotify?: (message: string) => void;
+}
+
+export const OrganizationRolesPanel: React.FC<OrganizationRolesPanelProps> = ({
+  organizationId,
+  organizationName,
+  members,
+  canManage,
+  focusMemberId,
+  onFocusMemberHandled,
+  onNotify,
+}) => {
+  const [snapshot, setSnapshot] = useState<OrganizationRolesSnapshot | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [banner, setBanner] = useState<Banner>(null);
+  const [denied, setDenied] = useState<string | null>(null);
+
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [draftPermissions, setDraftPermissions] = useState<string[]>([]);
+  const [roleReason, setRoleReason] = useState('');
+  const [roleErrors, setRoleErrors] = useState<Record<string, string | null>>({});
+
+  const [newKey, setNewKey] = useState('');
+  const [newNameAr, setNewNameAr] = useState('');
+  const [copyFrom, setCopyFrom] = useState('');
+  const [newPermissions, setNewPermissions] = useState<string[]>([]);
+  const [newReason, setNewReason] = useState('');
+  const [newErrors, setNewErrors] = useState<Record<string, string | null>>({});
+
+  const [selectedMembers, setSelectedMembers] = useState<number[]>([]);
+  const [memberView, setMemberView] = useState<MemberPermissionsView | null>(null);
+  const [states, setStates] = useState<Record<string, OverrideState>>({});
+  const [overrideReason, setOverrideReason] = useState('');
+  const [overrideErrors, setOverrideErrors] = useState<Record<string, string | null>>({});
+
+  const available = snapshot?.grantable_permissions ?? [];
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setDenied(null);
+    try {
+      const result = await api.getOrganizationRoles(organizationId);
+      if (result.success && result.data) {
+        setSnapshot(result.data);
+      } else {
+        setSnapshot(null);
+        setDenied(refusalOf(result));
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [organizationId]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const editing = useMemo(
+    () => snapshot?.roles.find((role) => role.key === editingKey) ?? null,
+    [snapshot, editingKey]
+  );
+
+  useEffect(() => {
+    if (editing) {
+      setDraftPermissions([...editing.permissions]);
+      setRoleReason('');
+      setRoleErrors({});
+    }
+  }, [editing]);
+
+  const openEditor = (key: string) => {
+    setEditingKey(key);
+    setBanner(null);
+  };
+
+  const saveRole = async () => {
+    if (!editing) return;
+    const reason = roleReason.trim();
+    const errors: Record<string, string | null> = {};
+    if (reason.length < 3) errors.reason = 'السبب مطلوب ويُحفظ مع القرار في سجل التدقيق';
+    setRoleErrors(errors);
+    if (Object.values(errors).some(Boolean)) return;
+
+    setBusy(true);
+    setBanner(null);
+    try {
+      const result = await api.updateOrganizationRole(organizationId, editing.key, { permissions: draftPermissions, reason });
+      if (result.success) {
+        setBanner({ kind: 'ok', text: `الدور «${editing.name_ar}» أصبح ${draftPermissions.length} صلاحية.` });
+        onNotify?.('أدوار المنشأة محفوظة');
+        setEditingKey(null);
+        await load();
+      } else {
+        setRoleErrors({ permissions: fieldError(result, 'permissions'), reason: fieldError(result, 'reason') });
+        setBanner({ kind: 'error', text: refusalOf(result) });
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const createRole = async () => {
+    const reason = newReason.trim();
+    const errors: Record<string, string | null> = {};
+    if (!KEY_PATTERN.test(newKey.trim())) errors.key = 'مفتاح لاتيني صغير يبدأ بحرف: warehouse_keeper مثلًا';
+    if (newNameAr.trim().length < 2) errors.name_ar = 'الاسم بالعربية مطلوب';
+    if (reason.length < 3) errors.reason = 'السبب مطلوب ويُحفظ مع القرار';
+    setNewErrors(errors);
+    if (Object.values(errors).some(Boolean)) return;
+
+    setBusy(true);
+    setBanner(null);
+    try {
+      // `permissions` is sent always, including empty: an explicit list is what the
+      // screen shows, and sending nothing while `copy_from` is set would let the
+      // server decide what «نسخ من المالك» means after the boxes were unticked.
+      const result = await api.createOrganizationRole(organizationId, {
+        key: newKey.trim(),
+        name_ar: newNameAr.trim(),
+        permissions: copyFrom && newPermissions.length === 0 ? undefined : newPermissions,
+        copy_from: copyFrom || null,
+        reason,
+      });
+      if (result.success) {
+        setBanner({ kind: 'ok', text: `أُنشئ الدور «${newNameAr.trim()}».` });
+        onNotify?.('دور جديد للمنشأة');
+        setNewKey('');
+        setNewNameAr('');
+        setCopyFrom('');
+        setNewPermissions([]);
+        setNewReason('');
+        await load();
+      } else {
+        setNewErrors({
+          key: fieldError(result, 'key') || (result.error_code === 'ROLE_KEY_RESERVED' ? 'هذا المفتاح اسم دور معتمد من المنصة' : null),
+          name_ar: fieldError(result, 'name_ar'),
+          permissions: fieldError(result, 'permissions'),
+          reason: fieldError(result, 'reason'),
+        });
+        setBanner({ kind: 'error', text: refusalOf(result) });
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const deleteRole = async (key: string, name: string) => {
+    const reason = window.prompt(`سبب إزالة الدور «${name}»؟ (مطلوب ويُحفظ في سجل التدقيق)`);
+    const trimmed = (reason ?? '').trim();
+    if (trimmed.length < 3) {
+      setBanner({ kind: 'error', text: 'لا دور يُزال بلا سبب مسجَّل.' });
+      return;
+    }
+    setBusy(true);
+    setBanner(null);
+    try {
+      const result = await api.deleteOrganizationRole(organizationId, key, trimmed);
+      if (result.success) {
+        setBanner({ kind: 'ok', text: `أُزيل الدور «${name}».` });
+        if (editingKey === key) setEditingKey(null);
+        await load();
+      } else {
+        setBanner({ kind: 'error', text: refusalOf(result) });
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const toggleMember = (userId: number) => {
+    setSelectedMembers((current) => (current.includes(userId) ? current.filter((id) => id !== userId) : [...current, userId]));
+    setMemberView(null);
+  };
+
+  // One person's row is readable; a group is not, because "the twelve except Ali"
+  // has no single answer to show.
+  useEffect(() => {
+    let active = true;
+
+    if (selectedMembers.length !== 1) {
+      setMemberView(null);
+      setStates({});
+      return;
+    }
+
+    void api.getMemberPermissions(organizationId, selectedMembers[0]).then((result) => {
+      if (!active) return;
+      if (result.success && result.data) {
+        setMemberView(result.data);
+        setStates(statesFrom(result.data.grants, result.data.denials));
+        setOverrideErrors({});
+      } else {
+        setMemberView(null);
+        setBanner({ kind: 'error', text: refusalOf(result) });
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+    // `setBanner` is stable and re-running on it would loop on every error.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedMembers, organizationId]);
+
+  useEffect(() => {
+    if (focusMemberId !== null) {
+      setSelectedMembers([focusMemberId]);
+      setEditingKey(null);
+      onFocusMemberHandled();
+    }
+    // The parent clears the request once it is taken; watching it is the point.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusMemberId]);
+
+  const saveOverrides = async () => {
+    const { grants, denials } = splitStates(states);
+    const reason = overrideReason.trim();
+    const errors: Record<string, string | null> = {};
+    if (reason.length < 3) errors.reason = 'السبب مطلوب ويُحفظ مع القرار';
+    if (!selectedMembers.length) errors.user_ids = 'اختر عضوًا واحدًا أو أكثر';
+    setOverrideErrors(errors);
+    if (Object.values(errors).some(Boolean)) return;
+
+    setBusy(true);
+    setBanner(null);
+    try {
+      const result =
+        selectedMembers.length === 1
+          ? await api.updateMemberPermissions(organizationId, selectedMembers[0], { grants, denials, reason })
+          : await api.bulkMemberPermissions(organizationId, { user_ids: selectedMembers, grants, denials, reason });
+
+      if (result.success) {
+        setBanner({
+          kind: 'ok',
+          text:
+            selectedMembers.length === 1
+              ? `تجاوزات العضو محفوظة: ${grants.length} إضافة، ${denials.length} سحب.`
+              : `طُبِّق على ${selectedMembers.length} أعضاء في قرار واحد.`,
+        });
+        onNotify?.('تجاوزات الأعضاء محفوظة');
+        setOverrideReason('');
+        if (selectedMembers.length === 1) {
+          const refreshed = await api.getMemberPermissions(organizationId, selectedMembers[0]);
+          if (refreshed.success && refreshed.data) {
+            setMemberView(refreshed.data);
+            setStates(statesFrom(refreshed.data.grants, refreshed.data.denials));
+          }
+        }
+      } else {
+        setOverrideErrors({
+          grants: fieldError(result, 'grants'),
+          denials: fieldError(result, 'denials'),
+          reason: fieldError(result, 'reason'),
+        });
+        setBanner({ kind: 'error', text: refusalOf(result) });
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const roleOptions = (snapshot?.roles ?? []).map((role) => ({
+    value: role.key,
+    label: `${role.name_ar} — ${role.permissions.length} صلاحية${role.is_system ? ' (معتمد)' : ''}`,
+  }));
+
+  return (
+    <div className="space-y-5">
+      <PanelShell
+        title="أدوار هذه المنشأة وصلاحياتها"
+        hint={
+          organizationName
+            ? `ما تُحدده هنا يسري داخل «${organizationName}» وحدها. صلاحيات المنصة (مراجعة عروض الآخرين، اعتماد المنشآت، إدارة الحسابات) ليست في هذه القائمة ولا تُمنح من هذا الباب.`
+            : 'أدوار المنشأة خاصة بمنشأة واحدة ولا تُقرأ كصلاحيات عامة.'
+        }
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-200">
+            <span>عدد الأدوار: {snapshot?.roles.length ?? 0}</span>
+            {loading ? <span className="text-[10px] font-normal text-slate-500">جارٍ التحديث…</span> : null}
+          </div>
+          <DecisionButton onClick={() => void load()} busy={loading}>
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>تحديث</span>
+          </DecisionButton>
+        </div>
+
+        {denied ? <ErrorNote text={denied} /> : null}
+        <BannerView banner={banner} />
+
+        {snapshot?.roles.length ? (
+          <div className="min-w-0 overflow-x-auto rounded-lg border border-slate-200 dark:border-hassal-line">
+            <table className="w-full min-w-[30rem] text-right text-xs">
+              <thead className="bg-slate-50 text-slate-600 dark:bg-hassal-raised dark:text-slate-300">
+                <tr>
+                  <th className="p-3 font-semibold">الدور</th>
+                  <th className="p-3 font-semibold">المفتاح</th>
+                  <th className="p-3 font-semibold">الحاملون</th>
+                  <th className="p-3 font-semibold">الصلاحية</th>
+                  {canManage ? <th className="p-3 text-center font-semibold">إجراء</th> : null}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-hassal-line">
+                {snapshot.roles.map((role) => (
+                  <tr key={role.key} className={editingKey === role.key ? 'bg-emerald-50/60 dark:bg-emerald-950/20' : undefined}>
+                    <td className="p-3 font-bold text-slate-900 dark:text-slate-100">{role.name_ar}</td>
+                    <td className="p-3 text-slate-600 dark:text-slate-300" dir="ltr">
+                      {role.key}
+                      {role.is_system ? <span className="mr-1 text-[10px] text-slate-400">(منصة)</span> : null}
+                    </td>
+                    <td className="p-3 text-slate-600 tabular-nums dark:text-slate-300">{role.holder_count ?? 0}</td>
+                    <td className="p-3 text-slate-600 dark:text-slate-300">
+                      <span className="inline-flex items-center gap-1">
+                        <span className="tabular-nums">{role.permissions.length}</span>
+                        <span className="text-[10px] text-slate-500" title={role.permissions.join('، ')} dir="ltr">
+                          {role.permissions.slice(0, 3).join('، ')}
+                          {role.permissions.length > 3 ? '…' : ''}
+                        </span>
+                      </span>
+                    </td>
+                    {canManage ? (
+                      <td className="p-3">
+                        <div className="flex flex-wrap items-center justify-center gap-2">
+                          <button
+                            onClick={() => openEditor(editingKey === role.key ? null : role.key)}
+                            disabled={busy}
+                            className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-[11px] font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 dark:border-hassal-line dark:bg-hassal-raised dark:text-slate-100"
+                          >
+                            {editingKey === role.key ? 'إغلاق' : 'تحرير الصلاحيات'}
+                          </button>
+                          {role.is_system ? null : (
+                            <button
+                              onClick={() => void deleteRole(role.key, role.name_ar)}
+                              disabled={busy}
+                              title="إزالة الدور (لا يُزال دور يحملُه أحد)"
+                              className="shrink-0 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-[11px] font-bold text-rose-700 hover:bg-rose-100 disabled:opacity-40"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    ) : null}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="py-6 text-center text-xs text-slate-500">
+            {loading ? 'جارٍ جلب أدوار المنشأة…' : 'لا أدوار معروضة؛ اقرأ التوضيح أعلاه.'}
+          </p>
+        )}
+
+        {editing ? (
+          <div className="space-y-3 rounded-lg border border-emerald-200 bg-emerald-50/40 p-3 dark:border-emerald-900 dark:bg-emerald-950/20">
+            <div className="text-[11px] font-bold text-slate-800 dark:text-slate-100">
+              تحرير «{editing.name_ar}» — <span dir="ltr">{editing.key}</span>
+            </div>
+            {editing.key === 'owner' ? (
+              <ErrorNote text="دور المالك يبقى قادرًا على تعيين غيرهم: «members.manage» و«organizations.manage» لا تُسحبان من هذا الدور، والخادم يرفض تجريده منهما." />
+            ) : null}
+            <PermissionPicker available={available} selected={draftPermissions} onSelect={setDraftPermissions} disabled={busy} />
+            <div className="flex flex-wrap items-end gap-3">
+              <TextInput label="سبب التغيير (مطلوب)" value={roleReason} onChange={setRoleReason} placeholder="مثال: تكليف أمين المستودع بالتسليم" wide error={roleErrors.reason ?? undefined} />
+              <DecisionButton tone="primary" onClick={() => void saveRole()} busy={busy}>
+                <span>حفظ {draftPermissions.length} صلاحية</span>
+              </DecisionButton>
+            </div>
+            {roleErrors.permissions ? <ErrorNote text={roleErrors.permissions} /> : null}
+          </div>
+        ) : null}
+
+        {canManage ? (
+          <div className="space-y-3 rounded-lg border border-slate-200 p-3 dark:border-hassal-line">
+            <div className="text-[11px] font-bold text-slate-800 dark:text-slate-100">دور خاص بهذه المنشأة</div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <TextInput label="المفتاح (لاتيني)" value={newKey} onChange={setNewKey} placeholder="warehouse_keeper" error={newErrors.key ?? undefined} help="يُستخدم في العضوية وسجل التدقيق" />
+              <TextInput label="الاسم بالعربية" value={newNameAr} onChange={setNewNameAr} placeholder="أمين مستودع" error={newErrors.name_ar ?? undefined} />
+              <LabeledSelect
+                label="نسخ من دور موجود"
+                value={copyFrom}
+                onChange={setCopyFrom}
+                options={[{ value: '', label: 'ابدأ بلا صلاحيات' }, ...roleOptions]}
+              />
+            </div>
+            <PermissionPicker available={available} selected={newPermissions} onSelect={setNewPermissions} disabled={busy} />
+            <div className="flex flex-wrap items-end gap-3">
+              <TextInput label="سبب الإنشاء (مطلوب)" value={newReason} onChange={setNewReason} placeholder="مثال: فصل الاستلام عن المبيعات" wide error={newErrors.reason ?? undefined} />
+              <DecisionButton tone="primary" onClick={() => void createRole()} busy={busy}>
+                <Plus className="w-3.5 h-3.5" />
+                <span>إنشاء الدور</span>
+              </DecisionButton>
+            </div>
+            <p className="text-[10px] leading-relaxed text-slate-500 dark:text-slate-400">
+              صندوق «نسخ من» ينقل صلاحيات الدور كما هي عند النقر؛ إذا حددت صناديق الصلاحيات فإن ما حددته هو ما يُحفظ.
+              الأدوار الخاصة لا تُحذف ما دام أحد يحملها — انقل صاحبه إلى دور آخر أولًا.
+            </p>
+            {newErrors.permissions ? <ErrorNote text={newErrors.permissions} /> : null}
+          </div>
+        ) : null}
+      </PanelShell>
+
+      <PanelShell
+        title="منح وسحب فردي داخل المنشأة"
+        hint="المنح يضيف فوق الدور، والسحب يمنعه حتى لو كان الدور يحمله. التجاوزات خاصة بهذا الحساب في هذه المنشأة: لا تنتقل معه إلى شركة أخرى ولا تتغير بالنسبة لزملائه في الدور نفسه."
+      >
+        {!canManage ? (
+          <ErrorNote text="إدارة عضوية هذه المنشأة لغير المالك ومدير المنشأة؛ لا تظهر هنا خيارات قد يرفضها الخادم." />
+        ) : (
+          <>
+            <div className="min-w-0 space-y-1">
+              {members.length ? (
+                members.map((member) => (
+                  <label key={member.user_id} className="flex cursor-pointer items-center gap-2 text-xs text-slate-700 dark:text-slate-200">
+                    <input
+                      type="checkbox"
+                      checked={selectedMembers.includes(member.user_id)}
+                      onChange={() => toggleMember(member.user_id)}
+                      className="h-3.5 w-3.5 accent-emerald-600"
+                    />
+                    <span className="font-bold">{member.user?.name || `مستخدم #${member.user_id}`}</span>
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-600 dark:bg-hassal-raised dark:text-slate-300" dir="ltr">
+                      {member.role}
+                    </span>
+                    {member.is_active ? null : <span className="text-[10px] text-rose-600">عضوية موقوفة</span>}
+                  </label>
+                ))
+              ) : (
+                <p className="text-[11px] text-slate-500">لا أعضاء نشطين في هذه المنشأة بعد.</p>
+              )}
+            </div>
+
+            {selectedMembers.length > 1 ? (
+              <ErrorNote text={`جماعي على ${selectedMembers.length} حسابات: القوائم تُستبدل للجميع كما تظهر هنا، والسبب يُسجَّل في قرار واحد يغطي الأسماء كلهم.`} />
+            ) : null}
+
+            {memberView ? (
+              <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-[11px] dark:border-hassal-line dark:bg-hassal-raised">
+                <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-100">
+                  <UserCheck className="w-3.5 h-3.5 text-emerald-700" />
+                  <span>الدور الحالي: {memberView.role}</span>
+                  <span className="text-[10px] font-normal text-slate-500 dark:text-slate-400">
+                    {memberView.role_permissions.length} من الدور · {memberView.effective.length} نافذة فعليًا
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <div>
+                    <div className="font-bold text-slate-700 dark:text-slate-200">من الدور ({memberView.role_permissions.length})</div>
+                    <div className="break-all text-slate-600 dark:text-slate-400" dir="ltr">
+                      {memberView.role_permissions.length ? memberView.role_permissions.join('، ') : 'لا شيء'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="font-bold text-slate-700 dark:text-slate-200">النافذة لهذا العضو ({memberView.effective.length})</div>
+                    <div className="break-all text-slate-600 dark:text-slate-400" dir="ltr">
+                      {memberView.effective.length ? memberView.effective.join('، ') : 'لا شيء'}
+                    </div>
+                  </div>
+                </div>
+                <p className="text-[10px] leading-relaxed text-slate-500 dark:text-slate-400">
+                  القائمة اليمنى هي قرار الوسيط نفسه، وهي ما يراه وسيط الصلاحيات قبل تنفيذ أي طلب؛ لا تُخمَّن بحساب
+                  الصناديق هنا.
+                </p>
+              </div>
+            ) : null}
+
+            <PermissionPicker available={available} selected={[]} states={states} onStatesChange={setStates} inherited={memberView?.role_permissions} disabled={busy} />
+
+            <div className="flex flex-wrap items-end gap-3">
+              <TextInput
+                label="سبب القرار (مطلوب)"
+                value={overrideReason}
+                onChange={setOverrideReason}
+                placeholder="مثال: إغلاق المنشورات المنتهية كل نهاية شهر"
+                wide
+                error={overrideErrors.reason ?? undefined}
+              />
+              <DecisionButton tone="primary" onClick={() => void saveOverrides()} busy={busy}>
+                <span>
+                  {selectedMembers.length === 1 ? 'حفظ تجاوزات العضو' : `تطبيق على ${selectedMembers.length || 0}`}
+                </span>
+              </DecisionButton>
+            </div>
+            {overrideErrors.grants || overrideErrors.denials ? (
+              <ErrorNote text={[overrideErrors.grants, overrideErrors.denials].filter(Boolean).join(' — ')} />
+            ) : null}
+          </>
+        )}
+      </PanelShell>
+    </div>
+  );
+};
+
+
+##########################################################################################
+edit 01160dd6-f8b1-4ee2-a4e2-fcbc55a6730c.jsonl 2026-09-25T16:48:49.113Z D:\hassal\backend\CHANGELOG.md len=5594
+##########################################################################################
+{
+  "file_path": "D:\\hassal\\backend\\CHANGELOG.md",
+  "new_string": "---\n\n## [Unreleased] - the name decides, not the row - permission scopes and two doors (2026-09-25)\n\n### Added\n- **A scope on every capability.** `config/rbac.php` gained `permission_scopes`, a written partition of the\n  45-name catalogue: `platform` (10), `business` (25), `both` (10). `App\\Support\\RbacScope` is the arbiter,\n  and `RolesAndPermissionsSeeder::assertScopesCover()` fails the seed when a name is missing from all three\n  lists or appears in two — a capability added to the catalogue can no longer become grantable inside a\n  company by not being mentioned. `2026_09_25_180000_add_scope_to_permissions_table` mirrors the value into\n  `permissions.scope` for queries and reports; the decision reads config, not the column, so the two cannot\n  drift into contradicting each other at the only moment it matters.\n- **Standings a company owns.** `2026_09_25_190000_create_organization_roles_tables` adds\n  `organization_roles` (one owner, key unique per organization and compared with `utf8mb4_bin`),\n  `organization_role_permissions` (what a standing is worth, by permission id), and\n  `organization_membership_permissions` (one member, one permission, `effect ∈ grant|deny`). The five\n  configured standings are seeded per company as `is_system` with the config values, so a company that never\n  edits anything reads exactly as it did before; beside them an owner may name أمين مستودع who moves stock\n  and never prices it.\n- **The account door**: `GET /api/v1/rbac/platform`,\n  `PUT /api/v1/rbac/platform/roles/{roleName}/permissions`,\n  `GET/PUT /api/v1/rbac/platform/users/{id}*/permissions` (`RoleGovernanceController`), gated on\n  `roles.manage` — a capability no organization route reads, and one business name can never be attached\n  through it (`RbacScope::unacceptableOnAccount()` → `ACCOUNT_PERMISSION_REFUSED`).\n- **The organization door**: `GET|POST /api/v1/organizations/{id}/roles`,\n  `PUT|DELETE /{id}/roles/{key}`, `GET|PUT /{id}/members/{userId}/permissions` and\n  `PUT /{id}/members/permissions/bulk` (`OrganizationRoleController`), gated on `members.manage`, refusing\n  platform-scope names as `ROLE_PERMISSION_REFUSED` / `MEMBER_PERMISSION_REFUSED`, a grant and a denial of\n  the same name as `MEMBER_PERMISSION_CONTRADICTION`, and any removal of the owner's\n  `members.manage` / `organizations.manage` as `OWNER_STANDING_PROTECTED`. Every write takes a `reason` and\n  is audited.\n- **Web**: `PermissionPicker` (one list, two modes, built from the server's own read response so a refused\n  name is never rendered), `PlatformPermissionsPanel` (platform matrix + account grants + inspect),\n  `OrganizationRolesPanel` (custom standings and individual overrides, single member or bulk), a\n  `permissions` tab in the admin console gated on `roles.manage`, and a per-row «تجاوزات فردية» entry in\n  `MembersView`.\n- **Mobile**: `MembershipRoleOption.isSystem`, parsed as tri-state (`null` when the server did not say), and\n  the member sheet labels a company-invented standing as خاص بهذه المنشأة.\n\n### Changed\n- **A membership row's `role` is a key into its own company's roles.** The\n  `organization_memberships_role_is_canonical` CHECK is dropped by the migration: MySQL cannot express a\n  constraint that references another table, so the boundary moved to the write doors\n  (`AddMemberRequest`, `OrganizationRoleController::update`), where it is checked against that\n  organization's rows. What stays in the schema is the foreign keys and `RESTRICT` on a standing still\n  holding members.\n- **The effective set is computed once, in one place.**\n  `OrganizationMembership::effectivePermissions()` = standing rows (config fallback while a standing is\n  unedited) + grants − denials, filtered by `RbacScope::exercisableInsideOrganization()` and the catalogue,\n  memoised per instance against a generation counter that `flushResolutions()` bumps. `User::hasPermissionTo()`\n  remains the single funnel for `permission:` middleware, `can()`, and `/auth/me`, so a button, a route, and\n  a service cannot disagree about what a name means.\n\n### Fixed\n- `OrganizationRoleController::validateOverrides()` declared `grants` and `denials` as `required`, which in\n  Laravel rejects `[]` — the one value that carries meaning here. A screen that only takes a capability\n  away, and a form that states \"no individual additions\", were both answered with `VALIDATION_FAILED`\n  instead of the controller's own guard codes. Both keys are now `present|array`, and three\n  `PermissionIsolationTest` cases went green with the code change rather than with adjusted assertions.\n\n### Verified\n- `tests/Feature/PermissionIsolationTest.php` 10 tests / 83 assertions, `MembershipPermissionsTest` 8 / 95,\n  and the **full backend suite 361 passed / 2283 assertions / 0 failed** (up from 351 before this phase).\n- Dev database migrated and converged: 40 system standings across 8 companies, 904 role permissions, 0\n  member overrides. Web `tsc --noEmit` and `vite build` clean; `flutter analyze` clean.\n- Docs carried the change: root `API_CONTRACT.md` (§3 error codes, §4.2 scope-is-the-decision, §4.3 both\n  doors, §4.12 platform matrix), `DATABASE.md` (three table layouts, the dropped CHECK, `permissions.scope`\n  with the 10/25/10 tally, and the `role` default corrected to `staff`), `DOMAIN_MODEL.md` §4 rewritten as\n  the two-door model.\n\n---\n",
+  "old_string": "---\n\n## [Unreleased] - third normal form, and what it took back (2026-09-25)"
+}
+
+##########################################################################################
+result 01160dd6-f8b1-4ee2-a4e2-fcbc55a6730c.jsonl 2026-09-25T17:33:45.056Z call_3be57a8f775843eb89a598a3 len=8549
+##########################################################################################
+1	import React, { useMemo, useState } from 'react';
+2	import type { ScopedPermission } from '../types';
+3	
+4	/**
+5	 * A checkbox list of capabilities the caller is allowed to offer.
+6	 *
+7	 * It exists because two doors — the platform's matrix and one company's standings —
+8	 * select from the same catalog under different rules, and the rule that matters is
+9	 * *which names appear at all*. Every screen passes the list the server's own read
+10	 * endpoint returned (`grantable_permissions` inside a company, `permissions` minus
+11	 * `account_forbidden` on the platform console), so a box the route would refuse is
+12	 * never rendered. A picker that filtered by a hardcoded list of names would be a
+13	 * second copy of the boundary, and copies of boundaries drift.
+14	 *
+15	 * Two modes because the two write shapes differ: `dual` shows three states per name
+16	 * (منح / لا شيء / سحب) for a member's individual override, where the write takes a
+17	 * grants list and a denials list, and `single` shows a tick for the role editors,
+18	 * where the write takes one replacement list.
+19	 */
+20	
+21	export type OverrideState = 'grant' | 'none' | 'deny';
+22	
+23	const SCOPE_LABELS: Record<ScopedPermission['scope'], string> = {
+24	  platform: 'صلاحية منصة',
+25	  business: 'صلاحية منشأة',
+26	  both: 'مشتركة',
+27	};
+28	
+29	const STATE_LABELS: Record<OverrideState, string> = {
+30	  grant: 'منح',
+31	  none: 'كالدور',
+32	  deny: 'سحب',
+33	};
+34	
+35	/** Stable ordering: the platform's own names first, then alphabetically. */
+36	function byScopeThenName(a: ScopedPermission, b: ScopedPermission): number {
+37	  const rank = (scope: ScopedPermission['scope']) => (scope === 'platform' ? 0 : scope === 'both' ? 1 : 2);
+38	  return rank(a.scope) - rank(b.scope) || a.name.localeCompare(b.name);
+39	}
+40	
+41	interface PickerProps {
+42	  /** What the server offered this screen. Anything outside it cannot be picked. */
+43	  available: ScopedPermission[];
+44	  /** The names the stored row currently carries, so the editor opens honest. */
+45	  selected: string[];
+46	  onSelect?: (names: string[]) => void;
+47	  states?: Record<string, OverrideState>;
+48	  onStatesChange?: (states: Record<string, OverrideState>) => void;
+49	  /** A name the account already holds through its role: labelled, not clickable-off. */
+50	  inherited?: string[];
+51	  disabled?: boolean;
+52	}
+53	
+54	export const PermissionPicker: React.FC<PickerProps> = ({
+55	  available,
+56	  selected,
+57	  onSelect,
+58	  states,
+59	  onStatesChange,
+60	  inherited = [],
+61	  disabled,
+62	}) => {
+63	  const [query, setQuery] = useState('');
+64	
+65	  const isDual = states !== undefined && onStatesChange !== undefined;
+66	
+67	  const chosen = useMemo(() => new Set(selected), [selected]);
+68	  const passedDown = useMemo(() => new Set(inherited), [inherited]);
+69	
+70	  const visible = useMemo(() => {
+71	    const needle = query.trim().toLowerCase();
+72	    return [...available]
+73	      .filter((entry) => !needle || entry.name.toLowerCase().includes(needle))
+74	      .sort(byScopeThenName);
+75	  }, [available, query]);
+76	
+77	  const toggleSingle = (name: string) => {
+78	    if (!onSelect) return;
+79	    onSelect(chosen.has(name) ? selected.filter((entry) => entry !== name) : [...selected, name]);
+80	  };
+81	
+82	  const cycle = (name: string) => {
+83	    if (!states || !onStatesChange) return;
+84	    const current = states[name] ?? 'none';
+85	    const next: OverrideState = current === 'none' ? 'grant' : current === 'grant' ? 'deny' : 'none';
+86	    onStatesChange({ ...states, [name]: next });
+87	  };
+88	
+89	  return (
+90	    <div className="space-y-2">
+91	      <div className="flex flex-wrap items-center justify-between gap-2">
+92	        <input
+93	          value={query}
+94	          onChange={(event) => setQuery(event.target.value)}
+95	          placeholder="ابحث عن صلاحية…"
+96	          disabled={disabled}
+97	          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs focus:bg-white focus:outline-none disabled:opacity-50 sm:w-56 dark:border-hassal-line dark:bg-hassal-raised dark:text-slate-100"
+98	        />
+99	        <span className="text-[10px] text-slate-500 dark:text-slate-400">
+100	          {isDual
+101	            ? `${Object.values(states ?? {}).filter((state) => state === 'grant').length} مُضافة · ${
+102	                Object.values(states ?? {}).filter((state) => state === 'deny').length
+103	              } مسحوبة`
+104	            : `${selected.length} من ${available.length}`}
+105	        </span>
+106	      </div>
+107	
+108	      {isDual ? (
+109	        <p className="text-[10px] leading-relaxed text-slate-500 dark:text-slate-400">
+110	          الاسم يُنقر بالدوران: منح يضيف فوق الدور، سحب يمنعه حتى لو كان الدور يحمله، ولا شيء يتركه كما هو.
+111	        </p>
+112	      ) : null}
+113	
+114	      <div className="max-h-72 min-w-0 overflow-y-auto rounded-lg border border-slate-200 dark:border-hassal-line">
+115	        {visible.length === 0 ? (
+116	          <p className="p-3 text-[11px] text-slate-500 dark:text-slate-400">
+117	            {available.length ? 'لا اسم يطابق البحث.' : 'لم تصل قائمة الصلاحيات من الخادم.'}
+118	          </p>
+119	        ) : (
+120	          <ul className="divide-y divide-slate-100 dark:divide-hassal-line">
+121	            {visible.map((entry) => {
+122	              const state = isDual ? states?.[entry.name] ?? 'none' : chosen.has(entry.name) ? 'grant' : 'none';
+123	              const carries = passedDown.has(entry.name);
+124	
+125	              return (
+126	                <li key={entry.name} className="flex items-center justify-between gap-2 px-2.5 py-1.5">
+127	                  <div className="min-w-0">
+128	                    <div className="truncate text-[11px] font-bold text-slate-800 dark:text-slate-100" dir="ltr" title={entry.name}>
+129	                      {entry.name}
+130	                    </div>
+131	                    <div className="flex flex-wrap items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400">
+132	                      <span>{SCOPE_LABELS[entry.scope]}</span>
+133	                      {/* Said out loud because the alternative is a ticked box that
+134	                          does nothing, which reads as a bug in the save. */}
+135	                      {carries && !isDual ? <span className="text-emerald-700 dark:text-emerald-400">موروثة من الدور</span> : null}
+136	                    </div>
+137	                  </div>
+138	                  <button
+139	                    type="button"
+140	                    disabled={disabled}
+141	                    onClick={() => (isDual ? cycle(entry.name) : toggleSingle(entry.name))}
+142	                    className={`shrink-0 rounded-lg border px-2 py-1 text-[10px] font-bold transition-colors disabled:opacity-40 ${
+143	                      state === 'grant'
+144	                        ? 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
+145	                        : state === 'deny'
+146	                          ? 'border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
+147	                          : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 dark:border-hassal-line dark:bg-hassal-raised dark:text-slate-300'
+148	                    }`}
+149	                  >
+150	                    {isDual ? STATE_LABELS[state] : state === 'grant' ? 'مشمولة' : 'غير مشمولة'}
+151	                  </button>
+152	                </li>
+153	              );
+154	            })}
+155	          </ul>
+156	        )}
+157	      </div>
+158	    </div>
+159	  );
+160	};
+161	
+162	/** The two lists a dual picker holds, split the way the route expects them. */
+163	export function splitStates(states: Record<string, OverrideState>): { grants: string[]; denials: string[] } {
+164	  const entries = Object.entries(states);
+165	  return {
+166	    grants: entries.filter(([, state]) => state === 'grant').map(([name]) => name).sort(),
+167	    denials: entries.filter(([, state]) => state === 'deny').map(([name]) => name).sort(),
+168	  };
+169	}
+170	
+171	/** A stored pair rebuilt as picker state, so an editor opens on what the row says. */
+172	export function statesFrom(grants: string[], denials: string[]): Record<string, OverrideState> {
+173	  const states: Record<string, OverrideState> = {};
+174	  for (const name of grants) states[name] = 'grant';
+175	  for (const name of denials) states[name] = 'deny';
+176	  return states;
+177	}
+178	
+
+##########################################################################################
+result 01160dd6-f8b1-4ee2-a4e2-fcbc55a6730c.jsonl 2026-09-25T17:33:53.001Z call_8f603a67b365438a817ab50b len=2265
+##########################################################################################
+..\hassal\src\components\OrganizationRolesPanel.tsx:5:import { PermissionPicker, splitStates, statesFrom, type OverrideState } from './PermissionPicker';
+..\hassal\src\components\OrganizationRolesPanel.tsx:241:        setStates(statesFrom(result.data.grants, result.data.denials));
+..\hassal\src\components\OrganizationRolesPanel.tsx:267:    const { grants, denials } = splitStates(states);
+..\hassal\src\components\OrganizationRolesPanel.tsx:283:          ? await api.updateMemberPermissions(organizationId, selectedMembers[0], { grants, denials, reason })
+..\hassal\src\components\OrganizationRolesPanel.tsx:284:          : await api.bulkMemberPermissions(organizationId, { user_ids: selectedMembers, grants, denials, reason });
+..\hassal\src\components\OrganizationRolesPanel.tsx:300:            setStates(statesFrom(refreshed.data.grants, refreshed.data.denials));
+..\hassal\src\components\OrganizationRolesPanel.tsx:417:            <PermissionPicker available={available} selected={draftPermissions} onSelect={setDraftPermissions} disabled={busy} />
+..\hassal\src\components\OrganizationRolesPanel.tsx:441:            <PermissionPicker available={available} selected={newPermissions} onSelect={setNewPermissions} disabled={busy} />
+..\hassal\src\components\OrganizationRolesPanel.tsx:522:            <PermissionPicker available={available} selected={[]} states={states} onStatesChange={setStates} inherited={memberView?.role_permissions} disabled={busy} />
+..\hassal\src\components\PermissionPicker.tsx:54:export const PermissionPicker: React.FC<PickerProps> = ({
+..\hassal\src\components\PermissionPicker.tsx:163:export function splitStates(states: Record<string, OverrideState>): { grants: string[]; denials: string[] } {
+..\hassal\src\components\PermissionPicker.tsx:172:export function statesFrom(grants: string[], denials: string[]): Record<string, OverrideState> {
+..\hassal\src\components\PlatformPermissionsPanel.tsx:5:import { PermissionPicker } from './PermissionPicker';
+..\hassal\src\components\PlatformPermissionsPanel.tsx:249:            <PermissionPicker available={offerable} selected={draft} onSelect={setDraft} inherited={role?.declared} disabled={busy} />
+..\hassal\src\components\PlatformPermissionsPanel.tsx:325:          <PermissionPicker
+
+##########################################################################################
+edit 01160dd6-f8b1-4ee2-a4e2-fcbc55a6730c.jsonl 2026-09-25T17:45:42.360Z D:\hassal\src\components\AccountPermissionsEditor.tsx len=941
+##########################################################################################
+{
+  "file_path": "D:\\hassal\\src\\components\\AccountPermissionsEditor.tsx",
+  "new_string": "            <PermissionPicker\n              available={available}\n              selected={draft}\n              onSelect={(names) => {\n                setDraft(names);\n                setNotice(null);\n              }}\n              inherited={inherited}\n              disabled={busy}\n            />\n\n            {notice ? (\n              <p className=\"rounded-lg border border-emerald-200 bg-emerald-50 p-2 text-[11px] font-bold text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300\">\n                {notice}\n              </p>\n            ) : null}\n\n",
+  "old_string": "            <PermissionPicker\n              available={available}\n              selected={draft}\n              onSelect={setDraft}\n              inherited={inherited}\n              disabled={busy}\n            />\n\n"
+}
+
+##########################################################################################
+result 91058cfd-f9a7-4637-a5bb-275d9ccd9efd.jsonl 2026-10-02T08:29:08.297Z call_ef67790c69ed4467b1e5bd2e len=8007
+##########################################################################################
+import React, { useMemo, useState } from 'react';
+import type { ScopedPermission } from '@/features/identity/types';
+
+/**
+ * A checkbox list of capabilities the caller is allowed to offer.
+ *
+ * It exists because two doors — the platform's matrix and one company's standings —
+ * select from the same catalog under different rules, and the rule that matters is
+ * *which names appear at all*. Every screen passes the list the server's own read
+ * endpoint returned (`grantable_permissions` inside a company, `permissions` minus
+ * `account_forbidden` on the platform console), so a box the route would refuse is
+ * never rendered. A picker that filtered by a hardcoded list of names would be a
+ * second copy of the boundary, and copies of boundaries drift.
+ *
+ * Two modes because the two write shapes differ: `dual` shows three states per name
+ * (منح / لا شيء / سحب) for a member's individual override, where the write takes a
+ * grants list and a denials list, and `single` shows a tick for the role editors,
+ * where the write takes one replacement list.
+ */
+
+export type OverrideState = 'grant' | 'none' | 'deny';
+
+const SCOPE_LABELS: Record<ScopedPermission['scope'], string> = {
+  platform: 'صلاحية منصة',
+  business: 'صلاحية منشأة',
+  both: 'مشتركة',
+};
+
+const STATE_LABELS: Record<OverrideState, string> = {
+  grant: 'منح',
+  none: 'كالدور',
+  deny: 'سحب',
+};
+
+/** Stable ordering: the platform's own names first, then alphabetically. */
+function byScopeThenName(a: ScopedPermission, b: ScopedPermission): number {
+  const rank = (scope: ScopedPermission['scope']) => (scope === 'platform' ? 0 : scope === 'both' ? 1 : 2);
+  return rank(a.scope) - rank(b.scope) || a.name.localeCompare(b.name);
+}
+
+interface PickerProps {
+  /** What the server offered this screen. Anything outside it cannot be picked. */
+  available: ScopedPermission[];
+  /** The names the stored row currently carries, so the editor opens honest. */
+  selected: string[];
+  onSelect?: (names: string[]) => void;
+  states?: Record<string, OverrideState>;
+  onStatesChange?: (states: Record<string, OverrideState>) => void;
+  /** A name the account already holds through its role: labelled, not clickable-off. */
+  inherited?: string[];
+  disabled?: boolean;
+}
+
+export const PermissionPicker: React.FC<PickerProps> = ({
+  available,
+  selected,
+  onSelect,
+  states,
+  onStatesChange,
+  inherited = [],
+  disabled,
+}) => {
+  const [query, setQuery] = useState('');
+
+  const isDual = states !== undefined && onStatesChange !== undefined;
+
+  const chosen = useMemo(() => new Set(selected), [selected]);
+  const passedDown = useMemo(() => new Set(inherited), [inherited]);
+
+  const visible = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return [...available]
+      .filter((entry) => !needle || entry.name.toLowerCase().includes(needle))
+      .sort(byScopeThenName);
+  }, [available, query]);
+
+  const toggleSingle = (name: string) => {
+    if (!onSelect) return;
+    onSelect(chosen.has(name) ? selected.filter((entry) => entry !== name) : [...selected, name]);
+  };
+
+  const cycle = (name: string) => {
+    if (!states || !onStatesChange) return;
+    const current = states[name] ?? 'none';
+    const next: OverrideState = current === 'none' ? 'grant' : current === 'grant' ? 'deny' : 'none';
+    onStatesChange({ ...states, [name]: next });
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="ابحث عن صلاحية…"
+          disabled={disabled}
+          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs focus:bg-white focus:outline-none disabled:opacity-50 sm:w-56 dark:border-hassal-line dark:bg-hassal-raised dark:text-slate-100"
+        />
+        <span className="text-[10px] text-slate-500 dark:text-slate-400">
+          {isDual
+            ? `${Object.values(states ?? {}).filter((state) => state === 'grant').length} مُضافة · ${
+                Object.values(states ?? {}).filter((state) => state === 'deny').length
+              } مسحوبة`
+            : `${selected.length} من ${available.length}`}
+        </span>
+      </div>
+
+      {isDual ? (
+        <p className="text-[10px] leading-relaxed text-slate-500 dark:text-slate-400">
+          الاسم يُنقر بالدوران: منح يضيف فوق الدور، سحب يمنعه حتى لو كان الدور يحمله، ولا شيء يتركه كما هو.
+        </p>
+      ) : null}
+
+      <div className="max-h-72 min-w-0 overflow-y-auto rounded-lg border border-slate-200 dark:border-hassal-line">
+        {visible.length === 0 ? (
+          <p className="p-3 text-[11px] text-slate-500 dark:text-slate-400">
+            {available.length ? 'لا اسم يطابق البحث.' : 'لم تصل قائمة الصلاحيات من الخادم.'}
+          </p>
+        ) : (
+          <ul className="divide-y divide-slate-100 dark:divide-hassal-line">
+            {visible.map((entry) => {
+              const state = isDual ? states?.[entry.name] ?? 'none' : chosen.has(entry.name) ? 'grant' : 'none';
+              const carries = passedDown.has(entry.name);
+
+              return (
+                <li key={entry.name} className="flex items-center justify-between gap-2 px-2.5 py-1.5">
+                  <div className="min-w-0">
+                    <div className="truncate text-[11px] font-bold text-slate-800 dark:text-slate-100" dir="ltr" title={entry.name}>
+                      {entry.name}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400">
+                      <span>{SCOPE_LABELS[entry.scope]}</span>
+                      {/* Said out loud because the alternative is a ticked box that
+                          does nothing, which reads as a bug in the save. */}
+                      {carries && !isDual ? <span className="text-emerald-700 dark:text-emerald-400">موروثة من الدور</span> : null}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => (isDual ? cycle(entry.name) : toggleSingle(entry.name))}
+                    className={`shrink-0 rounded-lg border px-2 py-1 text-[10px] font-bold transition-colors disabled:opacity-40 ${
+                      state === 'grant'
+                        ? 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
+                        : state === 'deny'
+                          ? 'border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
+                          : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 dark:border-hassal-line dark:bg-hassal-raised dark:text-slate-300'
+                    }`}
+                  >
+                    {isDual ? STATE_LABELS[state] : state === 'grant' ? 'مشمولة' : 'غير مشمولة'}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+};
+
+/** The two lists a dual picker holds, split the way the route expects them. */
+export function splitStates(states: Record<string, OverrideState>): { grants: string[]; denials: string[] } {
+  const entries = Object.entries(states);
+  return {
+    grants: entries.filter(([, state]) => state === 'grant').map(([name]) => name).sort(),
+    denials: entries.filter(([, state]) => state === 'deny').map(([name]) => name).sort(),
+  };
+}
+
+/** A stored pair rebuilt as picker state, so an editor opens on what the row says. */
+export function statesFrom(grants: string[], denials: string[]): Record<string, OverrideState> {
+  const states: Record<string, OverrideState> = {};
+  for (const name of grants) states[name] = 'grant';
+  for (const name of denials) states[name] = 'deny';
+  return states;
+}
+
+Shell cwd was reset to D:\hassal_app_flutter
+
+##########################################################################################
+write 91058cfd-f9a7-4637-a5bb-275d9ccd9efd.jsonl 2026-10-02T08:54:35.462Z D:\hassal\scripts\tmp-find-pp.mjs len=1566
+##########################################################################################
+/**
+ * Pull the PermissionPicker source back out of the transcripts.
+ *
+ * The file was never committed and never written through the editor, so the only
+ * copy that exists is the terminal output that printed it before it was deleted.
+ * Find every tool result that contains its export signature and dump them.
+ */
+import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+const projects = 'C:/Users/alshh/.qoder/projects';
+const found = [];
+
+function transcripts(dir) {
+  const out = [];
+  for (const entry of readdirSync(dir)) {
+    const path = join(dir, entry);
+    const st = statSync(path);
+    if (st.isDirectory()) out.push(...transcripts(path));
+    else if (entry.endsWith('.jsonl') && st.size > 200_000) out.push(path);
+  }
+  return out;
+}
+
+for (const file of transcripts(projects)) {
+  const lines = readFileSync(file, 'utf8').split('\n');
+  for (let i = 0; i < lines.length; i += 1) {
+    if (!lines[i].trim()) continue;
+    let event;
+    try {
+      event = JSON.parse(lines[i]);
+    } catch {
+      continue;
+    }
+    const text = JSON.stringify(event);
+    if (!text.includes('PermissionPicker')) continue;
+    if (!text.includes('OverrideState')) continue;
+    found.push({ file, line: i + 1, size: text.length, sample: text.slice(0, 160) });
+  }
+}
+
+console.log(`candidates: ${found.length}`);
+for (const c of found) console.log(`${c.file}:${c.line} len=${c.size}\n    ${c.sample}`);
+writeFileSync('backend/storage/permissionpicker-candidates.json', JSON.stringify(found, null, 2), 'utf8');
+
+
+##########################################################################################
+result 91058cfd-f9a7-4637-a5bb-275d9ccd9efd.jsonl 2026-10-02T08:55:14.569Z call_b3663a021fb9494887dbbee9 len=14746
+##########################################################################################
+2:====================================================================================================
+4:====================================================================================================
+5:[tool_use Write {"content":"import React, { useMemo, useState } from 'react';\nimport type { ScopedPermission } from '../types';\n\n/**\n * A checkbox list of capabilities the caller is allowed to offer.\n *\n * It exists because two doors — the platform's matrix and one company's standings —\n * select from the same catalog under different rules, and the rule that matters is\n * *which names appear at all*. Every screen passes the list the server's own read\n * endpoint returned (`grantable_permissions` inside a company, `permissions` minus\n * `account_forbidden` on the platform console), so a box the route would refuse is\n * never rendered. A picker that filtered by a hardcoded list of names would be a\n * second copy of the boundary, and copies of boundaries drift.\n *\n * Two modes because the two write shapes differ: `dual` shows three states per name\n * (منح / لا شيء / سحب) for a member's individual override, where the write takes a\n * grants list and a denials list, and `single` shows a tick for the role editors,\n * where the write takes one replacement list.\n */\n\nexport type OverrideState = 'grant' | 'none' | 'deny';\n\nconst SCOPE_LABELS: Record<ScopedPermission['scope'], string> = {\n  platform: 'صلاحية منصة',\n  business: 'صلاحية منشأة',\n  both: 'مشتركة',\n};\n\nconst STATE_LABELS: Record<OverrideState, string> = {\n  grant: 'منح',\n  none: 'كالدور',\n  deny: 'سحب',\n};\n\n/** Stable ordering: the platform's own names first, then alphabetically. */\nfunction byScopeThenName(a: ScopedPermission, b: ScopedPermission): number {\n  const rank = (scope: ScopedPermission['scope']) => (scope === 'platform' ? 0 : scope === 'both' ? 1 : 2);\n  return rank(a.scope) - rank(b.scope) || a.name.localeCompare(b.name);\n}\n\ninterface PickerProps {\n  /** What the server offered this screen. Anything outside it cannot be picked. */\n  available: ScopedPermission[];\n  /** The names the stored row currently carries, so the editor opens honest. */\n  selected: string[];\n  onSelect?: (names: string[]) => void;\n  states?: Record<string, OverrideState>;\n  onStatesChange?: (states: Record<string, OverrideState>) => void;\n  /** A name the account already holds through its role: labelled, not clickable-off. */\n  inherited?: string[];\n  disabled?: boolean;\n}\n\nexport const PermissionPicker: React.FC<PickerProps> = ({\n  available,\n  selected,\n  onSelect,\n  states,\n  onStatesChange,\n  inherited = [],\n  disabled,\n}) => {\n  const [query, setQuery] = useState('');\n\n  const isDual = states !== undefined && onStatesChange !== undefined;\n\n  const chosen = useMemo(() => new Set(selected), [selected]);\n  const passedDown = useMemo(() => new Set(inherited), [inherited]);\n\n  const visible = useMemo(() => {\n    const needle = query.trim().toLowerCase();\n    return [...available]\n      .filter((entry) => !needle || entry.name.toLowerCase().includes(needle))\n      .sort(byScopeThenName);\n  }, [available, query]);\n\n  const toggleSingle = (name: string) => {\n    if (!onSelect) return;\n    onSelect(chosen.has(name) ? selected.filter((entry) => entry !== name) : [...selected, name]);\n  };\n\n  const cycle = (name: string) => {\n    if (!states || !onStatesChange) return;\n    const current = states[name] ?? 'none';\n    const next: OverrideState = current === 'none' ? 'grant' : current === 'grant' ? 'deny' : 'none';\n    onStatesChange({ ...states, [name]: next });\n  };\n\n  return (\n    <div className=\"space-y-2\">\n      <div className=\"flex flex-wrap items-center justify-between gap-2\">\n        <input\n          value={query}\n          onChange={(event) => setQuery(event.target.value)}\n          placeholder=\"ابحث عن صلاحية…\"\n          disabled={disabled}\n          className=\"w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs focus:bg-white focus:outline-none disabled:opacity-50 sm:w-56 dark:border-hassal-line dark:bg-hassal-raised dark:text-slate-100\"\n        />\n        <span className=\"t]
+7:====================================================================================================
+9:====================================================================================================
+10:[tool_use Write {"content":"import React, { useCallback, useEffect, useMemo, useState } from 'react';\nimport { Plus, RefreshCw, Trash2, UserCheck } from 'lucide-react';\nimport { api, fieldError, type ApiResult } from '../lib/api';\nimport { BannerView, DecisionButton, ErrorNote, LabeledSelect, PanelShell, TextInput, type Banner } from './panel';\nimport { PermissionPicker, splitStates, statesFrom, type OverrideState } from './PermissionPicker';\nimport type { MemberPermissionsView, OrganizationRolesSnapshot, UserMembership } from '../types';\n\n/**\n * What a company's own standings are worth, and what one person inside it is worth.\n *\n * This is the organization door of the permissions system, and the component is\n * built around the three boundaries the server enforces behind it:\n *\n *   * The names on offer come from `grantable_permissions` in the same response as\n *     the roles, which is the list the route accepts — platform capabilities are\n *     absent from it. Nothing here filters by a list of names written in the\n *     client, so a rename in `config/rbac.php` cannot leave a stale checkbox that\n *     only fails at submit time.\n *   * Authority is per company and per page: the routes take the organization id,\n *     and the caller's membership in *that* company is asked for `members.manage`.\n *     The tenant header is set by the session, not chosen here.\n *   * The owner standing and the owner's own rows resist being edited into\n *     helplessness, which the server answers with `OWNER_STANDING_PROTECTED`. That\n *     refusal is shown rather than pre-empted: hiding the save on the owner row\n *     would be this screen inventing its own rule about ownership.\n *\n * Two editors, because the two decisions are different in kind. A standing says\n * what a *kind* of job in this company can do; an override says what *this person*\n * can do beyond or beneath the standing they hold. The override editor shows both\n * the standing's grants and the resulting effective set, because a manager who\n * cannot see the difference between the two will keep \"fixing\" a role that was\n * already narrowed by a denial nobody remembers writing.\n */\n\nfunction refusalOf(result: ApiResult<unknown>): string {\n  return result.error?.message || result.message || 'تعذّر تنفيذ الأمر على المنشأة';\n}\n\n/** The key the column stores; anything the server would reject is caught here first. */\nconst KEY_PATTERN = /^[a-z][a-z0-9_]{1,62}$/;\n\ninterface OrganizationRolesPanelProps {\n  organizationId: number;\n  organizationName: string | null;\n  members: UserMembership[];\n  /** `members.manage`, resolved by the caller the way every other screen does. */\n  canManage: boolean;\n  /** Set when the roster asks to edit one person's overrides; null opens the list. */\n  focusMemberId: number | null;\n  onFocusMemberHandled: () => void;\n  onNotify?: (message: string) => void;\n}\n\nexport const OrganizationRolesPanel: React.FC<OrganizationRolesPanelProps> = ({\n  organizationId,\n  organizationName,\n  members,\n  canManage,\n  focusMemberId,\n  onFocusMemberHandled,\n  onNotify,\n}) => {\n  const [snapshot, setSnapshot] = useState<OrganizationRolesSnapshot | null>(null);\n  const [loading, setLoading] = useState(false);\n  const [busy, setBusy] = useState(false);\n  const [banner, setBanner] = useState<Banner>(null);\n  const [denied, setDenied] = useState<string | null>(null);\n\n  const [editingKey, setEditingKey] = useState<string | null>(null);\n  const [draftPermissions, setDraftPermissions] = useState<string[]>([]);\n  const [roleReason, setRoleReason] = useState('');\n  const [roleErrors, setRoleErrors] = useState<Record<string, string | null>>({});\n\n  const [newKey, setNewKey] = useState('');\n  const [newNameAr, setNewNameAr] = useState('');\n  const [copyFrom, setCopyFrom] = useState('');\n  const [newPermissions, setNewPermissions] = useState<string[]>([]);\n  const [newReason, setNewReason] = useState('');\n  const [newErrors, ]
+12:====================================================================================================
+14:====================================================================================================
+15:[tool_result call_3be57a8f775843eb89a598a3 isError=false len=8549]
+36:21	export type OverrideState = 'grant' | 'none' | 'deny';
+44:29	const STATE_LABELS: Record<OverrideState, string> = {
+62:47	  states?: Record<string, OverrideState>;
+63:48	  onStatesChange?: (states: Record<string, OverrideState>) => void;
+100:85	    const next: OverrideState = current === 'none' ? 'grant' : current === 'grant' ? 'deny' : 'none';
+178:163	export function splitStates(states: Record<string, OverrideState>): { grants: string[]; denials: string[] } {
+187:172	export function statesFrom(grants: string[], denials: string[]): Record<string, OverrideState> {
+188:173	  const states: Record<string, OverrideState> = {};
+195:====================================================================================================
+197:====================================================================================================
+198:[tool_result call_8f603a67b365438a817ab50b isError=false len=2265]
+199:..\hassal\src\components\OrganizationRolesPanel.tsx:5:import { PermissionPicker, splitStates, statesFrom, type OverrideState } from './PermissionPicker';
+201:..\hassal\src\components\OrganizationRolesPanel.tsx:267:    const { grants, denials } = splitStates(states);
+209:..\hassal\src\components\PermissionPicker.tsx:163:export function splitStates(states: Record<string, OverrideState>): { grants: string[]; denials: string[] } {
+210:..\hassal\src\components\PermissionPicker.tsx:172:export function statesFrom(grants: string[], denials: string[]): Record<string, OverrideState> {
+215:====================================================================================================
+217:====================================================================================================
+218:[tool_result call_9857d03300b9412183c685f0 isError=false len=5903]
+271:src/components/OrganizationRolesPanel.tsx:8:import { PermissionPicker, splitStates, statesFrom, type OverrideState } from './PermissionPicker';
+285:====================================================================================================
+287:====================================================================================================
+288:[tool_result call_c6598dea368b49c0aebe5a4f isError=false len=13418]
+469:8:import { PermissionPicker, splitStates, statesFrom, type OverrideState } from './PermissionPicker';
+492:====================================================================================================
+494:====================================================================================================
+495:[tool_result call_c564acf3e5e2440f94810d0e isError=false len=3286]
+510:src/components/OrganizationRolesPanel.tsx:8:import { PermissionPicker, splitStates, statesFrom, type OverrideState } from './PermissionPicker';
+527:====================================================================================================
+529:====================================================================================================
+532:====================================================================================================
+534:====================================================================================================
+535:[tool_result call_ef67790c69ed4467b1e5bd2e isError=false len=8007]
+556:export type OverrideState = 'grant' | 'none' | 'deny';
+564:const STATE_LABELS: Record<OverrideState, string> = {
+582:  states?: Record<string, OverrideState>;
+583:  onStatesChange?: (states: Record<string, OverrideState>) => void;
+620:    const next: OverrideState = current === 'none' ? 'grant' : current === 'grant' ? 'deny' : 'none';
+698:export function splitStates(states: Record<string, OverrideState>): { grants: string[]; denials: string[] } {
+707:export function statesFrom(grants: string[], denials: string[]): Record<string, OverrideState> {
+708:  const states: Record<string, OverrideState> = {};
+716:====================================================================================================
+718:====================================================================================================
+721:====================================================================================================
+723:====================================================================================================
+724:[tool_use Write {"content":"/**\n * Pull the PermissionPicker source back out of the transcripts.\n *\n * The file was never committed and never written through the editor, so the only\n * copy that exists is the terminal output that printed it before it was deleted.\n * Find every tool result that contains its export signature and dump them.\n */\nimport { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';\nimport { join } from 'node:path';\n\nconst projects = 'C:/Users/alshh/.qoder/projects';\nconst found = [];\n\nfunction transcripts(dir) {\n  const out = [];\n  for (const entry of readdirSync(dir)) {\n    const path = join(dir, entry);\n    const st = statSync(path);\n    if (st.isDirectory()) out.push(...transcripts(path));\n    else if (entry.endsWith('.jsonl') && st.size > 200_000) out.push(path);\n  }\n  return out;\n}\n\nfor (const file of transcripts(projects)) {\n  const lines = readFileSync(file, 'utf8').split('\\n');\n  for (let i = 0; i < lines.length; i += 1) {\n    if (!lines[i].trim()) continue;\n    let event;\n    try {\n      event = JSON.parse(lines[i]);\n    } catch {\n      continue;\n    }\n    const text = JSON.stringify(event);\n    if (!text.includes('PermissionPicker')) continue;\n    if (!text.includes('OverrideState')) continue;\n    found.push({ file, line: i + 1, size: text.length, sample: text.slice(0, 160) });\n  }\n}\n\nconsole.log(`candidates: ${found.length}`);\nfor (const c of found) console.log(`${c.file}:${c.line} len=${c.size}\\n    ${c.sample}`);\nwriteFileSync('backend/storage/permissionpicker-candidates.json', JSON.stringify(found, null, 2), 'utf8');\n","file_path":"D:\\hassal\\scripts\\tmp-find-pp.mjs"}]
+
+Shell cwd was reset to D:\hassal_app_flutter
+
+##########################################################################################
+write 91058cfd-f9a7-4637-a5bb-275d9ccd9efd.jsonl 2026-10-02T08:55:47.079Z D:\hassal\scripts\tmp-extract-pp.mjs len=2129
+##########################################################################################
+/**
+ * Extract every transcript payload that could be the PermissionPicker source:
+ * a Write of it, or a terminal result that printed all of it.
+ */
+import { readFileSync, writeFileSync } from 'node:fs';
+import { m } from 'node:test';
+
+const files = [
+  'C:/Users/alshh/.qoder/projects/D--hassal-app-flutter/01160dd6-f8b1-4ee2-a4e2-fcbc55a6730c.jsonl',
+  'C:/Users/alshh/.qoder/projects/D--hassal-app-flutter/91058cfd-f9a7-4637-a5bb-275d9ccd9efd.jsonl',
+];
+
+const bodies = [];
+for (const file of files) {
+  for (const line of readFileSync(file, 'utf8').split('\n')) {
+    if (!line.trim()) continue;
+    let event;
+    try {
+      event = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    for (const part of event.message?.content ?? []) {
+      if (part.type === 'tool_use' && typeof part.input?.content === 'string' && part.input.content.includes('OverrideState')) {
+        bodies.push({ kind: 'write', file: file.split('/').pop(), ts: event.timestamp, path: part.input.file_path, body: part.input.content });
+      }
+      if (part.type === 'tool_use' && part.name === 'Edit' && JSON.stringify(part.input).includes('PermissionPicker')) {
+        bodies.push({ kind: 'edit', file: file.split('/').pop(), ts: event.timestamp, path: part.input.file_path, body: JSON.stringify(part.input, null, 2) });
+      }
+      if (part.type === 'tool_result') {
+        const body = typeof part.content === 'string' ? part.content : JSON.stringify(part.content);
+        if (body.includes('export function statesFrom') && body.includes('OverrideState')) {
+          bodies.push({ kind: 'result', file: file.split('/').pop(), ts: event.timestamp, path: part.tool_use_id, body });
+        }
+      }
+    }
+  }
+}
+
+bodies.sort((a, b) => String(a.ts).localeCompare(String(b.ts)));
+let out = '';
+for (const entry of bodies) out += `\n${'#'.repeat(90)}\n${entry.kind} ${entry.file} ${entry.ts} ${entry.path} len=${entry.body.length}\n${'#'.repeat(90)}\n${entry.body}\n`;
+writeFileSync('backend/storage/permissionpicker-full.txt', out, 'utf8');
+console.log(bodies.map((b) => `${b.kind} ${b.ts} ${b.path} len=${b.body.length}`).join('\n'));
+

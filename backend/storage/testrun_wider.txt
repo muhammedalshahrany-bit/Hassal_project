@@ -1,0 +1,132 @@
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\AccountGovernanceTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma token minted before a suspension stops working after it[39m[90m                                                  [39m [90m32.07s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma suspended request still carries the security headers[39m[90m                                                      [39m [90m0.46s[39m  
+  [32;1m✓[39;22m[90m [39m[90man inactive account cannot reach a write endpoint[39m[90m                                                           [39m [90m0.48s[39m  
+  [32;1m✓[39;22m[90m [39m[90msuspending an account from the console closes its sessions[39m[90m                                                  [39m [90m0.54s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe console lists only platform roles[39m[90m                                                                       [39m [90m0.56s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma business role can no longer be assigned from the platform console[39m[90m                                         [39m [90m0.48s[39m  
+  [32;1m✓[39;22m[90m [39m[90mgranting a platform role requires a reason and records it[39m[90m                                                   [39m [90m0.41s[39m  
+  [32;1m✓[39;22m[90m [39m[90mrevoking a platform role needs a reason and refuses self removal[39m[90m                                            [39m [90m0.43s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe last super admin cannot be revoked[39m[90m                                                                      [39m [90m0.43s[39m  
+  [32;1m✓[39;22m[90m [39m[90mrevoking the other super admin leaves the platform operable[39m[90m                                                 [39m [90m0.43s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma membership change is made with a reason and affects only that company[39m[90m                                     [39m [90m0.54s[39m  
+  [32;1m✓[39;22m[90m [39m[90mstaff is a valid membership role and operator is not[39m[90m                                                        [39m [90m0.50s[39m  
+  [32;1m✓[39;22m[90m [39m[90man admin cannot grant ownership and the last owner cannot step down alone[39m[90m                                   [39m [90m0.50s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe last active owner cannot be demoted[39m[90m                                                                     [39m [90m0.51s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe membership vocabulary is served rather than typed out[39m[90m                                                   [39m [90m0.48s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe accounts listing states the membership role where the console reads it[39m[90m                                  [39m [90m0.45s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe database refuses a role no validator would accept[39m[90m                                                       [39m [90m0.42s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe database refuses an account state it does not understand[39m[90m                                                [39m [90m0.37s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\DealFlowTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma deal remembers the terms it was made on[39m[90m                                                                   [39m [90m0.69s[39m  
+  [32;1m✓[39;22m[90m [39m[90monly the seller on this deal can approve it[39m[90m                                                                 [39m [90m0.67s[39m  
+  [32;1m✓[39;22m[90m [39m[90mmoving the goods and closing the order are two different jobs[39m[90m                                               [39m [90m0.73s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma state the product does not define moves nothing[39m[90m                                                           [39m [90m0.65s[39m  
+  [32;1m✓[39;22m[90m [39m[90mno state claims money the platform never held[39m[90m                                                               [39m [90m0.67s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe walk to completion moves the stock exactly once[39m[90m                                                         [39m [90m1.02s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma counter pickup can close without an inspection window[39m[90m                                                     [39m [90m0.81s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma cancelled deal gives the stock back once[39m[90m                                                                  [39m [90m0.99s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma dispute needs a case file and both sides can open one[39m[90m                                                     [39m [90m1.38s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma dispute can be raised by either side and closed only by the platform[39m[90m                                      [39m [90m1.18s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma ruling that calls the order off puts the quantity back[39m[90m                                                    [39m [90m1.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90meach side sees its own deals and nobody elses[39m[90m                                                               [39m [90m0.84s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\InventoryReservationTest[39m
+  [32;1m✓[39;22m[90m [39m[90man ask holds nothing until the seller answers[39m[90m                                                               [39m [90m0.54s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma hold records what it claims and remembers the price[39m[90m                                                       [39m [90m0.70s[39m  
+  [32;1m✓[39;22m[90m [39m[90mstock that is not there cannot be asked for[39m[90m                                                                 [39m [90m0.53s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma shelf that emptied after the ask is not held by the acceptance[39m[90m                                            [39m [90m0.65s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma line below the sellers minimum is not opened[39m[90m                                                              [39m [90m0.48s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma seller cannot raise an ask against their own shelf[39m[90m                                                        [39m [90m0.52s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma withdrawn listing cannot be asked for through the back door[39m[90m                                               [39m [90m0.68s[39m  
+  [32;1m✓[39;22m[90m [39m[90man ask is not honoured when the seller was stopped[39m[90m                                                          [39m [90m0.56s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe database waits for the first claim to finish[39m[90m                                                            [39m [90m1.48s[39m  
+  [32;1m✓[39;22m[90m [39m[90mcancelling returns the stock once and only once[39m[90m                                                             [39m [90m0.56s[39m  
+  [32;1m✓[39;22m[90m [39m[90man unanswered hold expires and the shelf reopens[39m[90m                                                            [39m [90m0.58s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma hold still inside its grace window is left alone[39m[90m                                                          [39m [90m0.55s[39m  
+  [32;1m✓[39;22m[90m [39m[90man expired hold cannot be turned into a deal[39m[90m                                                                [39m [90m0.62s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma replayed ask asks once[39m[90m                                                                                    [39m [90m0.54s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe last of a shelf goes to one buyer and can come back[39m[90m                                                     [39m [90m0.76s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma deal converts the hold instead of releasing it[39m[90m                                                            [39m [90m0.66s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\OfferCommunityTest[39m
+  [32;1m✓[39;22m[90m [39m[90minterest is one row per actor and a second press adds nothing[39m[90m                                               [39m [90m0.51s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe same person pressing from two businesses is one signal[39m[90m                                                  [39m [90m0.51s[39m  
+  [32;1m✓[39;22m[90m [39m[90mremoving interest only reaches the actors own row[39m[90m                                                           [39m [90m0.62s[39m  
+  [32;1m✓[39;22m[90m [39m[90minterest is never recorded for a company the caller does not belong to[39m[90m                                      [39m [90m0.54s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma listing nobody can buy cannot be liked[39m[90m                                                                    [39m [90m0.46s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe liked list is per person across every company they work for[39m[90m                                             [39m [90m0.53s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma consumer with no organization likes and is named by person only[39m[90m                                           [39m [90m0.56s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma consumer report is recorded and names no company[39m[90m                                                          [39m [90m0.55s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma suspended account holds no person capability[39m[90m                                                              [39m [90m0.45s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma question and the sellers answer are labelled by who they are[39m[90m                                              [39m [90m0.51s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma reply cannot be attached to another listings thread[39m[90m                                                       [39m [90m0.53s[39m  
+  [32;1m✓[39;22m[90m [39m[90mpre moderation holds a comment out of the public thread until a reviewer publishes it[39m[90m                       [39m [90m0.60s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe author withdrawing a comment hides it without deleting the record[39m[90m                                       [39m [90m0.52s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma stranger cannot withdraw another business comment[39m[90m                                                         [39m [90m0.53s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma report asks for a review and decides nothing itself[39m[90m                                                       [39m [90m0.54s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe moderation queues are closed to business roles and open to the platform[39m[90m                                 [39m [90m0.64s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe listing publishes counts it can prove and no opinion it cannot[39m[90m                                          [39m [90m0.55s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\PlatformAdminLayerTest[39m
+  [32;1m✓[39;22m[90m [39m[90mthe sellers shelf holds every status and the market only live ones[39m[90m                                          [39m [90m0.63s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe shelf is a tenants view and not a global one[39m[90m                                                            [39m [90m0.61s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe moderation queue lists other businesses and refuses the seller[39m[90m                                          [39m [90m0.56s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe organization directory is scoped to the caller and honours search[39m[90m                                       [39m [90m0.48s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma business cannot verify itself[39m[90m                                                                             [39m [90m0.42s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma platform verification is recorded as a platform review[39m[90m                                                    [39m [90m0.49s[39m  
+  [32;1m✓[39;22m[90m [39m[90man adverse decision requires a reason and a repeated one is refused[39m[90m                                         [39m [90m0.48s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma reinstatement does not redate the original verification[39m[90m                                                   [39m [90m0.48s[39m  
+  [32;1m✓[39;22m[90m [39m[90mverification honours the legal fields the platform itself required[39m[90m                                          [39m [90m0.55s[39m  
+  [32;1m✓[39;22m[90m [39m[90msuspending a business stops it trading and being used[39m[90m                                                       [39m [90m0.67s[39m  
+  [32;1m✓[39;22m[90m [39m[90man adjustment changes the offers own quantities and records the transition[39m[90m                                  [39m [90m0.60s[39m  
+  [32;1m✓[39;22m[90m [39m[90man adjustment respects committed stock and other peoples offers[39m[90m                                             [39m [90m0.75s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe marketplace closes when its flag is off and reopens immediately[39m[90m                                         [39m [90m0.63s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe audit trail filters and stays inside the callers scope[39m[90m                                                  [39m [90m0.69s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe role vocabulary the console offers is the one assignment checks[39m[90m                                         [39m [90m0.76s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\PurchaseRequestFlowTest[39m
+  [32;1m✓[39;22m[90m [39m[90masking holds nothing and consumes the match[39m[90m                                                                 [39m [90m0.68s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe quantity is checked against what the seller will actually do[39m[90m                                            [39m [90m0.52s[39m  
+  [32;1m✓[39;22m[90m [39m[90monly the seller answers and acceptance is what holds stock[39m[90m                                                  [39m [90m0.64s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma seller cannot accept more than the shelf holds[39m[90m                                                            [39m [90m0.69s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma refusal needs a reason and ends the conversation[39m[90m                                                          [39m [90m0.68s[39m  
+  [32;1m✓[39;22m[90m [39m[90mnegotiation records the proposed terms without rewriting the ask[39m[90m                                            [39m [90m0.65s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma buyer withdraws only an unanswered ask[39m[90m                                                                    [39m [90m0.82s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma match is worthless once the offer leaves the market[39m[90m                                                       [39m [90m0.52s[39m  
+  [32;1m✓[39;22m[90m [39m[90man expired match and an expired offer are reported differently[39m[90m                                              [39m [90m0.70s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma finished listing cannot be asked for from its card[39m[90m                                                        [39m [90m0.52s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\RbacMatrixTest[39m
+  [32;1m✓[39;22m[90m [39m[90mevery permission the catalog declares is enforced somewhere[39m[90m                                                 [39m [90m0.22s[39m  
+  [32;1m✓[39;22m[90m [39m[90mno route checks a capability the catalog never declared[39m[90m                                                     [39m [90m0.08s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe seeded matrix matches the catalog[39m[90m                                                                       [39m [90m0.42s[39m  
+  [32;1m✓[39;22m[90m [39m[90mbusiness roles never hold a platform only capability[39m[90m                                                        [39m [90m0.07s[39m  
+  [32;1m✓[39;22m[90m [39m[90mperson capabilities are real and never platform scoped[39m[90m                                                      [39m [90m0.08s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\SellerIdentityVisibilityTest[39m
+  [32;1m✓[39;22m[90m [39m[90mpublishing can record a request to hide the sellers name[39m[90m                                                    [39m [90m0.85s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma stranger reading the public list gets no name no registration and no vat[39m[90m                                  [39m [90m0.54s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe detail page answers the same way as the list[39m[90m                                                            [39m [90m0.49s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe selling organization still reads its own listing in full[39m[90m                                                [39m [90m0.48s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma platform reviewer reads the name the market does not[39m[90m                                                      [39m [90m0.49s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe sellers own answer in the thread carries no name either[39m[90m                                                 [39m [90m0.46s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe switch travels with an edit and not with the lifecycle[39m[90m                                                  [39m [90m0.44s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\TenantIsolationAndIdorTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma rival seller cannot edit another business offer[39m[90m                                                           [39m [90m0.55s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma rival seller cannot delete another business draft[39m[90m                                                         [39m [90m0.48s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma rival cannot read a deal it is not party to[39m[90m                                                               [39m [90m0.54s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma rival cannot move another partys deal through the state machine[39m[90m                                           [39m [90m0.49s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma rival cannot cancel a reservation it does not hold[39m[90m                                                        [39m [90m0.59s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma rival cannot approve a purchase request addressed to another seller[39m[90m                                       [39m [90m0.60s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma rival cannot rename another business warehouse[39m[90m                                                            [39m [90m0.47s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma business cannot read the audit trail of another business[39m[90m                                                  [39m [90m0.52s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe same user in two businesses sees only the selected tenant offers[39m[90m                                        [39m [90m0.50s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma non member cannot place a foreign organization in context[39m[90m                                                 [39m [90m0.42s[39m  
+
+  [90mTests:[39m    [32;1m110 passed[39;22m[90m (1061 assertions)[39m
+  [90mDuration:[39m [39m96.02s[39m
+

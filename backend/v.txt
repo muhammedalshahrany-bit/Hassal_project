@@ -1,0 +1,23 @@
+--- Listings: total = available + reserved + sold ---
+[32m   15 listings checked.[39m
+--- Holds: reserved_quantity = active holds + holds of open orders ---
+[32m   18 holds counted against 15 listings.[39m
+--- Orders: the money fields add up as the pricing service adds them ---
+[32m   14 orders checked.[39m
+--- Orders: the state each one sits in is the state its history ends at ---
+[32m   54 history rows.[39m
+--- Delivery codes: each one matches the order it was issued for ---
+[32m   13 codes checked.[39m
+--- Coverage: every state a screen walks has at least one row ---
+   listings: ACTIVE, CANCELLED, DRAFT, EXPIRED, PAUSED, PENDING_REVIEW, SOLD_OUT
+   purchase requests: ACCEPTED, CANCELLED, PROPOSED, REJECTED, REQUESTED
+   holds: ACTIVE, CANCELLED, CONVERTED_TO_DEAL, EXPIRED
+   orders: ACCEPTED, CANCELLED, COMPLETED, DELIVERED, DISPATCHED, DISPUTED, INSPECTION, PENDING_SELLER_APPROVAL, PROCESSING, READY_FOR_PICKUP, RESOLVED
+   delivery codes: ACTIVE, INVALIDATED, USED
+   disputes: EVIDENCE_REQUIRED, OPEN, RESOLVED_CANCELLATION, RESOLVED_RELEASE
+   organizations: 8 across buyer, intermediary, seller
+--- The platform has exactly one operator, and no demo account is one ---
+   SuperAdmin: alshhranymuha39@gmail.com
+   demo accounts: 21
+
+[32mOK — the demo world agrees with itself.[39m

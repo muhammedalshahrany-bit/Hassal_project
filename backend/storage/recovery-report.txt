@@ -1,0 +1,39 @@
+src/App.tsx                                ok       git HEAD lines=636 applied=19 missed=3 failed-skipped=3 sessions=C:\Users {"at":"2026-09-25T14:52:41.922Z","transcript":"C:\\Users","old":"          onLogout={async () => {\n            await api.logout();\n            setCurrentUser(null);\n"}
+src/main.tsx                               ok       git HEAD lines=20 applied=0 missed=0 failed-skipped=0 sessions=C:\Users 
+src/components/Header.tsx                  ok       git HEAD lines=906 applied=9 missed=0 failed-skipped=4 sessions=C:\Users 
+src/lib/config.ts                          ok       git HEAD lines=349 applied=0 missed=0 failed-skipped=1 sessions=C:\Users 
+src/lib/i18n.ts                            ok       git HEAD lines=138 applied=0 missed=0 failed-skipped=1 sessions=C:\Users 
+src/lib/theme.ts                           ok       git HEAD lines=99 applied=0 missed=0 failed-skipped=0 sessions=C:\Users 
+src/lib/navigation.ts                      ok       write@2026-09-28T16:21:50.224Z lines=444 applied=5 missed=0 failed-skipped=1 sessions=C:\Users 
+src/components/panel.tsx                   ok       git HEAD lines=189 applied=0 missed=0 failed-skipped=0 sessions=C:\Users 
+src/components/BrandMark.tsx               ok       git HEAD lines=74 applied=0 missed=0 failed-skipped=0 sessions=C:\Users 
+src/components/CameraCapture.tsx           ok       git HEAD lines=213 applied=0 missed=0 failed-skipped=0 sessions=C:\Users 
+src/lib/googleIdentity.ts                  ok       git HEAD lines=212 applied=0 missed=0 failed-skipped=0 sessions=C:\Users 
+src/components/AuthModal.tsx               ok       git HEAD lines=592 applied=0 missed=0 failed-skipped=1 sessions=C:\Users 
+src/components/AccountSetupCard.tsx        ok       git HEAD lines=225 applied=0 missed=0 failed-skipped=0 sessions=C:\Users 
+src/components/SigninDevicesPanel.tsx      ok       write@2026-09-24T14:25:24.030Z lines=241 applied=0 missed=0 failed-skipped=0 sessions=C:\Users 
+src/components/ProfileView.tsx             ok       git HEAD lines=258 applied=5 missed=0 failed-skipped=0 sessions=C:\Users SIDECHAIN 
+src/components/CatalogView.tsx             ok       git HEAD lines=934 applied=0 missed=0 failed-skipped=0 sessions=C:\Users SIDECHAIN 
+src/components/CommunityModerationPanel.tsx ok       git HEAD lines=443 applied=0 missed=0 failed-skipped=0 sessions=C:\Users 
+src/components/OfferCommunity.tsx          ok       git HEAD lines=406 applied=1 missed=0 failed-skipped=0 sessions=C:\Users 
+src/components/PermissionPicker.tsx        NO BASE   lines=- applied=- missed=- failed-skipped=- sessions=- undefined
+src/components/AccountPermissionsEditor.tsx ok       write@2026-09-25T17:37:14.586Z lines=328 applied=7 missed=0 failed-skipped=0 sessions=C:\Users 
+src/components/PlatformPermissionsPanel.tsx ok       write@2026-09-25T17:39:59.442Z lines=193 applied=1 missed=0 failed-skipped=0 sessions=C:\Users 
+src/components/SellerInventoryView.tsx     ok       git HEAD lines=2032 applied=0 missed=0 failed-skipped=4 sessions=C:\Users SIDECHAIN 
+src/components/WarehouseMapView.tsx        ok       git HEAD lines=103 applied=0 missed=0 failed-skipped=1 sessions=C:\Users SIDECHAIN 
+src/components/MarketplaceView.tsx         ok       git HEAD lines=1449 applied=3 missed=1 failed-skipped=7 sessions=C:\Users SIDECHAIN {"at":"2026-09-25T14:45:50.718Z","transcript":"C:\\Users","old":"import BrandMark from './BrandMark';\nimport { OfferLikeButton, OfferThread, useOfferCommunity } from"}
+src/components/DemandsView.tsx             ok       git HEAD lines=856 applied=0 missed=0 failed-skipped=0 sessions=C:\Users 
+src/components/PromotedStrip.tsx           ok       write@2026-09-24T21:39:08.291Z lines=289 applied=0 missed=0 failed-skipped=0 sessions=C:\Users 
+src/components/NotificationBell.tsx        ok       git HEAD lines=76 applied=0 missed=0 failed-skipped=0 sessions=C:\Users 
+src/components/MembersView.tsx             ok       git HEAD lines=489 applied=4 missed=0 failed-skipped=0 sessions=C:\Users SIDECHAIN 
+src/components/OrganizationProfileView.tsx ok       git HEAD lines=452 applied=0 missed=0 failed-skipped=0 sessions=C:\Users SIDECHAIN 
+src/components/OrganizationDocumentsPanel.tsx ok       git HEAD lines=688 applied=0 missed=0 failed-skipped=1 sessions=C:\Users 
+src/components/OrganizationRolesPanel.tsx  ok       write@2026-09-25T16:30:03.653Z lines=548 applied=1 missed=0 failed-skipped=0 sessions=C:\Users 
+src/components/AdminConsoleView.tsx        ok       git HEAD lines=1826 applied=19 missed=0 failed-skipped=4 sessions=C:\Users SIDECHAIN 
+src/components/PlatformConfigView.tsx      ok       git HEAD lines=1098 applied=1 missed=0 failed-skipped=0 sessions=C:\Users SIDECHAIN 
+src/components/IntegrationsPanel.tsx       ok       git HEAD lines=380 applied=0 missed=0 failed-skipped=0 sessions=C:\Users 
+src/components/SetupWizardPanel.tsx        ok       git HEAD lines=247 applied=0 missed=0 failed-skipped=0 sessions=C:\Users 
+src/components/SupportDeskPanel.tsx        ok       write@2026-09-24T21:45:56.381Z lines=595 applied=2 missed=0 failed-skipped=1 sessions=C:\Users 
+src/components/DealsPipelineView.tsx       ok       git HEAD lines=2492 applied=43 missed=0 failed-skipped=4 sessions=C:\Users SIDECHAIN 
+src/components/DisputesView.tsx            ok       git HEAD lines=535 applied=11 missed=0 failed-skipped=1 sessions=C:\Users SIDECHAIN 
+src/components/LedgerView.tsx              ok       git HEAD lines=507 applied=3 missed=0 failed-skipped=2 sessions=C:\Users SIDECHAIN 

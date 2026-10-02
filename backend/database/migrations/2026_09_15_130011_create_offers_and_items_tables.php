@@ -13,7 +13,11 @@ return new class extends Migration
             $table->foreignId('seller_organization_id')->constrained('organizations')->cascadeOnDelete();
             $table->foreignId('warehouse_id')->constrained('warehouses')->restrictOnDelete();
             $table->foreignId('product_variant_id')->constrained('product_variants')->restrictOnDelete();
-            $table->foreignId('category_id')->nullable()->constrained('categories')->nullOnDelete();
+            // No `category_id`: which category a listing belongs to is a fact
+            // about its product, reached through this column. It was dropped by
+            // `2026_09_25_100100_drop_derived_category_from_offers.php`, and the
+            // line is removed here as well so a fresh database never holds a
+            // shape the platform has already decided against.
 
             $table->string('title_ar');
             $table->string('title_en')->nullable();

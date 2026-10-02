@@ -21,3 +21,6 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Route dump the web contract check compares itself against. Generated, never committed.
+/storage/routes.check.json

@@ -35,6 +35,11 @@ return [
         // platform responsibility, so only SuperAdmin (which holds '*') has it.
         'offers.view', 'offers.create', 'offers.update', 'offers.delete',
         'offers.publish', 'offers.cancel', 'offers.moderate',
+        // `offers.moderate` decides whether a listing may be seen; `offers.feature`
+        // decides where it sits in front of everyone. Placing a company's goods at
+        // the head of the market's front page is the platform ranking its own
+        // marketplace, so — again — no business standing holds it, whoever pays.
+        'offers.feature',
 
         // Catalog (platform-owned reference data)
         'catalog.manage',
@@ -63,9 +68,11 @@ return [
         'requests.view', 'requests.create', 'requests.update',
         'requests.cancel', 'requests.approve', 'requests.reject',
 
-        // Deals (agreed terms, immutable snapshot)
+        // Deals (agreed terms, immutable snapshot). There is no `deals.manage`:
+        // the closing acts of an order are the seller's dispatch, the delivery
+        // scan and the buyer's receipt, each with its own name and its own actor.
         'deals.view', 'deals.create', 'deals.confirm',
-        'deals.dispatch', 'deals.deliver', 'deals.dispute', 'deals.manage',
+        'deals.dispatch', 'deals.deliver', 'deals.dispute',
 
         // Locations
         'warehouses.view', 'warehouses.manage',
@@ -83,9 +90,135 @@ return [
         'notifications.view',
 
         // Platform administration (SuperAdmin / platform staff only)
-        'users.manage', 'settings.manage', 'currencies.manage',
+        'users.manage', 'roles.manage', 'settings.manage', 'currencies.manage',
         'audit.view', 'reports.view', 'api.manage',
         'ledger.view',
+        // Reading the support queue and answering it. Filing a ticket needs no
+        // capability at all — the account this desk exists for is the one whose
+        // paperwork was rejected or whose phone cannot get in — but the other
+        // side of it is held by nobody but the platform: a counterparty must
+        // never read what the other is complaining about.
+        'support.manage',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Which subject a name may be attached to at all
+    |--------------------------------------------------------------------------
+    |
+    | A list of permissions says what exists. It does not say *who is allowed to
+    | be the holder*, and that gap is what this section closes. Before it, the
+    | difference between a platform capability and a business one lived only in
+    | prose: nothing stopped an admin screen from attaching `offers.moderate` to
+    | a company's owner standing, or a script from stamping `offers.create` onto
+    | an account — where it would follow that person into every business they
+    | ever joined, which is the exact fault the retired `SellerAdmin` roles were
+    | removed for.
+    |
+    | Three answers, and every name in `permissions` must carry exactly one:
+    |
+    |   * `platform` — an act upon the market or upon somebody else's business:
+    |     approving a listing, promoting one, verifying a company, ruling a
+    |     dispute, staffing accounts, editing the platform's own settings,
+    |     answering the support desk. A counterparty holding one would be judging
+    |     its own case, so no organization door may ever attach these.
+    |   * `business` — an act a company performs on its own trade, its own shelf,
+    |     its own staff. These are held by memberships and by nothing else:
+    |     attached to an account they would survive the person leaving the
+    |     company, and a grant that outlives the relationship that justified it is
+    |     not a grant, it is a leftover.
+    |   * `both` — a name that legitimately reads on either side, where the
+    |     *difference is made by the context the code runs in and not by the name:
+    |     `ledger.view` is one company's books under an organization context and
+    |     every company's books without one, `audit.view` and `reports.view`
+    |     likewise, and the read names the platform's own reviewer holds to see
+    |     what a seller sees of its listings. Isolating these behind a second
+    |     name (`ledger.view.own` / `ledger.view.all`) would only relocate the
+    |     decision into two places that can disagree; the scoping rule here is
+    |     about who may *hold* a name, and the tenant rule in the controllers is
+    |     about what holding it *reaches*.
+    |
+    | `App\Core\Rbac\RbacScope` reads this list and refuses the wrong-direction
+    | write by name, and `tests/Feature/RbacMatrixTest.php` asserts the catalog
+    | is fully and uniquely covered — a name missing here is a name no one has
+    | decided, and a name in two of these lists is a name whose boundary is a
+    | rumour.
+    |
+    */
+
+    'permission_scopes' => [
+        'platform' => [
+            'offers.moderate', 'offers.feature',
+            'community.moderate',
+            'organizations.verify',
+            'disputes.resolve',
+            'users.manage', 'roles.manage', 'settings.manage', 'currencies.manage',
+            'support.manage',
+        ],
+
+        // Everything not named below and not named above is `business`: the
+        // writes a company performs on its own trade.
+        'both' => [
+            'offers.view', 'demands.view', 'requests.view', 'deals.view',
+            'warehouses.view',
+            'catalog.manage',
+            'notifications.view',
+            'audit.view', 'reports.view', 'ledger.view',
+        ],
+
+        /*
+         | Named rather than left as the remainder, even though `scopeOf()` treats
+         | an unnamed name this way. The three lists are a partition, and a
+         | partition nobody wrote down cannot be reviewed: a new capability added
+         | at the top of this file would otherwise become grantable inside a
+         | company the day it was written, silently, by not being mentioned.
+         | `RolesAndPermissionsSeeder::assertScopesCover()` fails the seed when a
+         | name is missing from all three or appears in two of them.
+         */
+        'business' => [
+            'offers.create', 'offers.update', 'offers.delete',
+            'offers.publish', 'offers.cancel', 'offers.like',
+            'comments.create',
+            'demands.create', 'demands.quote',
+            'requests.create', 'requests.update', 'requests.cancel',
+            'requests.approve', 'requests.reject',
+            'deals.create', 'deals.confirm', 'deals.dispatch', 'deals.deliver',
+            'deals.dispute',
+            'warehouses.manage',
+            'disputes.open',
+            'organizations.manage', 'members.manage',
+            // Machine credentials are issued by whoever owns the business they act
+            // for, so this is a company's decision and not the platform's.
+            'api.manage',
+        ],
+    ],
+
+    /*
+    |----------------------------------------------------------------------
+    | Person capabilities — the consumer standing (see App\Core\Rbac\RbacScope)
+    |----------------------------------------------------------------------
+    |
+    | A signed-in account with no organization is a consumer of the platform,
+    | and §1 of the product brief makes that context first-class rather than an
+    | error state. Three names are exercisable by the human alone: pressing
+    | "interested" and asking a public question attribute to the person
+    | (`user_id` is always stored; `organization_id` is stored when one stands
+    | behind the click), and reading notifications is already a per-user read in
+    | `NotificationController` — the rows are addressed to the account, never to
+    | a company. Everything else — trading, ordering, publishing, warehousing —
+    | stays company-only, because a commercial claim needs the registered
+    | business behind it that a counterparty can hold to account.
+    |
+    | Names here must exist in `permissions` and be of the business/both scope;
+    | `RbacMatrixTest` asserts both, because a list that grants a platform name
+    | to any account is the one way this file could open a moderation door to a
+    | stranger.
+    |
+    */
+    'person_capabilities' => [
+        'offers.like',
+        'comments.create',
+        'notifications.view',
     ],
 
     'roles' => [
@@ -192,7 +325,7 @@ return [
     | to uncheck it. Standing inside a company is held per company, in
     | `organization_memberships.role`, so that is what has to be read.
     |
-    | `App\Models\User::hasPermissionTo()` asks this matrix for whatever the
+    | `App\Identity\Models\User::hasPermissionTo()` asks this matrix for whatever the
     | active organization context says the user is, so a route guarded by
     | `permission:offers.create` is answered by the membership row and not by a
     | global role. A name that appears here must exist in `permissions` above;
@@ -227,7 +360,7 @@ return [
             'requests.view', 'requests.create', 'requests.update', 'requests.cancel',
             'requests.approve', 'requests.reject',
             'deals.view', 'deals.create', 'deals.confirm', 'deals.dispatch',
-            'deals.deliver', 'deals.dispute', 'deals.manage',
+            'deals.deliver', 'deals.dispute',
             'warehouses.view', 'warehouses.manage',
             'disputes.open',
             'organizations.manage', 'members.manage',
@@ -248,7 +381,7 @@ return [
             'requests.view', 'requests.create', 'requests.update', 'requests.cancel',
             'requests.approve', 'requests.reject',
             'deals.view', 'deals.create', 'deals.confirm', 'deals.dispatch',
-            'deals.deliver', 'deals.dispute', 'deals.manage',
+            'deals.deliver', 'deals.dispute',
             'warehouses.view', 'warehouses.manage',
             'disputes.open',
             'organizations.manage', 'members.manage',
@@ -272,8 +405,8 @@ return [
             'notifications.view',
         ],
 
-        // Money: confirms terms, sees the books and the reports, and can open a
-        // dispute about a payment. Does not move stock or run the catalog.
+        // Money terms: confirms the price, sees the books and the reports, and can
+        // open a dispute about the amounts. Does not move stock or run the catalog.
         'finance' => [
             'offers.view', 'demands.view', 'requests.view',
             'deals.view', 'deals.confirm', 'deals.dispute',

@@ -138,13 +138,15 @@ Generated from `php artisan route:list --path=api/v1` (**120 routes**, counted f
 | **Deals** | `GET` | `/api/v1/deals/{id}` | Deal detail | `deals.view` |
 | **Deals** | `POST` | `/api/v1/deals` | Create Deal from a held reservation | `deals.view` + `deals.create` |
 | **Deals** | `POST` | `/api/v1/deals/{id}/transition` | State machine transition | `deals.view`; the target state declares its own permission and actor inside |
+| **Deals** | `GET` | `/api/v1/deals/{id}/handover` | Handover code for the active deal | `deals.view`, `feature:marketplace` |
+| **Deals** | `GET` | `/api/v1/deals/{id}/handover/label` | The same code as a printable SVG QR label | `deals.view`, `feature:marketplace` |
+| **Deals** | `POST` | `/api/v1/deals/{id}/handover/verify` | Spend the code once at pickup/delivery | `deals.deliver`, `feature:marketplace`, `idempotency` |
 | **Disputes** | `GET` | `/api/v1/disputes` | Dispute list | `disputes.open` |
 | **Disputes** | `POST` | `/api/v1/disputes` | Raise a dispute on a deal | `disputes.open` |
 | **Disputes** | `POST` | `/api/v1/disputes/{id}/resolve` | Platform resolution | `disputes.resolve` |
 | **Ledger** | `GET` | `/api/v1/ledger/accounts` | Chart of accounts | `ledger.view`, `feature:double_entry_ledger` |
 | **Ledger** | `GET` | `/api/v1/ledger/journal-entries` | Double-Entry Journal Entries | `ledger.view`, `feature:double_entry_ledger` |
 | **Ledger** | `GET` | `/api/v1/ledger/trial-balance` | Trial Balance Verification | `ledger.view`, `feature:double_entry_ledger` |
-| **Ledger** | `GET` | `/api/v1/reconciliation/audit` | Ledger ↔ deal reconciliation | `ledger.view`, `feature:double_entry_ledger` |
 | **Reports** | `GET` | `/api/v1/reports/sales-summary` | Aggregated sales | `reports.view` |
 | **Reports** | `GET` | `/api/v1/reports/export/deals-csv` | Deals CSV export | `reports.view` |
 | **Organizations** | `GET` | `/api/v1/organizations`, `/api/v1/organizations/{id}` | Read organizations | Authenticated + `tenant` |
@@ -167,16 +169,16 @@ Generated from `php artisan route:list --path=api/v1` (**120 routes**, counted f
 | **Integration** | `GET`/`POST` | `/api/v1/webhooks` | List / register webhook endpoints | `api.manage`, `feature:webhooks` |
 | **Integration** | `GET` | `/api/v1/webhooks/{id}/deliveries` | Delivery attempts | `api.manage`, `feature:webhooks` |
 | **Integration** | `POST` | `/api/v1/webhooks/{id}/ping` | Test delivery | `api.manage`, `feature:webhooks` |
-| **Notifications** | `GET` | `/api/v1/notifications`, `/api/v1/notifications/unread-count` | The acting user's inbox | `notifications.view` |
+| **Notifications** | `GET` | `/api/v1/notifications`, `/api/v1/notifications/unread-count` | The acting user's inbox (a person capability — an unaffiliated consumer reads it with no organization in context) | `notifications.view` |
 | **Notifications** | `POST` | `/api/v1/notifications/{id}/read`, `/api/v1/notifications/read-all` | Mark read | `notifications.view` |
 | **Auth** | `PATCH` | `/api/v1/auth/profile` | Correct own name / phone / national id (never email, never the company) | Authenticated + `idempotency` |
 | **Auth** | `POST` | `/api/v1/auth/password` | Change password; revokes the account's other tokens | Authenticated + `idempotency` |
 | **Community** | `GET` | `/api/v1/marketplace/offers/{id}/comments` | The published question thread, replies nested | Public, `feature:community` |
-| **Community** | `POST`/`DELETE` | `/api/v1/marketplace/offers/{id}/like` | Record / withdraw one attributed interest per organization | `offers.like`; POST also `verified_tenant` |
-| **Community** | `GET` | `/api/v1/marketplace/liked-offers` | Which listings the current organization liked | Authenticated, `feature:community` |
-| **Community** | `POST` | `/api/v1/marketplace/offers/{id}/comments` | Ask a question or reply (a reply to a reply flattens onto the question) | `comments.create` + `verified_tenant` |
-| **Community** | `DELETE` | `/api/v1/marketplace/comments/{id}` | Withdraw: author, the author's org owner/admin, or platform | Authenticated (row-scoped) |
-| **Community** | `POST` | `/api/v1/marketplace/comments/{id}/report` | Flag a comment, reason from a closed list | `comments.create` |
+| **Community** | `POST`/`DELETE` | `/api/v1/marketplace/offers/{id}/like` | Record / withdraw one attributed interest per person (organization captured when in context, `null` for a consumer) | `offers.like`; POST also `verified_tenant` |
+| **Community** | `GET` | `/api/v1/marketplace/liked-offers` | Which listings this account liked, across all its companies or in its own name | Authenticated, `feature:community` |
+| **Community** | `POST` | `/api/v1/marketplace/offers/{id}/comments` | Ask a question or reply (a reply to a reply flattens onto the question); author always named, organization only when one is in context | `comments.create` + `verified_tenant` |
+| **Community** | `DELETE` | `/api/v1/marketplace/comments/{id}` | Withdraw: the author themselves (any standing), the author's org owner/admin, or platform | Authenticated (row-scoped) |
+| **Community** | `POST` | `/api/v1/marketplace/comments/{id}/report` | Flag a comment, reason from a closed list; one report per person per comment | `comments.create` |
 | **Moderation** | `GET` | `/api/v1/community/summary` | Six queue counters, read from the tables the queues read | `community.moderate` |
 | **Moderation** | `GET` | `/api/v1/community/comments?status=` | `pending` (default) / `published` / `removed` / `reported` | `community.moderate` |
 | **Moderation** | `PUT` | `/api/v1/community/comments/{id}/moderate` | `publish` / `remove` (reason required) / `pending` | `community.moderate` |

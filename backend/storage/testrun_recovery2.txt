@@ -1,0 +1,487 @@
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Unit\OutboundEndpointPolicyTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma public https endpoint is accepted[39m[90m                                                                         [39m [90m0.63s[39m  
+  [32;1m✓[39;22m[90m [39m[90mendpoints that point inside the network are refused with data set "cloud metadata service"[39m[90m                  [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mendpoints that point inside the network are refused with data set "loopback v4"[39m[90m                             [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mendpoints that point inside the network are refused with data set "loopback v6"[39m[90m                             [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mendpoints that point inside the network are refused with data set "class a private"[39m[90m                         [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mendpoints that point inside the network are refused with data set "class b private"[39m[90m                         [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90mendpoints that point inside the network are refused with data set "class c private"[39m[90m                         [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mendpoints that point inside the network are refused with data set "carrier-grade nat"[39m[90m                       [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mendpoints that point inside the network are refused with data set "unique local v6"[39m[90m                         [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mendpoints that point inside the network are refused with data set "unspecified"[39m[90m                             [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mplain http is refused outside development[39m[90m                                                                   [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mbare and internal hostnames are refused[39m[90m                                                                     [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90minteger host forms are refused even though curl would resolve them[39m[90m                                          [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mcredentials embedded in the url are refused[39m[90m                                                                 [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mnon http schemes are refused[39m[90m                                                                                [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mmalformed and empty endpoints are refused[39m[90m                                                                   [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma development deployment may opt into internal endpoints[39m[90m                                                    [39m [90m0.05s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Unit\QrCodeTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma handover payload encodes to the grid a decoder read[39m[90m                                                       [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma symbol is the size its version declares[39m[90m                                                                   [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe corner geometry a locator looks for[39m[90m                                                                     [39m [90m0.02s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe format information announces the mask that was applied[39m[90m                                                  [39m [90m0.02s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe quiet zone is left to the renderer but is documented[39m[90m                                                    [39m [90m0.02s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma printable label is an svg with its margin drawn[39m[90m                                                           [39m [90m0.02s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma payload bigger than the encoder builds is refused not truncated with data set "one byte past version 10"[39m
+  [32;1m✓[39;22m[90m [39m[90ma payload bigger than the encoder builds is refused not truncated with data set "far past it"[39m
+  [32;1m✓[39;22m[90m [39m[90mthe boundary itself is carried[39m[90m                                                                              [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe same payload always draws the same picture[39m[90m                                                              [39m [90m0.03s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\AccountGovernanceTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma token minted before a suspension stops working after it[39m[90m                                                  [39m [90m25.89s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma suspended request still carries the security headers[39m[90m                                                      [39m [90m0.33s[39m  
+  [32;1m✓[39;22m[90m [39m[90man inactive account cannot reach a write endpoint[39m[90m                                                           [39m [90m0.35s[39m  
+  [32;1m✓[39;22m[90m [39m[90msuspending an account from the console closes its sessions[39m[90m                                                  [39m [90m0.48s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe console lists only platform roles[39m[90m                                                                       [39m [90m0.43s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma business role can no longer be assigned from the platform console[39m[90m                                         [39m [90m0.41s[39m  
+  [32;1m✓[39;22m[90m [39m[90mgranting a platform role requires a reason and records it[39m[90m                                                   [39m [90m0.41s[39m  
+  [32;1m✓[39;22m[90m [39m[90mrevoking a platform role needs a reason and refuses self removal[39m[90m                                            [39m [90m0.41s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe last super admin cannot be revoked[39m[90m                                                                      [39m [90m0.42s[39m  
+  [32;1m✓[39;22m[90m [39m[90mrevoking the other super admin leaves the platform operable[39m[90m                                                 [39m [90m0.40s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma membership change is made with a reason and affects only that company[39m[90m                                     [39m [90m0.42s[39m  
+  [32;1m✓[39;22m[90m [39m[90mstaff is a valid membership role and operator is not[39m[90m                                                        [39m [90m0.53s[39m  
+  [32;1m✓[39;22m[90m [39m[90man admin cannot grant ownership and the last owner cannot step down alone[39m[90m                                   [39m [90m0.41s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe last active owner cannot be demoted[39m[90m                                                                     [39m [90m0.41s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe membership vocabulary is served rather than typed out[39m[90m                                                   [39m [90m0.42s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe accounts listing states the membership role where the console reads it[39m[90m                                  [39m [90m0.46s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe database refuses a role no validator would accept[39m[90m                                                       [39m [90m0.37s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe database refuses an account state it does not understand[39m[90m                                                [39m [90m0.38s[39m  
+
+  [39;41;1m FAIL [39;49;22m[39m Tests\Feature\AccountPreferencesTest[39m
+  [31;1m⨯[39;22m[90m [39m[90ma fresh account is answered the compiled defaults[39m[90m                                                           [39m [90m0.57s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma patch leaves the keys it never mentioned alone[39m[90m                                                            [39m [90m0.49s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma key the platform does not define is refused by name and never stored[39m[90m                                      [39m [90m0.49s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma value outside an enums own list is ignored rather than stored[39m[90m                                             [39m [90m0.50s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe preferences of one account are never another accounts[39m[90m                                                   [39m [90m0.45s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe session itself carries the values so the chrome needs no second fetch[39m[90m                                   [39m [90m0.46s[39m  
+  [32;1m✓[39;22m[90m [39m[90mpreferences require a session[39m[90m                                                                               [39m [90m0.39s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma written row is answered complete so no client has to supply defaults[39m[90m                                      [39m [90m0.43s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\ApiKeyCapabilityTest[39m
+  [32;1m✓[39;22m[90m [39m[90mthe console can list keys and is told no route accepts them[39m[90m                                                 [39m [90m0.51s[39m  
+  [32;1m✓[39;22m[90m [39m[90missuing is refused while the capability is off[39m[90m                                                              [39m [90m0.47s[39m  
+  [32;1m✓[39;22m[90m [39m[90man issued key still reports that no route accepts it[39m[90m                                                        [39m [90m0.44s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\ApiRateLimitTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma signed in account gets refused once it passes its configured ceiling[39m[90m                                      [39m [90m0.45s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe ceiling moves with the setting so an operator can lower it live[39m[90m                                         [39m [90m0.50s[39m  
+  [32;1m✓[39;22m[90m [39m[90manonymous traffic is bounded per address[39m[90m                                                                    [39m [90m0.37s[39m  
+  [32;1m✓[39;22m[90m [39m[90maccounts of one organization share a budget[39m[90m                                                                 [39m [90m0.50s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe public auth routes keep their own tighter limit[39m[90m                                                         [39m [90m0.46s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\AuthTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma person can register and receive a working token[39m[90m                                                           [39m [90m0.44s[39m  
+  [32;1m✓[39;22m[90m [39m[90man issued token expires after the configured lifetime[39m[90m                                                       [39m [90m0.42s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma token stops working once its lifetime ends[39m[90m                                                                [39m [90m0.46s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma business is created after registration and not inside it[39m[90m                                                  [39m [90m0.58s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma weak password is rejected rather than stored[39m[90m                                                              [39m [90m0.38s[39m  
+  [32;1m✓[39;22m[90m [39m[90man application that omits its identity is told what is missing[39m[90m                                              [39m [90m0.37s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma password confirmation has to match the password[39m[90m                                                           [39m [90m0.50s[39m  
+  [32;1m✓[39;22m[90m [39m[90mpassword recovery answers the same question whether or not an email exists[39m[90m                                  [39m [90m0.85s[39m  
+  [32;1m✓[39;22m[90m [39m[90mlogin accepts either email or phone and never leaks the password[39m[90m                                            [39m [90m0.49s[39m  
+  [32;1m✓[39;22m[90m [39m[90mwrong password gets the same answer as a wrong email[39m[90m                                                        [39m [90m0.41s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma suspended person cannot sign in[39m[90m                                                                           [39m [90m0.40s[39m  
+  [32;1m✓[39;22m[90m [39m[90mlogging out invalidates the token that was used[39m[90m                                                             [39m [90m0.44s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma person cannot enter a business they do not belong to[39m[90m                                                      [39m [90m0.39s[39m  
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+PHP Fatal error:  Cannot redeclare App\Models\Offer::isExpired() in D:\hassal\backend\app\Models\Offer.php on line 172
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+[33mIn Offer.php line 172:[39m
+[37;41m                                                  [39;49m
+[37;41m  Cannot redeclare App\Models\Offer::isExpired()  [39;49m
+[37;41m                                                  [39;49m
+
+
+Fatal error: Cannot redeclare App\Models\Offer::isExpired() in D:\hassal\backend\app\Models\Offer.php on line 172

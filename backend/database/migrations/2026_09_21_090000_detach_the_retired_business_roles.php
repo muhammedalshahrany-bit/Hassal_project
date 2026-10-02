@@ -45,7 +45,7 @@ return new class extends Migration
 
         $carried = DB::table('model_has_roles')
             ->join('users', 'users.id', '=', 'model_has_roles.model_id')
-            ->where('model_has_roles.model_type', 'App\Models\User')
+            ->where('model_has_roles.model_type', 'App\Identity\Models\User')
             ->whereIn('model_has_roles.role_id', $roles->values()->all())
             ->select('users.id as user_id', 'users.name', 'model_has_roles.role_id')
             ->get();
@@ -62,7 +62,7 @@ return new class extends Migration
         }
 
         DB::table('model_has_roles')
-            ->where('model_type', 'App\Models\User')
+            ->where('model_type', 'App\Identity\Models\User')
             ->whereIn('role_id', $roles->values()->all())
             ->delete();
 

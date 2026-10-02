@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('organization_id')->constrained('organizations')->cascadeOnDelete();
             $table->string('endpoint_url', 500);
             $table->string('secret', 128); // HMAC-SHA256 Secret
-            $table->json('events'); // ['offer.created', 'deal.status_changed', 'inventory.depleted', 'payment.verified', 'dispute.opened']
+            $table->json('events'); // a subset of App\Platform\Services\WebhookDispatcherService::EVENTS, or ['*']
             $table->boolean('is_active')->default(true);
             $table->unsignedInteger('failure_count')->default(0);
             $table->timestamp('last_triggered_at')->nullable();

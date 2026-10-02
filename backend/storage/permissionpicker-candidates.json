@@ -1,0 +1,74 @@
+[
+  {
+    "file": "C:\\Users\\alshh\\.qoder\\projects\\D--hassal-app-flutter\\01160dd6-f8b1-4ee2-a4e2-fcbc55a6730c.jsonl",
+    "line": 24627,
+    "size": 9535,
+    "sample": "{\"type\":\"assistant\",\"uuid\":\"850295ba-4bc3-4679-aaa5-e61abdfc9444\",\"timestamp\":\"2026-09-25T16:27:09.857Z\",\"message\":{\"id\":\"chatcmpl-98d0ad88-7003-9060-9d41-a46eb"
+  },
+  {
+    "file": "C:\\Users\\alshh\\.qoder\\projects\\D--hassal-app-flutter\\01160dd6-f8b1-4ee2-a4e2-fcbc55a6730c.jsonl",
+    "line": 24683,
+    "size": 27467,
+    "sample": "{\"type\":\"assistant\",\"uuid\":\"0f940c1b-e3fe-43cd-aa86-3e8aa822ab41\",\"timestamp\":\"2026-09-25T16:30:03.653Z\",\"message\":{\"id\":\"chatcmpl-355c262d-0c2d-9bbd-8b73-631d4"
+  },
+  {
+    "file": "C:\\Users\\alshh\\.qoder\\projects\\D--hassal-app-flutter\\01160dd6-f8b1-4ee2-a4e2-fcbc55a6730c.jsonl",
+    "line": 26125,
+    "size": 17821,
+    "sample": "{\"type\":\"user\",\"uuid\":\"47f12b88-bbc7-47e7-b005-0f68c32c62f4\",\"timestamp\":\"2026-09-25T17:33:45.056Z\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"t"
+  },
+  {
+    "file": "C:\\Users\\alshh\\.qoder\\projects\\D--hassal-app-flutter\\01160dd6-f8b1-4ee2-a4e2-fcbc55a6730c.jsonl",
+    "line": 26132,
+    "size": 5352,
+    "sample": "{\"type\":\"user\",\"uuid\":\"124a3ffe-03f5-476c-80f6-3fc51941cb97\",\"timestamp\":\"2026-09-25T17:33:53.001Z\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"t"
+  },
+  {
+    "file": "C:\\Users\\alshh\\.qoder\\projects\\D--hassal-app-flutter\\91058cfd-f9a7-4637-a5bb-275d9ccd9efd.jsonl",
+    "line": 8206,
+    "size": 12713,
+    "sample": "{\"type\":\"user\",\"uuid\":\"daed20fe-1d3e-46ba-981f-075332954cbd\",\"timestamp\":\"2026-10-02T08:26:46.683Z\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"t"
+  },
+  {
+    "file": "C:\\Users\\alshh\\.qoder\\projects\\D--hassal-app-flutter\\91058cfd-f9a7-4637-a5bb-275d9ccd9efd.jsonl",
+    "line": 8208,
+    "size": 28017,
+    "sample": "{\"type\":\"user\",\"uuid\":\"15e40d27-2cdb-498a-aa06-b5db1f27b2f5\",\"timestamp\":\"2026-10-02T08:26:46.788Z\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"t"
+  },
+  {
+    "file": "C:\\Users\\alshh\\.qoder\\projects\\D--hassal-app-flutter\\91058cfd-f9a7-4637-a5bb-275d9ccd9efd.jsonl",
+    "line": 8229,
+    "size": 7409,
+    "sample": "{\"type\":\"user\",\"uuid\":\"681e3507-b3f8-41ef-a9a8-f4acb88922f6\",\"timestamp\":\"2026-10-02T08:27:49.427Z\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"t"
+  },
+  {
+    "file": "C:\\Users\\alshh\\.qoder\\projects\\D--hassal-app-flutter\\91058cfd-f9a7-4637-a5bb-275d9ccd9efd.jsonl",
+    "line": 8259,
+    "size": 3672,
+    "sample": "{\"type\":\"assistant\",\"uuid\":\"995d9f10-1234-4a6f-b5c7-697137cb1437\",\"timestamp\":\"2026-10-02T08:29:07.867Z\",\"message\":{\"id\":\"chatcmpl-38fcfcb8-11b4-90ad-b60d-a88fe"
+  },
+  {
+    "file": "C:\\Users\\alshh\\.qoder\\projects\\D--hassal-app-flutter\\91058cfd-f9a7-4637-a5bb-275d9ccd9efd.jsonl",
+    "line": 8263,
+    "size": 17213,
+    "sample": "{\"type\":\"user\",\"uuid\":\"5c8ee6be-59cd-473a-a7c0-67e4afa73fa9\",\"timestamp\":\"2026-10-02T08:29:08.297Z\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"t"
+  },
+  {
+    "file": "C:\\Users\\alshh\\.qoder\\projects\\D--hassal-app-flutter\\91058cfd-f9a7-4637-a5bb-275d9ccd9efd.jsonl",
+    "line": 8268,
+    "size": 9596,
+    "sample": "{\"type\":\"assistant\",\"uuid\":\"92ce59c4-9f5f-477f-b674-77f6abf9eddc\",\"timestamp\":\"2026-10-02T08:30:13.596Z\",\"message\":{\"id\":\"chatcmpl-6cd94e86-7a6c-90d0-b718-49eb3"
+  },
+  {
+    "file": "C:\\Users\\alshh\\.qoder\\projects\\D--hassal-app-flutter\\91058cfd-f9a7-4637-a5bb-275d9ccd9efd.jsonl",
+    "line": 8589,
+    "size": 23507,
+    "sample": "{\"type\":\"user\",\"uuid\":\"80db93b0-d033-4c41-8b8a-d7040aeeb10d\",\"timestamp\":\"2026-10-02T08:53:25.819Z\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"text\",\"text\":\"T"
+  },
+  {
+    "file": "C:\\Users\\alshh\\.qoder\\projects\\D--hassal-app-flutter\\91058cfd-f9a7-4637-a5bb-275d9ccd9efd.jsonl",
+    "line": 8625,
+    "size": 3003,
+    "sample": "{\"type\":\"assistant\",\"uuid\":\"76dbf08b-1cc8-45da-8051-02a0fa3f8c12\",\"timestamp\":\"2026-10-02T08:54:35.462Z\",\"message\":{\"id\":\"chatcmpl-5d8935fc-d6ff-9e96-92c3-b5696"
+  }
+]

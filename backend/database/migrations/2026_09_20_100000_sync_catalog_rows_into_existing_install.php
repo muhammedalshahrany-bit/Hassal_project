@@ -1,6 +1,6 @@
 <?php
 
-use App\Support\CatalogSync;
+use App\Platform\Support\CatalogSync;
 use Illuminate\Database\Migrations\Migration;
 
 /**

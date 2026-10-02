@@ -1,0 +1,37 @@
+== register/login (consumer, no org) ==
+{"success":true,"message":"User registered successfully","data":{"user":{"id":25,"name":"\u0645\u0633\u062a\u0647\u0644\u0643 \u0641\u062d\u0635 \u062d\u064a","email":"live.consumer.1790878224@hassal.test","phone":"+9677854794668","status":"active","roles":[],"permissions":["comments.create","notifications.view","offers.like"],"preferences":{"hide_organization_name":false,"hide_seller_name":false,
+token length: 51
+== re-login with the same credentials (proves the row signed in, not just registered) ==
+login token length: 51
+== browse offers ==
+{"success":true,"message":"\u062a\u0645 \u0627\u0633\u062a\u0631\u062c\u0627\u0639 \u0627\u0644\u0639\u0631\u0648\u0636 \u0628\u0646\u062c\u0627\u062d","data":[{"id":16,"seller_organization_id":1,"warehouse_id":1,"product_variant_id":1,"category_id":1,"title_ar":"240 \u0643\u0631\u062a\u0648\u0646",
+== search ==
+{"success":true,"message":"\u062a\u0645 \u0627\u0633\u062a\u0631\u062c\u0627\u0639 \u0627\u0644\u0639\u0631\u0648\u0636 \u0628\u0646\u062c\u0627\u062d","data":[{"id":7,"seller_organization_id":3,"warehouse_id":3,"product
+== nearby ==
+{"success":true,"message":"\u062a\u0645 \u0627\u0633\u062a\u0631\u062c\u0627\u0639 \u0627\u0644\u0639\u0631\u0648\u0636 \u0627\u0644\u0642\u0631\u064a\u0628\u0629 \u0628\u0646\u062c\u0627\u062d","data":{"offers":[{"id":7
+== pick first active offer id ==
+offer id: 9
+== view offer detail ==
+{"success":true,"message":"\u062a\u0645 \u0627\u0633\u062a\u0631\u062c\u0627\u0639 \u062a\u0641\u0627\u0635\u064a\u0644 \u0627\u0644\u0639\u0631\u0636 \u0628\u0646\u062c\u0627\u062d","data":{"id":9,"seller_organization_i
+== like (as person, no tenant header) ==
+{"success":true,"message":"\u062a\u0645 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u0627\u0647\u062a\u0645\u0627\u0645","data":{"liked":true,"likes_count":2,"created":true},"meta":{"timestamp":"2026-10-01T21:10:31+03:00","correlation_id":"5a677e7b-dcad-4068-810e-9a0bf0ff7f87"}}
+== comment ==
+{"success":true,"message":"\u062a\u0645 \u0646\u0634\u0631 \u062a\u0639\u0644\u064a\u0642\u0643","data":{"id":2,"offer_id":9,"body":"\u0641\u062d\u0635 \u062d\u064a: \u0647\u0644 \u0627\u0644\u062a\u0633\u0644\u064a\u0645 \u0645\u062a\u0627\u062d \u063a\u062f\u064b\u0627\u061f","author_name":"\u0645\u0633\u062a\u0647\u0644\u0643 \u0641\u062d\u0635 \u062d\u064a","identity_hidden":false,"is_seller_reply":false,"status":"published","created_at":"2026-10-01T18:10:32.000000Z"},"meta":{"timestamp":"2026-10-01T21:10:32+03:00","correlation_id":"9af07d95-40b9-4e09-ba2a-9aed082177f4"}}
+
+comment id: 2
+== thread shows consumer row without org ==
+{"success":true,"message":"\u062a\u0645 \u0627\u0633\u062a\u0631\u062c\u0627\u0639 \u0623\u0633\u0626\u0644\u0629 \u0627\u0644\u0639\u0631\u0648\u0636","data":{"offer_id":9,"comments":[{"id":2,"offer_id":9,"body":"\u0641\u062d\u0635 \u062d\u064a: \u0647\u0644 \u0627\u0644\u062a\u0633\u0644\u064a\u0645 \u0645\u062a\u0627\u062d \u063a\u062f\u064b\u0627\u061f","author_name":"\u0645\u0633\u062a\u0647\u0644\u0643 \u0641\u062d\u0635 \u062d\u064a","identity_hidden":false,"is_seller_reply":false,"status
+== report ==
+{"success":true,"message":"\u062a\u0645 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u0628\u0644\u0627\u063a \u0644\u0645\u0631\u0627\u062c\u0639\u0629 \u0641\u0631\u064a\u0642 \u0627\u0644\u0645\u0646\u0635\u0629","data":{"comment_id":2,"report_count":1,"recorded":true},"meta":{"timestamp":"2026-10-01T21:10:34+03:00","correlation_id":"fb73257a-21d9-4512-a0cf-0c744465bb89"}}
+== purchase request must be refused (no org) ==
+{"success":false,"error_code":"PERMISSION_DENIED","error":{"code":"PERMISSION_DENIED","message":"\u0635\u0644\u0627\u062d\u064a\u0629 \u063a\u064a\u0631 \u0643\u0627\u0641\u064a\u0629 \u0644\u0647\u0630\u0627 \u0627\u0644\u0625\u062c\u0631\u0627\u0621","details":{"required_permission":"requests.view
+== liked list is per person ==
+{"success":true,"message":"\u0642\u0627\u0626\u0645\u0629 \u0627\u0644\u0639\u0631\u0648\u0636 \u0627\u0644\u0645\u0647\u062a\u0645 \u0628\u0647\u0627","data":{"offer_ids":[9]},"meta":{"timestamp":"20
+== withdraw own comment ==
+{"success":true,"message":"\u062a\u0645 \u0633\u062d\u0628 \u0627\u0644\u062a\u0639\u0644\u064a\u0642","data":{"id":2,"status":"removed"},"meta":{"timestamp":"2026-10-01T21:10:36+03:00","correlation_id":"bd4852e3-678f-46
+== unlike ==
+{"success":true,"message":"\u0623\u064f\u0644\u063a\u064a \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u0627\u0647\u062a\u0645\u0627\u0645","data":{"liked":false,"likes_count":1,"removed":true},"meta":{"timestamp":"2026-1
+== notifications inbox (person capability, no org) ==
+GET /notifications -> 200
+{"success":true,"message":"Unread notification count retrieved successfully","data":{"count":0},"meta":{"timestamp":"2026-10-01T21:10:38+03:00","correlation_id":"01f32816-5a46-4315-bf5d-68b06fa0b97a"}
+DONE

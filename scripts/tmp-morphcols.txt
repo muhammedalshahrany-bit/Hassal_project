@@ -1,0 +1,9 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+audit_logs	auditable_type
+inventory_movements	reference_type
+journal_entries	entity_type
+model_has_permissions	model_type
+model_has_roles	model_type
+organization_documents	mime_type
+personal_access_tokens	tokenable_type
+product_images	mime_type

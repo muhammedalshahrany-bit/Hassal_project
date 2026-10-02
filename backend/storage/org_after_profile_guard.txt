@@ -1,0 +1,92 @@
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Organizations\DocumentReviewQueueTest[39m
+  [32;1m✓[39;22m[90m [39m[90mthe default queue shows only waiting papers from every business[39m[90m                                            [39m [90m28.35s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma business cannot read the desk even though it holds its own papers[39m[90m                                         [39m [90m0.29s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe queue filters by paper type by business and by name[39m[90m                                                     [39m [90m0.30s[39m  
+  [32;1m✓[39;22m[90m [39m[90maccepting a paper moves it out of the queue and shows on the business row[39m[90m                                   [39m [90m0.39s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe summary counts the same rows the queue pages[39m[90m                                                            [39m [90m0.28s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma queue row carries the business state the decision is made against[39m[90m                                         [39m [90m0.31s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Organizations\MembershipPermissionsTest[39m
+  [32;1m✓[39;22m[90m [39m[90mthe matrix covers every standing and names only real permissions[39m[90m                                            [39m [90m0.27s[39m  
+  [32;1m✓[39;22m[90m [39m[90mno standing in a company reaches a capability that belongs to the platform[39m[90m                                  [39m [90m0.25s[39m  
+  [32;1m✓[39;22m[90m [39m[90mownership is the widest standing inside the company[39m[90m                                                         [39m [90m0.25s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma standing is read per company and does not follow the person[39m[90m                                               [39m [90m0.31s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe access a company granted is the access ending the membership takes back[39m[90m                                 [39m [90m0.29s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe retired business roles grant nothing and change nothing[39m[90m                                                 [39m [90m0.27s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe route layer answers from the company standing[39m[90m                                                           [39m [90m0.45s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe profile endpoint reports the effective set and no more[39m[90m                                                  [39m [90m0.34s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Organizations\OrganizationTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma business can be registered with its legal identity[39m[90m                                                        [39m [90m0.34s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma required registration number is still required[39m[90m                                                            [39m [90m0.35s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma business can register without one when the operator does not require it[39m[90m                                   [39m [90m0.39s[39m  
+  [32;1m✓[39;22m[90m [39m[90man applicant cannot register itself as a platform administrator[39m[90m                                             [39m [90m0.24s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma super administrator can register a platform organization[39m[90m                                                  [39m [90m0.30s[39m  
+  [32;1m✓[39;22m[90m [39m[90mtwo businesses cannot share one registration number[39m[90m                                                         [39m [90m0.28s[39m  
+  [32;1m✓[39;22m[90m [39m[90man owner can add a staff member and change their internal role[39m[90m                                              [39m [90m0.29s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma stranger cannot manage another business staff[39m[90m                                                             [39m [90m0.29s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe registration number and member roster are not public read[39m[90m                                               [39m [90m0.30s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma member can read their own business profile[39m[90m                                                                [39m [90m0.26s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe last owner cannot be locked out of a business[39m[90m                                                           [39m [90m0.28s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma business can complete its own profile record[39m[90m                                                              [39m [90m0.29s[39m  
+  [32;1m✓[39;22m[90m [39m[90mchanging a legal identifier reopens the platform review[39m[90m                                                     [39m [90m0.27s[39m  
+  [32;1m✓[39;22m[90m [39m[90msaving the profile without touching the identifiers keeps the decision[39m[90m                                      [39m [90m0.28s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Organizations\OrganizationVerificationTest[39m
+  [32;1m✓[39;22m[90m [39m[90man unreviewed business can browse but cannot publish[39m[90m                                                        [39m [90m0.39s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe refusal says which step is missing instead of saying no[39m[90m                                                 [39m [90m0.31s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe gate leaves the exit open[39m[90m                                                                               [39m [90m0.41s[39m  
+  [32;1m✓[39;22m[90m [39m[90mverification is an operator switch not a constant[39m[90m                                                           [39m [90m0.39s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma reviewed business trades and the gate does not reopen for its existing work[39m[90m                               [39m [90m0.43s[39m  
+  [32;1m✓[39;22m[90m [39m[90mplatform staff are not brought before the gate[39m[90m                                                              [39m [90m0.35s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma rival business cannot read another business documents[39m[90m                                                     [39m [90m0.38s[39m  
+  [32;1m✓[39;22m[90m [39m[90mfiling then accepting a document is recorded against a named reviewer[39m[90m                                       [39m [90m0.42s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma rejection carries a reason the applicant can act on[39m[90m                                                       [39m [90m0.38s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma business cannot accept its own paperwork[39m[90m                                                                  [39m [90m0.33s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma staff reviewer can read the paperwork it is asked to decide[39m[90m                                               [39m [90m0.41s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma filed paper lives on the private disk and reads back only through its signed link[39m[90m                         [39m [90m0.33s[39m  
+  [32;1m✓[39;22m[90m [39m[90mboth card sides are filed as photos and ruled on separately[39m[90m                                                 [39m [90m0.40s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Identity\AccountGovernanceTest[39m
+  [32;1m✓[39;22m[90m [39m[90ma token minted before a suspension stops working after it[39m[90m                                                   [39m [90m0.29s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma suspended request still carries the security headers[39m[90m                                                      [39m [90m0.28s[39m  
+  [32;1m✓[39;22m[90m [39m[90man inactive account cannot reach a write endpoint[39m[90m                                                           [39m [90m0.26s[39m  
+  [32;1m✓[39;22m[90m [39m[90msuspending an account from the console closes its sessions[39m[90m                                                  [39m [90m0.33s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe console lists only platform roles[39m[90m                                                                       [39m [90m0.35s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma business role can no longer be assigned from the platform console[39m[90m                                         [39m [90m0.36s[39m  
+  [32;1m✓[39;22m[90m [39m[90mgranting a platform role requires a reason and records it[39m[90m                                                   [39m [90m0.64s[39m  
+  [32;1m✓[39;22m[90m [39m[90mrevoking a platform role needs a reason and refuses self removal[39m[90m                                            [39m [90m0.81s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe last super admin cannot be revoked[39m[90m                                                                      [39m [90m0.67s[39m  
+  [32;1m✓[39;22m[90m [39m[90mrevoking the other super admin leaves the platform operable[39m[90m                                                 [39m [90m0.69s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma membership change is made with a reason and affects only that company[39m[90m                                     [39m [90m0.69s[39m  
+  [32;1m✓[39;22m[90m [39m[90mstaff is a valid membership role and operator is not[39m[90m                                                        [39m [90m0.63s[39m  
+  [32;1m✓[39;22m[90m [39m[90man admin cannot grant ownership and the last owner cannot step down alone[39m[90m                                   [39m [90m0.64s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe last active owner cannot be demoted[39m[90m                                                                     [39m [90m0.61s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe membership vocabulary is served rather than typed out[39m[90m                                                   [39m [90m0.58s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe accounts listing states the membership role where the console reads it[39m[90m                                  [39m [90m0.61s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe database refuses a role no validator would accept[39m[90m                                                       [39m [90m0.55s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe database refuses an account state it does not understand[39m[90m                                                [39m [90m0.52s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Identity\PermissionIsolationTest[39m
+  [32;1m✓[39;22m[90m [39m[90mthe catalog classifies every name exactly once[39m[90m                                                              [39m [90m0.60s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe company door refuses a platform capability by name[39m[90m                                                      [39m [90m1.13s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma platform capability rows cannot reach a company route[39m[90m                                                     [39m [90m0.90s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe platform door refuses a company capability and a company role[39m[90m                                           [39m [90m0.66s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma business capability written on the account grants nothing[39m[90m                                                 [39m [90m0.58s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma standing one company invented is worth only what that company said[39m[90m                                        [39m [90m0.95s[39m  
+  [32;1m✓[39;22m[90m [39m[90man individual grant adds to a standing and an individual denial takes away[39m[90m                                  [39m [90m0.79s[39m  
+  [32;1m✓[39;22m[90m [39m[90mbulk overrides apply to every named member or to none[39m[90m                                                       [39m [90m0.67s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe owner standing cannot be edited into helplessness[39m[90m                                                       [39m [90m0.99s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma company without staffing authority cannot open either door[39m[90m                                                [39m [90m0.58s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\Identity\RbacMatrixTest[39m
+  [32;1m✓[39;22m[90m [39m[90mevery permission the catalog declares is enforced somewhere[39m[90m                                                 [39m [90m0.34s[39m  
+  [32;1m✓[39;22m[90m [39m[90mno route checks a capability the catalog never declared[39m[90m                                                     [39m [90m0.11s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe seeded matrix matches the catalog[39m[90m                                                                       [39m [90m0.53s[39m  
+  [32;1m✓[39;22m[90m [39m[90mbusiness roles never hold a platform only capability[39m[90m                                                        [39m [90m0.10s[39m  
+  [32;1m✓[39;22m[90m [39m[90mperson capabilities are real and never platform scoped[39m[90m                                                      [39m [90m0.09s[39m  
+
+  [90mTests:[39m    [32;1m74 passed[39;22m[90m (499 assertions)[39m
+  [90mDuration:[39m [39m60.36s[39m
+

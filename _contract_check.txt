@@ -1,0 +1,7 @@
+Server API routes: 122
+Client paths called from api.ts: 120
+
+Client calls a route the server does not have:
+  /api/v1/deals/{}/handover/label  ← handoverLabelUrl
+
+Either implement the endpoint or delete the method and every screen that uses it.

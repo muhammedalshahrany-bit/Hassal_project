@@ -1,0 +1,119 @@
+parsed C:/Users/alshh/.qoder/projects/D--hassal-app-flutter/01160dd6-f8b1-4ee2-a4e2-fcbc55a6730c.jsonl (seq=7611)
+parsed C:/Users/alshh/.qoder/projects/D--hassal-app-flutter/91058cfd-f9a7-4637-a5bb-275d9ccd9efd.jsonl (seq=8184)
+recovered: app/http/controllers/api/v1/authcontroller.php
+recovered: app/http/controllers/api/v1/offercontroller.php
+recovered: app/http/controllers/api/v1/organizationcontroller.php
+recovered: app/http/controllers/api/v1/organizationdocumentcontroller.php
+recovered: app/http/controllers/api/v1/productimagecontroller.php
+recovered: app/http/controllers/api/v1/purchaserequestcontroller.php
+recovered: app/http/requests/googlesigninrequest.php
+recovered: app/http/requests/registerrequest.php
+recovered: app/http/resources/offerresource.php
+recovered: app/models/dispute.php
+recovered: app/models/offer.php
+recovered: app/models/user.php
+recovered: app/services/auth/googleidtokenverifier.php
+recovered: app/services/geodiscoveryservice.php
+recovered: app/support/settingcatalog.php
+
+recovered(differs-from-HEAD): 15
+created(missing): 0
+identical: 54
+edit issues: 204
+  app/console/commands/installsystemcommand.php: old_string not found (edit seq 5217)
+  app/console/commands/installsystemcommand.php: old_string not found (edit seq 5328)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 734)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 735)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 736)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 739)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 740)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 743)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 744)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 745)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 746)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 765)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 766)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 773)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 1298)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 1300)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4119)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4120)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4123)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4125)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4127)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4129)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4130)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4131)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4200)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4201)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4203)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4204)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4211)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4212)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 4213)
+  app/http/controllers/api/v1/authcontroller.php: old_string not found (edit seq 8082)
+  app/http/controllers/api/v1/dealcontroller.php: old_string not found (edit seq 3762)
+  app/http/controllers/api/v1/dealcontroller.php: old_string not found (edit seq 4100)
+  app/http/controllers/api/v1/dealcontroller.php: old_string not found (edit seq 4997)
+  app/http/controllers/api/v1/dealcontroller.php: old_string not found (edit seq 4998)
+  app/http/controllers/api/v1/dealcontroller.php: old_string not found (edit seq 4999)
+  app/http/controllers/api/v1/dealcontroller.php: old_string not found (edit seq 5040)
+  app/http/controllers/api/v1/dealcontroller.php: old_string not found (edit seq 5042)
+  app/http/controllers/api/v1/dealcontroller.php: old_string not found (edit seq 7428)
+  app/http/controllers/api/v1/dealcontroller.php: old_string not found (edit seq 7429)
+  app/http/controllers/api/v1/dealcontroller.php: old_string not found (edit seq 7430)
+  app/http/controllers/api/v1/dealcontroller.php: old_string not found (edit seq 7431)
+  app/http/controllers/api/v1/dealcontroller.php: old_string not found (edit seq 7560)
+  app/http/controllers/api/v1/dealcontroller.php: old_string not found (edit seq 7564)
+  app/http/controllers/api/v1/dealcontroller.php: old_string not found (edit seq 7567)
+  app/http/controllers/api/v1/disputecontroller.php: old_string not found (edit seq 5081)
+  app/http/controllers/api/v1/disputecontroller.php: old_string not found (edit seq 5082)
+  app/http/controllers/api/v1/disputecontroller.php: old_string not found (edit seq 5083)
+  app/http/controllers/api/v1/disputecontroller.php: old_string not found (edit seq 5084)
+  app/http/controllers/api/v1/disputecontroller.php: old_string not found (edit seq 5085)
+  app/http/controllers/api/v1/disputecontroller.php: old_string not found (edit seq 5164)
+  app/http/controllers/api/v1/inventorymovementcontroller.php: old_string not found (edit seq 1363)
+  app/http/controllers/api/v1/offercommentcontroller.php: old_string not found (edit seq 7956)
+  app/http/controllers/api/v1/offercommentcontroller.php: old_string not found (edit seq 7957)
+  app/http/controllers/api/v1/offercommentcontroller.php: old_string not found (edit seq 7958)
+  app/http/controllers/api/v1/offercommentcontroller.php: old_string not found (edit seq 7959)
+  app/http/controllers/api/v1/offercommentcontroller.php: old_string not found (edit seq 7960)
+  app/http/controllers/api/v1/offercommentcontroller.php: old_string not found (edit seq 7961)
+  app/http/controllers/api/v1/offercontroller.php: old_string not found (edit seq 1355)
+files with edits but no snapshot: 36
+  app/http/requests/googlesigninrequest.php
+  app/http/requests/registerrequest.php
+  app/http/controllers/api/v1/authcontroller.php
+  app/models/user.php
+  app/http/middleware/securityheaders.php
+  app/services/auth/googleidtokenverifier.php
+  app/http/middleware/auditlogmiddleware.php
+  app/http/controllers/api/v1/organizationdocumentcontroller.php
+  app/http/controllers/api/v1/productimagecontroller.php
+  app/models/offer.php
+  app/http/controllers/api/v1/offercontroller.php
+  app/http/controllers/api/v1/inventorymovementcontroller.php
+  app/services/inventoryreservationservice.php
+  app/services/doubleentryledgerservice.php
+  app/providers/appserviceprovider.php
+  app/services/geodiscoveryservice.php
+  app/http/resources/offerresource.php
+  app/support/settingcatalog.php
+  app/http/controllers/api/v1/purchaserequestcontroller.php
+  app/http/controllers/api/v1/warehousecontroller.php
+  app/services/pricingandcurrencyservice.php
+  app/http/controllers/api/v1/dealcontroller.php
+  app/services/demandmatchingservice.php
+  app/models/organizationmembership.php
+  app/http/controllers/api/v1/organizationcontroller.php
+  app/http/requests/addmemberrequest.php
+  app/support/flagcatalog.php
+  app/models/dispute.php
+  app/http/controllers/api/v1/disputecontroller.php
+  app/services/webhookdispatcherservice.php
+  app/http/controllers/api/v1/webhookcontroller.php
+  app/http/middleware/ensurefeatureenabled.php
+  app/http/controllers/api/v1/reportexportcontroller.php
+  app/console/commands/installsystemcommand.php
+  app/http/controllers/api/v1/offerlikecontroller.php
+  app/http/controllers/api/v1/offercommentcontroller.php

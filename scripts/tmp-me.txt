@@ -1,0 +1,12 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+*************************** 1. row ***************************
+               id: 1
+             name: Muhammed Alshhranym
+            email: alshhranymuha39@gmail.com
+           status: active
+email_verified_at: NULL
+       created_at: 2026-09-26 00:16:08
+organization_id	name_ar	type	role	is_active
+10	المسؤول	buyer	owner	1
+role_id	model_type	model_id
+1	App\\Models\\User	1

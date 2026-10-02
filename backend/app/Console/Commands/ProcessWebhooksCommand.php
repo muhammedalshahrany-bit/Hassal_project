@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Models\WebhookDelivery;
-use App\Services\WebhookDispatcherService;
+use App\Platform\Models\WebhookDelivery;
+use App\Platform\Services\WebhookDispatcherService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 

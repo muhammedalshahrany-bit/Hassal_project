@@ -2,13 +2,13 @@
 
 namespace Database\Seeders;
 
-use App\Models\Category;
-use App\Models\Currency;
-use App\Models\FeatureFlag;
-use App\Models\SystemSetting;
-use App\Support\CategoryCatalog;
-use App\Support\FlagCatalog;
-use App\Support\SettingCatalog;
+use App\Catalog\Models\Category;
+use App\Platform\Models\Currency;
+use App\Platform\Models\FeatureFlag;
+use App\Platform\Models\SystemSetting;
+use App\Catalog\Support\CategoryCatalog;
+use App\Platform\Support\FlagCatalog;
+use App\Platform\Support\SettingCatalog;
 use Illuminate\Database\Seeder;
 
 /**
@@ -18,7 +18,7 @@ use Illuminate\Database\Seeder;
  * review and change: the RBAC matrix, system settings, currency registry,
  * feature flags, and the food-sector classification the product starts from.
  *
- * Settings and flags come from App\Support\SettingCatalog and FlagCatalog —
+ * Settings and flags come from App\Platform\Support\SettingCatalog and FlagCatalog —
  * the same lists `app:install-system` seeds — so there is exactly one
  * vocabulary of keys between the installer, the admin console and the code
  * that reads them at runtime.
